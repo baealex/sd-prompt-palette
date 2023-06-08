@@ -1,0 +1,52 @@
+.category {
+    width: 100%;
+    padding: 2rem;
+}
+
+.category:not(:last-child) {
+    border-bottom: 1px solid #333;
+}
+
+.category h2 {
+    margin-bottom: 0.5rem;
+}
+
+.category ul {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.category ul li {
+    list-style: none;
+    background-color: #fff;
+    padding: 0.5rem 0.8rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+}
+
+.form {
+    margin-bottom: 1rem;
+}
+
+.form input {
+    padding: 0.5rem;
+    font-size: 1rem;
+    outline: none;
+    background-color: transparent;
+    border: none;
+    border-bottom: 1px solid #333;
+}
+
+.form button {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    border: 1px solid #333;
+    border-radius: 0.5rem;
+    background-color: #333;
+    color: #fff;
+    cursor: pointer;
+}

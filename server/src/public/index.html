@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stable Diffusion Prompt Wiki</title>
+    <style>
+        .category {
+            width: 100%;
+            padding: 1rem;
+            border-bottom: 1px solid #333;
+        }
+
+        .category h2 {
+            margin-bottom: 0.5rem;
+        }
+
+        .category ul {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .category ul li {
+            list-style: none;
+            background-color: #fff;
+            padding: 0.5rem 0.8rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+        }
+
+        form {
+            margin-bottom: 1rem;
+        }
+
+        form input {
+            padding: 0.5rem;
+            font-size: 1rem;
+            outline: none;
+            background-color: transparent;
+            border: none;
+            border-bottom: 1px solid #333;
+        }
+
+        form button {
+            padding: 0.5rem;
+            font-size: 1rem;
+            border: 1px solid #333;
+            border-radius: 0.5rem;
+            background-color: #333;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="category"></div>
+</body>
+
+<script>
+    const handleRemove = [];
+
+    const container = (function () {
+        const containerName = 'snackbar-container';
+
+        if (!document.getElementById(containerName)) {
+            const div = document.createElement('div');
+            div.id = containerName;
+            document.body.appendChild(div);
+        }
+        return document.getElementById(containerName);
+    }());
+
+    function snackBar(text, options) {
+        clearSnackBar();
+
+        const snackBar = document.createElement('div');
+        snackBar.textContent = text;
+        snackBar.classList.add('snack-bar');
+
+        if (options?.size) {
+            snackBar.classList.add(options.size);
+        }
+
+        if (options?.onClick) {
+            snackBar.classList.add('have-event');
+            snackBar.addEventListener('click', options.onClick);
+        }
+
+        container.appendChild(snackBar);
+        handleRemove.unshift(setTimeout(() => {
+            container.removeChild(snackBar);
+        }, 4250));
+    }
+
+    function clearSnackBar() {
+        Array.from(document.getElementsByClassName('snack-bar')).forEach(el => {
+            clearTimeout(handleRemove.shift());
+            container.removeChild(el);
+        });
+    }
+
+    function createKeyword(name) {
+        const keyword = document.createElement('li');
+        keyword.textContent = name;
+        return keyword;
+    }
+
+    async function main() {
+        const response = await fetch('/categories');
+        const categories = await response.json();
+
+
+    }
+
+    document.addEventListener('click', (event) => {
+        if (event.target.tagName === 'LI') {
+            const keyword = event.target.textContent;
+            navigator.clipboard.writeText(keyword);
+            snackBar('😍 Copied to clipboard', {
+                size: 'small',
+            });
+        }
+    });
+
+    main();
+</script>
+
+</html>

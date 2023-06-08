@@ -1,0 +1,10 @@
+version: "2.0"
+
+services:
+  app:
+    image: baealex/sdprompt
+    ports:
+      - 3000:3332
+    volumes:
+      - ./server/src/prisma:/data
+      - ./assets:/assets

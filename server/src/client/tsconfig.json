@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "sourceMap": true,
+        "target": "ES2015",
+        "esModuleInterop": true,
+        "moduleResolution": "Node",
+        "baseUrl": "src",
+        "paths": {
+            "~/*": ["./*"]
+        }
+    },
+    "include": [
+        "src",
+        "types/*.d.ts"
+    ],
+    "exclude": [
+        "public",
+    ]
+}

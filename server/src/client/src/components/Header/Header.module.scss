@@ -1,0 +1,21 @@
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1rem;
+    background-color: #fff;
+    border-bottom: 1px solid #eaeaea;
+    height: 80px;
+
+    h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #333;
+    }
+}
+
+.links {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
