@@ -10,7 +10,6 @@ RUN npm i
 
 COPY ./src/ ./
 
-RUN npm run build
 RUN npm run build:client
 
 RUN mkdir /app/client/dist/assets

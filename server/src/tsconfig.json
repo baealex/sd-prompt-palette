@@ -2,18 +2,21 @@
     "compilerOptions": {
         "outDir": "dist",
         "esModuleInterop": true,
+        "module": "CommonJS",
         "moduleResolution": "Node",
-        "baseUrl": "src",
-        "target": "ES6",
+        "baseUrl": "./src",
+        "target": "ES5",
         "paths": {
             "~/*": [
                 "./*"
-            ]
+            ],
         },
     },
     "include": [
-        "src/**/*",
-        "script/**/*"
+        "src/**/*"
+    ],
+    "exclude": [
+        "scripts/**/*",
     ],
     "ts-node": {
         "require": [
