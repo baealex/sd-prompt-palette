@@ -22,8 +22,8 @@ export class Header extends Component {
         });
         new Link($links, {
             text: 'PNG Info',
-            href: '/png-info',
-            className: window.location.pathname === '/png-info' ? styles.active : '',
+            href: '/image-load',
+            className: window.location.pathname === '/image-load' ? styles.active : '',
         });
     }
 
