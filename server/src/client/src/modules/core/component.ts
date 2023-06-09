@@ -7,8 +7,8 @@ interface ComponentProps<T> {
 
 export default class Component<T extends HTMLElement = HTMLDivElement, K = unknown> {
     $el: T;
-    state: K;
-    _isMounted: boolean;
+    _state: K;
+    _isMounted = false;
 
     constructor($parent: HTMLElement, props?: ComponentProps<K>) {
         this.$el = document.createElement(props?.tag || 'div') as T;
@@ -20,11 +20,14 @@ export default class Component<T extends HTMLElement = HTMLDivElement, K = unkno
         if (props?.className) {
             this.$el.className = props.className;
         }
-      
+
         $parent.appendChild(this.$el);
-        this.setState(props?.initialState);
+        this._state = props?.initialState as K;
         this.rerender();
-        this._isMounted = true;
+    }
+
+    get state() {
+        return { ...this._state };
     }
 
     useSelector<T extends HTMLElement>(selector: string): T {
@@ -32,15 +35,31 @@ export default class Component<T extends HTMLElement = HTMLDivElement, K = unkno
     }
 
     rerender() {
-        if (this._isMounted) {
-            this.unmount();
-        }
-        this.$el.innerHTML = this.render();
-        this.mount();
+        window.requestAnimationFrame(() => {
+            if (this._isMounted) {
+                this.unmount();
+            } else {
+                this._isMounted = true;
+            }
+            this.$el.innerHTML = this.render();
+            this.mount();
+        });
     }
 
-    setState(nextState: K) {
-        this.state = nextState;
+    setState(nextState: K | ((prevState: K) => K)) {
+        let newState: any = nextState;
+
+        if (typeof newState === 'function') {
+            newState = newState(this.state);
+        }
+
+        newState = Object.freeze({
+            ...this._state,
+            ...newState,
+        });
+
+        this._state = newState;
+
         if (this._isMounted) {
             this.rerender();
         }
@@ -53,7 +72,7 @@ export default class Component<T extends HTMLElement = HTMLDivElement, K = unkno
 
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     unmount() {
-      
+
     }
 
     render() {

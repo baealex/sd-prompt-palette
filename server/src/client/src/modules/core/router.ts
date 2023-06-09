@@ -19,7 +19,8 @@ export const useRouter = () => {
 
 export class Router {
     $root: HTMLElement;
-    map: Map<string, typeof Component>;
+    pageMemory: Component;
+    componentMap: Map<string, typeof Component>;
 
     constructor($root: HTMLElement) {
         const router = routerInstance.get();
@@ -29,17 +30,17 @@ export class Router {
             this.push(window.location.pathname, true);
         });
         this.$root = $root;
-        this.map = new Map();
+        this.componentMap = new Map();
         routerInstance.set(this);
     }
 
     routes(path: string, component: unknown) {
-        this.map.set(path, component as typeof Component);
+        this.componentMap.set(path, component as typeof Component);
         return this;
     }
 
     push(path: string, isPopState = false) {
-        if (this.map.has(path)) {
+        if (this.componentMap.has(path)) {
             if (window.location.pathname === path && !isPopState) {
                 return;
             }
@@ -48,9 +49,13 @@ export class Router {
                 window.history.pushState({}, '', path);
             }
 
-            const component = this.map.get(path);
+            if (this.pageMemory) {
+                this.pageMemory.unmount();
+            }
+
+            const component = this.componentMap.get(path);
             this.$root.innerHTML = '';
-            new component(this.$root);
+            this.pageMemory = new component(this.$root);
         }
     }
 }
