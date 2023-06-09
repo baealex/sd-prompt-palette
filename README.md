@@ -1,5 +1,7 @@
 # Stable Diffusion Prompt Wiki
 
+![](https://github.com/baealex/sdprompt-wiki/assets/35596687/b0b6df6d-822b-4582-a01e-ec887bc4f899)
+
 영어가 아직 부족해서 이미지를 자연스럽게 표현하는데 어려움을 겪고 있어서 만들었습니다. 팔레트의 물감처럼 단어를 다룰 수 있게 하는 것이 목표입니다.
 
 <br>
