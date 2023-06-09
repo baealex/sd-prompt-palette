@@ -24,7 +24,7 @@
 
 ```
 git clone https://github.com/baealex/sdprompt-wiki
-docker-compose up -d
+git pull && docker-compose pull && docker-compose up -d
 ```
 
 connect to `http://localhost:3000`
