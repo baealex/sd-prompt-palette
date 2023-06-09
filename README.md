@@ -1,9 +1,8 @@
 # Stable Diffusion Prompt Palette
 
-![](https://github.com/baealex/sdprompt-wiki/assets/35596687/1c014bcb-6a64-4d46-943a-66306cbc16ff)
+![](https://github.com/baealex/sd-prompt-palette/assets/35596687/a8bbe847-fa05-4324-9f39-accbb9effa63)
 
-![](https://github.com/baealex/sdprompt-wiki/assets/35596687/86233a35-dc6a-4f05-ade5-3d9476f8058c)
-
+![](https://github.com/baealex/sd-prompt-palette/assets/35596687/d4c2cb5f-f308-4101-9a13-d913a01d01b2)
 
 영어가 아직 부족해서 이미지를 자연스럽게 표현하는데 어려움을 겪고 있어서 만들었습니다. 팔레트의 물감처럼 단어를 다룰 수 있게 하는 것이 목표입니다.
 
