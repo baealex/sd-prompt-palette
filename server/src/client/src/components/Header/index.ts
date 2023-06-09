@@ -13,10 +13,17 @@ export class Header extends Component {
         new Link($links, {
             text: 'Home',
             href: '/',
+            className: window.location.pathname === '/' ? styles.active : '',
         });
         new Link($links, {
             text: 'Manage',
             href: '/manage',
+            className: window.location.pathname === '/manage' ? styles.active : '',
+        });
+        new Link($links, {
+            text: 'PNG Info',
+            href: '/png-info',
+            className: window.location.pathname === '/png-info' ? styles.active : '',
         });
     }
 

@@ -6,13 +6,14 @@ import { useRouter } from '~/modules/core/router';
 interface State {
     text: string;
     href: string;
+    className?: string;
 }
 
 export class Link extends Component<HTMLAnchorElement, State> {
     constructor($parent: HTMLElement, initialState: State) {
         super($parent, {
             tag: 'a',
-            className: styles.Link,
+            className: styles.Link + (initialState.className ? ` ${initialState.className}` : ''),
             initialState,
         });
     }
