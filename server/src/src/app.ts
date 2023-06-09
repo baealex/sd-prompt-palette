@@ -10,4 +10,12 @@ export default express()
         extensions: ['html']
     }))
     .use(express.json())
-    .use('/api/', router);
+    .use('/api/', router)
+    .get('*', (req, res) => {
+        if (req.path.startsWith('/api/')) {
+            return res.status(404).json({
+                message: 'Not Found',
+            });
+        }
+        res.sendFile(path.resolve('client/dist/index.html'));
+    });

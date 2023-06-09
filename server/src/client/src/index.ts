@@ -8,5 +8,5 @@ import './styles/main.scss';
         .routes('/', Home)
         .routes('/manage', Manage);
 
-    router.push(window.location.pathname);
+    router.push(window.location.pathname, true);
 })();

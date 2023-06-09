@@ -40,9 +40,14 @@ export class Router {
 
     push(path: string, isPopState = false) {
         if (this.map.has(path)) {
+            if (window.location.pathname === path && !isPopState) {
+                return;
+            }
+
             if (!isPopState) {
                 window.history.pushState({}, '', path);
             }
+
             const component = this.map.get(path);
             this.$root.innerHTML = '';
             new component(this.$root);
