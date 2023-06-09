@@ -13,6 +13,70 @@ export class Home extends Component {
         super($parent, { className: styles.Home });
     }
 
+    handleClickKeyword = async (e: any) => {
+        if (e.target.tagName === 'LI') {
+            const $target = e.target as HTMLElement;
+            const keyword = $target.textContent;
+            navigator.clipboard.writeText(keyword);
+            snackBar('😍 Copied to clipboard');
+        }
+    };
+
+    handleContextMenu = async (e: any) => {
+        if (e.target.tagName === 'LI') {
+            contextMenu.create({
+                top: e.clientY,
+                left: e.clientX,
+                menus: [
+                    {
+                        label: 'Delete',
+                        click: async () => {
+                            const {
+                                id,
+                                categoryId,
+                            } = e.target.dataset;
+                            await deleteKeyword(Number(id), {
+                                categoryId: Number(categoryId),
+                            });
+                            e.target.remove();
+                            snackBar('😭 Deleted');
+                        },
+                    },
+                ]
+            });
+        }
+        if (e.target.tagName === 'H2') {
+            contextMenu.create({
+                top: e.clientY,
+                left: e.clientX,
+                menus: [
+                    {
+                        label: 'Rename',
+                        click: async () => {
+                            const name = prompt('Rename category', e.target.textContent);
+                            if (name === null) {
+                                return;
+                            }
+                            const { id } = e.target.parentElement;
+                            await updateCategory(Number(id), { name });
+                            e.target.textContent = name;
+                            snackBar('😍 Renamed');
+                        },
+                    },
+                    {
+                        label: 'Delete',
+                        click: async () => {
+                            const { id } = e.target.parentElement;
+                            await deleteCategory(Number(id));
+                            e.target.parentElement.remove();
+                            snackBar('😭 Deleted');
+                        },
+                    },
+                ]
+            });
+        }
+    };
+
     async mount() {
         const { data: categories } = await getCategories();
 
@@ -80,68 +144,13 @@ export class Home extends Component {
             });
         });
 
-        this.$el.addEventListener('click', (event: any) => {
-            if (event.target.tagName === 'LI') {
-                const keyword = event.target.textContent;
-                navigator.clipboard.writeText(keyword);
-                snackBar('😍 Copied to clipboard');
-            }
-        });
+        this.$el.addEventListener('click', this.handleClickKeyword);
+        this.$el.addEventListener('contextmenu', this.handleContextMenu);
+    }
 
-        this.$el.addEventListener('contextmenu', (e: any) => {
-            if (e.target.tagName === 'LI') {
-                contextMenu.create({
-                    top: e.clientY,
-                    left: e.clientX,
-                    menus: [
-                        {
-                            label: 'Delete',
-                            click: async () => {
-                                const {
-                                    id,
-                                    categoryId,
-                                } = e.target.dataset;
-                                await deleteKeyword(Number(id), {
-                                    categoryId: Number(categoryId),
-                                });
-                                e.target.remove();
-                                snackBar('😭 Deleted');
-                            },
-                        },
-                    ]
-                });
-            }
-            if (e.target.tagName === 'H2') {
-                contextMenu.create({
-                    top: e.clientY,
-                    left: e.clientX,
-                    menus: [
-                        {
-                            label: 'Rename',
-                            click: async () => {
-                                const name = prompt('Rename category', e.target.textContent);
-                                if (name === null) {
-                                    return;
-                                }
-                                const { id } = e.target.parentElement;
-                                await updateCategory(Number(id), { name });
-                                e.target.textContent = name;
-                                snackBar('😍 Renamed');
-                            },
-                        },
-                        {
-                            label: 'Delete',
-                            click: async () => {
-                                const { id } = e.target.parentElement;
-                                await deleteCategory(Number(id));
-                                e.target.parentElement.remove();
-                                snackBar('😭 Deleted');
-                            },
-                        },
-                    ]
-                });
-            }
-        });
+    unmount() {
+        this.$el.removeEventListener('click', this.handleClickKeyword);
+        this.$el.removeEventListener('contextmenu', this.handleContextMenu);
     }
 
     render() {

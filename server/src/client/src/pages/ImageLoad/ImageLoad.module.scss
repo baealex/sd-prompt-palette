@@ -34,19 +34,6 @@
     }
 }
 
-.propts {
-    margin: 0;
-    padding: 0;
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    margin-bottom: 1rem;
-}
-
-.propts li {
-    list-style: none;
-    background-color: #fff;
-    padding: 0.5rem 0.8rem;
-    border-radius: 0.5rem;
-    cursor: pointer;
+.promptContainer {
+    display: block;
 }
