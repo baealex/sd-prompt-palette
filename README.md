@@ -1,6 +1,9 @@
-# Stable Diffusion Prompt Wiki
+# Stable Diffusion Prompt Palette
 
-![](https://github.com/baealex/sdprompt-wiki/assets/35596687/b0b6df6d-822b-4582-a01e-ec887bc4f899)
+![](https://github.com/baealex/sdprompt-wiki/assets/35596687/1c014bcb-6a64-4d46-943a-66306cbc16ff)
+
+![](https://github.com/baealex/sdprompt-wiki/assets/35596687/86233a35-dc6a-4f05-ade5-3d9476f8058c)
+
 
 영어가 아직 부족해서 이미지를 자연스럽게 표현하는데 어려움을 겪고 있어서 만들었습니다. 팔레트의 물감처럼 단어를 다룰 수 있게 하는 것이 목표입니다.
 
@@ -8,23 +11,40 @@
 
 ## Feature
 
-- [x] 단어 클릭시 복사됩니다. (https나 local 에서만 동작합니다)
-- [x] 단어나 카테고리를 오른쪽 클릭할 경우 삭제 및 수정이 가능합니다.
-- [ ] 단어를 호버하면 단어에 대한 등록한 샘플 이미지가 표기됩니다.
+- [x] 키워드 클릭시 키워드가 복사됩니다. (https나 localhost 에서만 동작합니다)
+- [x] 키워드나 카테고리를 오른쪽 클릭할 경우 삭제 및 수정이 가능합니다.
+- [x] 이미지의 프롬프트를 조회할 수 있습니다.
+- [ ] 단어를 호버하면 단어에 대한 샘플 이미지가 표기됩니다.
+- [ ] 카테고리의 키워드를 랜덤 조합하여 새로운 아이디어를 얻을 수 있습니다.
+- [ ] 자주 사용하는 프롬프트의 조합을 보다 편리하게 관리할 수 있습니다.
 
 <br>
 
 ## Demo site
 
-[stpromt-wiki.vvip.page](https://sdprompt-wiki.vvip.page/)
+[sd-prompt-palette.vvip.page](https://sd-prompt-palette.vvip.page/)
 
 <br>
 
 ## Self-host
 
+### use NodeJS
+
 ```
-git clone https://github.com/baealex/sdprompt-wiki
+git clone https://github.com/baealex/sd-prompt-palette
+cd server/src
+npm i
+npm run build:client
+npm run start
+```
+
+`http://localhost:3332`로 접속할 수 있습니다.
+
+### use Docker
+
+```
+git clone https://github.com/baealex/sd-prompt-palette
 git pull && docker-compose pull && docker-compose up -d
 ```
 
-connect to `http://localhost:3000`
+`http://localhost:3000`로 접속할 수 있습니다.
