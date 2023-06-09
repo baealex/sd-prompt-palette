@@ -29,7 +29,7 @@ export class Header extends Component {
 
     render() {
         return html`
-            <h1>SDPrompt Wiki</h1>
+            <h1>Prompt Palette</h1>
             <div class="${styles.links}"></div>
         `;
     }
