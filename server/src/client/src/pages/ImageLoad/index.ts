@@ -124,7 +124,7 @@ export class ImageLoad extends Component {
         `));
         this.$prompts = new Prompts(this.$promptContainer, INITIAL_PROMPTS_STATE);
         this.$promptContainer.appendChild(htmlToElement(html`
-            <div class="${styles.categoryHeader}">
+            <div class="${styles.categoryHeader}" style="margin-top: 2rem;">
                 <h2>Negative Prompt</h2>
                 <button id="copy-all-negative">
                     copy all
