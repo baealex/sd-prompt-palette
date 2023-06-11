@@ -57,7 +57,7 @@ export class Home extends Component {
                             if (name === null) {
                                 return;
                             }
-                            const { id } = e.target.parentElement;
+                            const { id } = e.target.parentElement.parentElement.dataset;
                             await updateCategory(Number(id), { name });
                             e.target.textContent = name;
                             snackBar('😍 Renamed');
@@ -66,9 +66,9 @@ export class Home extends Component {
                     {
                         label: 'Delete',
                         click: async () => {
-                            const { id } = e.target.parentElement;
+                            const { id } = e.target.parentElement.parentElement.dataset;
                             await deleteCategory(Number(id));
-                            e.target.parentElement.remove();
+                            e.target.parentElement.parentElement.remove();
                             snackBar('😭 Deleted');
                         },
                     },
@@ -82,7 +82,7 @@ export class Home extends Component {
 
         categories.forEach((category) => {
             this.$el.appendChild(htmlToElement(html`
-                <div id="category-${category.id}" class="${styles.category}">
+                <div id="category-${category.id}" class="${styles.category}" data-id="${category.id}">
                     <div class="${styles.categoryHeader}">
                         <h2>${category.name}</h2>
                         <button>

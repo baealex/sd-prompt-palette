@@ -53,10 +53,12 @@ export const updateCategory: Controller = async (req, res) => {
 };
 
 export const deleteCategory: Controller = async (req, res) => {
+    const categoryId = Number(req.params.id);
+
     await models.keywordToCategory.deleteMany({
         where: {
             category: {
-                id: Number(req.params.id),
+                id: categoryId,
             },
         },
     });
@@ -69,7 +71,7 @@ export const deleteCategory: Controller = async (req, res) => {
     });
     await models.category.delete({
         where: {
-            id: Number(req.params.id),
+            id: categoryId,
         },
     });
     res.status(204).end();
