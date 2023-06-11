@@ -20,7 +20,9 @@ export const createKeyword: Controller = async (req, res) => {
             name: req.body.name,
             categories: {
                 some: {
-                    id: categoryId,
+                    category: {
+                        id: categoryId,
+                    },
                 },
             },
         },
