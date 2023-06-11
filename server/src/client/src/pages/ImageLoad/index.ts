@@ -14,6 +14,10 @@ const INITIAL_PROMPTS_STATE = {
     }
 };
 
+const memo = {
+    image: null as File,
+};
+
 export class ImageLoad extends Component {
     $imageLoader: HTMLDivElement;
     $imagePreview: HTMLImageElement;
@@ -77,6 +81,7 @@ export class ImageLoad extends Component {
         if (files.length > 0) {
             this.showPreview(files[0]);
             this.readPrompt(files[0]);
+            memo.image = files[0];
         }
     };
 
@@ -98,6 +103,7 @@ export class ImageLoad extends Component {
         if (files.length > 0) {
             this.showPreview(files[0]);
             this.readPrompt(files[0]);
+            memo.image = files[0];
         }
     };
 
@@ -141,6 +147,11 @@ export class ImageLoad extends Component {
             navigator.clipboard.writeText(prompts.join(', '));
             snackBar('😍 Copied to clipboard');
         });
+
+        if (memo.image) {
+            this.readPrompt(memo.image);
+            this.showPreview(memo.image);
+        }
 
     }
 
