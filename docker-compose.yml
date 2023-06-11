@@ -2,7 +2,7 @@ version: "2.0"
 
 services:
   app:
-    image: baealex/sdprompt
+    image: baealex/sd-prompt-palette
     ports:
       - 3000:3332
     volumes:

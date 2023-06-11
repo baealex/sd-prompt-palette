@@ -33,6 +33,6 @@ jobs:
           file: ./server/Dockerfile
           platforms: linux/amd64
           push: true
-          tags: baealex/sdprompt:latest
+          tags: baealex/sd-prompt-palette:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
