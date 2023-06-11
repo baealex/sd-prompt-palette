@@ -1,6 +1,9 @@
 .category {
-    width: 100%;
     padding: 2rem;
+
+    @media (max-width: 768px) {
+        padding: 1rem;
+    }
 }
 
 .category:not(:last-child) {

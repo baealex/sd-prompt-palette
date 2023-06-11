@@ -102,19 +102,46 @@ export class ImageLoad extends Component {
     };
 
     async mount() {
+        document.title = 'Image Load | SD Prompt Palette';
+
         this.$imageLoader = this.useSelector(`.${styles.imageLoader}`);
         this.$imagePreview = this.useSelector(`.${styles.imagePreview}`);
         this.$imageInput = this.$imageLoader.querySelector('input[type="file"]');
         this.$promptContainer = this.useSelector(`.${styles.promptContainer}`);
-        this.$promptContainer.appendChild(htmlToElement(html`<h3>Prompt</h3>`));
+        this.$promptContainer.appendChild(htmlToElement(html`
+            <div class="${styles.categoryHeader}">
+                <h2>Prompt</h2>
+                <button id="copy-all">
+                    copy all
+                </button>
+            </div>
+        `));
         this.$prompts = new Prompts(this.$promptContainer, INITIAL_PROMPTS_STATE);
-        this.$promptContainer.appendChild(htmlToElement(html`<h3>Negative Prompt</h3>`));
+        this.$promptContainer.appendChild(htmlToElement(html`
+            <div class="${styles.categoryHeader}">
+                <h2>Negative Prompt</h2>
+                <button id="copy-all-negative">
+                    copy all
+                </button>
+            </div>
+        `));
         this.$negativePrompts = new Prompts(this.$promptContainer, INITIAL_PROMPTS_STATE);
 
         this.$imageInput.addEventListener('change', this.handleImageChange);
         this.$imageLoader.addEventListener('click', this.handleImageLoaderClick);
         this.$imageLoader.addEventListener('dragover', this.handleImageLoaderDrag);
         this.$imageLoader.addEventListener('drop', this.handleImageLoaderDrop);
+        this.$promptContainer.querySelector('#copy-all').addEventListener('click', () => {
+            const prompts = this.$prompts.state.prompts;
+            navigator.clipboard.writeText(prompts.join(', '));
+            snackBar('😍 Copied to clipboard');
+        });
+        this.$promptContainer.querySelector('#copy-all-negative').addEventListener('click', () => {
+            const prompts = this.$negativePrompts.state.prompts;
+            navigator.clipboard.writeText(prompts.join(', '));
+            snackBar('😍 Copied to clipboard');
+        });
+
     }
 
     unmount() {

@@ -78,6 +78,8 @@ export class Home extends Component {
     };
 
     async mount() {
+        document.title = 'SD Prompt Palette';
+
         const { data: categories } = await getCategories();
 
         categories.forEach((category) => {

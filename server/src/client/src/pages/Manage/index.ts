@@ -15,6 +15,8 @@ export class Manage extends Component {
     }
 
     async mount() {
+        document.title = 'Manage | SD Prompt Palette';
+
         const router = useRouter();
         const categoryWrap = document.createElement('div');
         categoryWrap.innerHTML += html`
