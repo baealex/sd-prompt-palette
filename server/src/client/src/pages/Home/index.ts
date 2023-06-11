@@ -1,6 +1,6 @@
 import styles from './Home.module.scss';
 
-import { Component, html } from '~/modules/core';
+import { Component, html, htmlToElement } from '~/modules/core';
 import { snackBar } from '~/modules/ui/snack-bar';
 
 import { getCategories, createKeyword, deleteKeyword, updateCategory, deleteCategory } from '~/api';
@@ -16,7 +16,7 @@ export class Home extends Component {
     handleClickKeyword = async (e: any) => {
         if (e.target.tagName === 'LI') {
             const $target = e.target as HTMLElement;
-            const keyword = $target.textContent;
+            const keyword = $target.textContent.trim();
             navigator.clipboard.writeText(keyword);
             snackBar('😍 Copied to clipboard');
         }
@@ -81,35 +81,39 @@ export class Home extends Component {
         const { data: categories } = await getCategories();
 
         categories.forEach((category) => {
-            const categoryWrap = document.createElement('div');
-            Object.assign(categoryWrap, {
-                id: category.id,
-                className: styles.category,
+            this.$el.appendChild(htmlToElement(html`
+                <div id="category-${category.id}" class="${styles.category}">
+                    <div class="${styles.categoryHeader}">
+                        <h2>${category.name}</h2>
+                        <button>
+                            copy all
+                        </button>
+                    </div>
+                    <ul>
+                        ${category.keywords.map(({ keyword: item }) => html`
+                            <li data-id="${item.id}" data-category-id="${category.id}">
+                                ${item.name}
+                            </li>
+                        `).join('')}
+                    </ul>
+                    <form name="${category.id}" class="${styles.form}">
+                        <input type="text" name="keyword" placeholder="Keyword">
+                        <button type="submit">+</button>
+                    </form>
+                </div>
+            `));
+
+            const $wrapper = this.useSelector(`#category-${category.id}`);
+            const $copyAll = $wrapper.querySelector('button');
+            const $items = $wrapper.querySelector('ul');
+            const $form = $wrapper.querySelector('form');
+
+            $copyAll.addEventListener('click', () => {
+                const keywords = Array.from($items.querySelectorAll('li')).map((item) => item.textContent.trim());
+                navigator.clipboard.writeText(keywords.join(', '));
+                snackBar('😍 Copied to clipboard');
             });
 
-            categoryWrap.innerHTML += html`
-                <h2>${category.name}</h2>
-            `;
-
-            categoryWrap.innerHTML += html`
-                <ul>
-                    ${category.keywords.map(({ keyword: item }) => html`
-                        <li data-id="${item.id}" data-category-id="${category.id}">${item.name}</li>
-                    `).join('')}
-                </ul>
-            `;
-
-            categoryWrap.innerHTML += html`
-                <form name="${category.id}" class="${styles.form}">
-                    <input type="text" name="keyword" placeholder="Keyword">
-                    <button type="submit">+</button>
-                </form>
-            `;
-
-            this.$el.appendChild(categoryWrap);
-        });
-
-        document.querySelectorAll('form').forEach(($form) => {
             $form.addEventListener('submit', async (event) => {
                 event.preventDefault();
 
@@ -121,23 +125,22 @@ export class Home extends Component {
                     return;
                 }
 
-                const $category = document.getElementById($form.name);
-                const $categoryItems = $category.querySelector('ul');
-
                 for (const item of keyword.split(',').map((item) => item.trim())) {
                     if (item === '') {
                         continue;
                     }
 
                     try {
-                        const { data: keyword } = await createKeyword({
-                            categoryId: Number($form.name),
+                        const { data } = await createKeyword({
+                            categoryId: category.id,
                             name: item.slice(0, 50).toLowerCase(),
                         });
-                        $categoryItems.innerHTML += html`
-                            <li data-id="${keyword.id}" data-category-id="${$form.name}">${keyword.name}</li>
-                        `;
-                    } catch (e) {
+                        $items.appendChild(htmlToElement(html`
+                            <li data-id="${data.id}" data-category-id="${category.id}">
+                                ${data.name}
+                            </li>
+                        `));
+                    } catch (error) {
                         continue;
                     }
                 }
