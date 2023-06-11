@@ -8,7 +8,10 @@ interface Keyword {
 interface Category {
     id: number;
     name: string;
-    Keywords: Keyword[];
+    keywords: {
+        order: number;
+        keyword: Keyword;
+    }[];
 }
 
 export function getCategories() {

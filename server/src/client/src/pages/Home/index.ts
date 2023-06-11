@@ -93,7 +93,7 @@ export class Home extends Component {
 
             categoryWrap.innerHTML += html`
                 <ul>
-                    ${category.Keywords.map((item) => html`
+                    ${category.keywords.map(({ keyword: item }) => html`
                         <li data-id="${item.id}" data-category-id="${category.id}">${item.name}</li>
                     `).join('')}
                 </ul>
@@ -121,26 +121,28 @@ export class Home extends Component {
                     return;
                 }
 
-                keyword.split(',').map((item) => item.trim()).forEach(async (item) => {
+                const $category = document.getElementById($form.name);
+                const $categoryItems = $category.querySelector('ul');
+
+                for (const item of keyword.split(',').map((item) => item.trim())) {
                     if (item === '') {
-                        return;
+                        continue;
                     }
 
-                    item = item.slice(0, 50).toLowerCase();
+                    try {
+                        const { data: keyword } = await createKeyword({
+                            categoryId: Number($form.name),
+                            name: item.slice(0, 50).toLowerCase(),
+                        });
+                        $categoryItems.innerHTML += html`
+                            <li data-id="${keyword.id}" data-category-id="${$form.name}">${keyword.name}</li>
+                        `;
+                    } catch (e) {
+                        continue;
+                    }
+                }
 
-                    const { data: keyword } = await createKeyword({
-                        categoryId: Number($form.name),
-                        name: item,
-                    });
-
-                    const $category = document.getElementById($form.name);
-                    const $categoryItems = $category.querySelector('ul');
-                    $categoryItems.innerHTML += html`
-                        <li data-id="${keyword.id}" data-category-id="${$form.name}">${keyword.name}</li>
-                    `;
-
-                    $form.reset();
-                });
+                $form.reset();
             });
         });
 

@@ -29,17 +29,26 @@ model Profile {
 }
 
 model Category {
-  id        Int       @id @default(autoincrement())
-  name      String    @unique
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  Keywords  Keyword[]
+  id        Int                 @id @default(autoincrement())
+  name      String              @unique
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  keywords  KeywordToCategory[]
 }
 
 model Keyword {
-  id         Int        @id @default(autoincrement())
-  name       String     @unique
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  Categories Category[]
+  id         Int                 @id @default(autoincrement())
+  name       String              @unique
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+  categories KeywordToCategory[]
+}
+
+model KeywordToCategory {
+  id         Int      @id @default(autoincrement())
+  order      Int
+  keyword    Keyword  @relation(fields: [keywordId], references: [id])
+  keywordId  Int
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId Int
 }

@@ -6,6 +6,9 @@ export const getKeywords: Controller = async (req, res) => {
         select: {
             id: true,
             name: true,
+        },
+        orderBy: {
+            id: 'asc',
         }
     })).end();
 };
@@ -15,7 +18,7 @@ export const createKeyword: Controller = async (req, res) => {
     const keywordExistsInCategory = await models.keyword.findFirst({
         where: {
             name: req.body.name,
-            Categories: {
+            categories: {
                 some: {
                     id: categoryId,
                 },
@@ -34,15 +37,34 @@ export const createKeyword: Controller = async (req, res) => {
         },
     });
 
+    const lastOrder = await models.keywordToCategory.findFirst({
+        where: {
+            category: {
+                id: categoryId,
+            },
+        },
+        orderBy: {
+            order: 'desc',
+        },
+        select: {
+            order: true,
+        },
+    });
+
     if (!keywordExists) {
         const keyword = await models.keyword.create({
             data: {
                 name: req.body.name,
-                Categories: {
-                    connect: {
-                        id: categoryId,
+                categories: {
+                    create: {
+                        order: (lastOrder?.order || 0) + 1,
+                        category: {
+                            connect: {
+                                id: categoryId,
+                            },
+                        },
                     },
-                },
+                }
             },
             select: {
                 id: true,
@@ -58,9 +80,14 @@ export const createKeyword: Controller = async (req, res) => {
             id: keywordExists.id,
         },
         data: {
-            Categories: {
-                connect: {
-                    id: categoryId,
+            categories: {
+                create: {
+                    order: (lastOrder?.order || 0) + 1,
+                    category: {
+                        connect: {
+                            id: categoryId,
+                        },
+                    },
                 },
             },
         },
@@ -79,12 +106,24 @@ export const deleteKeyword: Controller = async (req, res) => {
     const keywordExists = await models.keyword.findFirst({
         where: {
             id: keywordId,
-            Categories: {
+            categories: {
                 some: {
-                    id: categoryId,
-                },
+                    categoryId,
+                }
             },
         },
+        select: {
+            categories: {
+                select: {
+                    id: true,
+                    category: {
+                        select: {
+                            id: true,
+                        },
+                    }
+                },
+            },
+        }
     });
 
     if (!keywordExists) {
@@ -97,16 +136,17 @@ export const deleteKeyword: Controller = async (req, res) => {
             id: keywordId,
         },
         data: {
-            Categories: {
-                disconnect: {
-                    id: categoryId,
+            categories: {
+                delete: {
+                    id: keywordExists.categories
+                        .find(({ category }) => category.id === categoryId).id,
                 },
             },
         },
         select: {
             id: true,
             name: true,
-            Categories: {
+            categories: {
                 select: {
                     id: true,
                 },
@@ -114,7 +154,7 @@ export const deleteKeyword: Controller = async (req, res) => {
         },
     });
 
-    if (keyword.Categories.length === 0) {
+    if (keyword.categories.length === 0) {
         await models.keyword.delete({
             where: {
                 id: keywordId,

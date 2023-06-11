@@ -2,7 +2,7 @@ import styles from './ImageLoad.module.scss';
 
 import { Header, Prompts } from '~/components';
 
-import { Component, html } from '~/modules/core';
+import { Component, html, htmlToElement } from '~/modules/core';
 import { snackBar } from '~/modules/ui/snack-bar';
 
 const INITIAL_PROMPTS_STATE = {
@@ -106,17 +106,9 @@ export class ImageLoad extends Component {
         this.$imagePreview = this.useSelector(`.${styles.imagePreview}`);
         this.$imageInput = this.$imageLoader.querySelector('input[type="file"]');
         this.$promptContainer = this.useSelector(`.${styles.promptContainer}`);
-        this.$promptContainer.appendChild((() => {
-            const head = document.createElement('h3');
-            head.textContent = 'Prompt';
-            return head;
-        })());
+        this.$promptContainer.appendChild(htmlToElement(html`<h3>Prompt</h3>`));
         this.$prompts = new Prompts(this.$promptContainer, INITIAL_PROMPTS_STATE);
-        this.$promptContainer.appendChild((() => {
-            const head = document.createElement('h3');
-            head.textContent = 'Negative Prompt';
-            return head;
-        })());
+        this.$promptContainer.appendChild(htmlToElement(html`<h3>Negative Prompt</h3>`));
         this.$negativePrompts = new Prompts(this.$promptContainer, INITIAL_PROMPTS_STATE);
 
         this.$imageInput.addEventListener('change', this.handleImageChange);

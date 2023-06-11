@@ -6,7 +6,20 @@ export const getCategories: Controller = async (req, res) => {
         select: {
             id: true,
             name: true,
-            Keywords: true,
+            keywords: {
+                select: {
+                    order: true,
+                    keyword: {
+                        select: {
+                            id: true,
+                            name: true,
+                        }
+                    }
+                },
+            },
+        },
+        orderBy: {
+            id: 'asc',
         }
     })).end();
 };
@@ -40,6 +53,20 @@ export const updateCategory: Controller = async (req, res) => {
 };
 
 export const deleteCategory: Controller = async (req, res) => {
+    await models.keywordToCategory.deleteMany({
+        where: {
+            category: {
+                id: Number(req.params.id),
+            },
+        },
+    });
+    await models.keyword.deleteMany({
+        where: {
+            categories: {
+                none: {}
+            }
+        },
+    });
     await models.category.delete({
         where: {
             id: Number(req.params.id),
