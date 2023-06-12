@@ -35,7 +35,8 @@ export class Home extends Component {
                                 id,
                                 categoryId,
                             } = e.target.dataset;
-                            await deleteKeyword(Number(id), {
+                            await deleteKeyword({
+                                keywordId: Number(id),
                                 categoryId: Number(categoryId),
                             });
                             e.target.remove();
@@ -58,8 +59,8 @@ export class Home extends Component {
                                 return;
                             }
                             const { id } = e.target.parentElement.parentElement.dataset;
-                            await updateCategory(Number(id), { name });
-                            e.target.textContent = name;
+                            const { data } = await updateCategory({ id, name });
+                            e.target.textContent = data.updateCategory.name;
                             snackBar('😍 Renamed');
                         },
                     },
@@ -67,7 +68,7 @@ export class Home extends Component {
                         label: 'Delete',
                         click: async () => {
                             const { id } = e.target.parentElement.parentElement.dataset;
-                            await deleteCategory(Number(id));
+                            await deleteCategory({ id });
                             e.target.parentElement.parentElement.remove();
                             snackBar('😭 Deleted');
                         },
@@ -80,9 +81,9 @@ export class Home extends Component {
     async mount() {
         document.title = 'SD Prompt Palette';
 
-        const { data: categories } = await getCategories();
+        const { data: { allCategories } } = await getCategories();
 
-        categories.forEach((category) => {
+        allCategories.forEach((category) => {
             this.$el.appendChild(htmlToElement(html`
                 <div id="category-${category.id}" class="${styles.category}" data-id="${category.id}">
                     <div class="${styles.categoryHeader}">
@@ -92,9 +93,9 @@ export class Home extends Component {
                         </button>
                     </div>
                     <ul>
-                        ${category.keywords.map(({ keyword: item }) => html`
-                            <li data-id="${item.id}" data-category-id="${category.id}">
-                                ${item.name}
+                        ${category.keywords.map(({ id, name }) => html`
+                            <li data-id="${id}" data-category-id="${category.id}">
+                                ${name}
                             </li>
                         `).join('')}
                     </ul>
@@ -138,8 +139,8 @@ export class Home extends Component {
                             name: item.slice(0, 50).toLowerCase(),
                         });
                         $items.appendChild(htmlToElement(html`
-                            <li data-id="${data.id}" data-category-id="${category.id}">
-                                ${data.name}
+                            <li data-id="${data.createKeyword.id}" data-category-id="${category.id}">
+                                ${data.createKeyword.name}
                             </li>
                         `));
                     } catch (error) {
