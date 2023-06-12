@@ -97,6 +97,7 @@ export default (_, { mode }): Configuration | WebpackOptionsNormalized => ({
         historyApiFallback: true,
         proxy: {
             '/api': 'http://localhost:3332/',
+            '/graphql': 'http://localhost:3332/',
         }
     },
 });

@@ -1,5 +1,5 @@
 {
-  "name": "my-vanillajs-template",
+  "name": "sd-prompt-palette-client",
   "version": "1.0.0",
   "scripts": {
     "dev": "webpack-dev-server --mode development",
