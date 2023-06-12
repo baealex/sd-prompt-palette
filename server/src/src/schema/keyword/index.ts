@@ -51,29 +51,55 @@ export const keywordResolvers: IResolvers = {
     },
     Mutation: {
         createKeyword: async (_, { name, categoryId }: Keyword & KeywordToCategory) => {
-            if (await models.keyword.findFirst({
+            categoryId = Number(categoryId);
+
+            const keyword = await models.keyword.findFirst({
                 where: {
                     name,
+                },
+                select: {
+                    id: true,
                     categories: {
-                        some: {
-                            category: {
-                                id: Number(categoryId),
-                            },
+                        select: {
+                            categoryId: true,
                         },
                     },
                 },
-            })) {
+            });
+
+            if (keyword?.categories?.some((category) => category.categoryId === categoryId)) {
                 throw new Error('Keyword already exists in category');
             }
 
             const nextOrder = await models.keywordToCategory.findFirst({
                 where: {
-                    categoryId: Number(categoryId),
+                    categoryId,
                 },
                 orderBy: {
                     order: 'desc',
                 },
             });
+
+            if (keyword) {
+                return models.keyword.update({
+                    where: {
+                        id: keyword.id,
+                    },
+                    data: {
+                        categories: {
+                            create: {
+                                order: nextOrder ? nextOrder.order + 1 : 1,
+                                category: {
+                                    connect: {
+                                        id: categoryId,
+                                    }
+                                },
+                            },
+                        }
+                    },
+                });
+            }
+
             return models.keyword.create({
                 data: {
                     name,
@@ -82,7 +108,7 @@ export const keywordResolvers: IResolvers = {
                             order: nextOrder ? nextOrder.order + 1 : 1,
                             category: {
                                 connect: {
-                                    id: Number(categoryId),
+                                    id: categoryId,
                                 },
                             },
                         },
