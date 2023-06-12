@@ -101,7 +101,7 @@ describe('Keyword Schema', () => {
     `;
 
     const getAllCategories = async () => {
-        const res = await request(app).get('/graphql').send({
+        const res = await request(app).post('/graphql').send({
             query: allCategoriesQuery,
         });
 

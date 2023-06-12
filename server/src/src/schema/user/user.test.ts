@@ -26,7 +26,7 @@ afterAll(async () => {
 
 describe('User Schema', () => {
     it('return user list', async () => {
-        const res = await request(app).get('/graphql').send({
+        const res = await request(app).post('/graphql').send({
             query: `
                 query {
                     allUsers {
@@ -44,7 +44,7 @@ describe('User Schema', () => {
     });
 
     it('can not return password', async () => {
-        const res = await request(app).get('/graphql').send({
+        const res = await request(app).post('/graphql').send({
             query: `
                 query {
                     allUsers {
@@ -64,7 +64,7 @@ describe('User Schema', () => {
     });
 
     it('return user', async () => {
-        const res = await request(app).get('/graphql').send({
+        const res = await request(app).post('/graphql').send({
             query: `
                 query {
                     user(id: 1) {

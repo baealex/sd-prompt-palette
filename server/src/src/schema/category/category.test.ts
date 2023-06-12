@@ -101,7 +101,7 @@ describe('Category Schema', () => {
     `;
 
     const getAllCategories = async () => {
-        const res = await request(app).get('/graphql').send({
+        const res = await request(app).post('/graphql').send({
             query: allCategoriesQuery,
         });
 
@@ -109,7 +109,7 @@ describe('Category Schema', () => {
     };
 
     it('카테고리 리스트를 반환한다.', async () => {
-        const res = await request(app).get('/graphql').send({
+        const res = await request(app).post('/graphql').send({
             query: allCategoriesQuery,
         });
 
@@ -165,7 +165,7 @@ describe('Category Schema', () => {
 
         expect(res1.body.data.deleteCategory).toBe(true);
 
-        const res2 = await request(app).get('/graphql').send({
+        const res2 = await request(app).post('/graphql').send({
             query: `
                 query {
                     allKeywords {
