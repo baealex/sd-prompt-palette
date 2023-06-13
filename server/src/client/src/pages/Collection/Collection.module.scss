@@ -54,7 +54,7 @@
         width: 100%;
         flex-direction: column;
 
-        &:nth-child(odd) {
+        &:nth-child(even) {
             flex-direction: column;
         }
 

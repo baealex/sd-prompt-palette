@@ -19,6 +19,8 @@ interface State {
     }[];
 }
 
+const formState = {};
+
 export class Home extends Component<HTMLDivElement, State> {
     constructor($parent: HTMLElement) {
         new Header($parent);
@@ -148,6 +150,8 @@ export class Home extends Component<HTMLDivElement, State> {
                     categoryId: Number(categoryId),
                     name: item.slice(0, 50).toLowerCase(),
                 });
+                formState[categoryId] = '';
+                formState['focused'] = categoryId;
                 this.setState((state) => {
                     return {
                         ...state,
@@ -172,7 +176,6 @@ export class Home extends Component<HTMLDivElement, State> {
                 continue;
             }
         }
-
         e.target.reset();
     };
 
@@ -197,6 +200,14 @@ export class Home extends Component<HTMLDivElement, State> {
         this.$el.addEventListener('click', this.handleClickKeyword);
         this.$el.addEventListener('contextmenu', this.handleContextMenu);
         this.$el.querySelectorAll('form').forEach(($form) => {
+            const $input = $form.querySelector('input');
+            $input.value = formState[$form.dataset.categoryId] || '';
+            if (formState['focused'] === $form.dataset.categoryId) {
+                $input.focus();
+            }
+            $input.addEventListener('change', (e) => {
+                formState[$form.dataset.categoryId] = (e.target as HTMLInputElement).value;
+            });
             $form.addEventListener('submit', this.handleSubmit);
         });
         this.$el.querySelectorAll('button[data-action="copy"]').forEach(($button) => {

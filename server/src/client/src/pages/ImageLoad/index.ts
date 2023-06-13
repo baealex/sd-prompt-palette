@@ -144,17 +144,21 @@ export class ImageLoad extends Component {
         const reader = new FileReader();
         reader.readAsDataURL(image);
         reader.onload = async (e) => {
-            const { data } = await imageUpload({ image: e.target.result.toString() });
+            try {
+                const { data } = await imageUpload({ image: e.target.result.toString() });
 
-            const title = prompt('Input collection title') || '';
+                const title = prompt('Input collection title') || '';
 
-            await createCollection({
-                title,
-                imageId: data.id,
-                prompt: prompts.join(', '),
-                negativePrompt: negativePrompts.join(', '),
-            });
-            snackBar('😍 Saved to collection');
+                await createCollection({
+                    title,
+                    imageId: data.id,
+                    prompt: prompts.join(', '),
+                    negativePrompt: negativePrompts.join(', '),
+                });
+                snackBar('😍 Saved to collection');
+            } catch (e) {
+                snackBar('😥 Cannot save to collection');
+            }
         };
     };
 
@@ -162,33 +166,35 @@ export class ImageLoad extends Component {
     async mount() {
         document.title = 'Image Load | SD Prompt Palette';
 
-        this.$imagePreview = this.useSelector(`.${styles.imagePreview}`);
+        window.requestAnimationFrame(() => {
+            this.$imagePreview = this.useSelector(`.${styles.imagePreview}`);
 
-        this.$imageLoader = this.useSelector(`.${styles.imageLoader}`);
-        this.$imageLoader.addEventListener('click', this.handleImageLoaderClick);
-        this.$imageLoader.addEventListener('dragover', this.handleImageLoaderDrag);
-        this.$imageLoader.addEventListener('drop', this.handleImageLoaderDrop);
+            this.$imageLoader = this.useSelector(`.${styles.imageLoader}`);
+            this.$imageLoader.addEventListener('click', this.handleImageLoaderClick);
+            this.$imageLoader.addEventListener('dragover', this.handleImageLoaderDrag);
+            this.$imageLoader.addEventListener('drop', this.handleImageLoaderDrop);
 
-        this.$imageInput = this.useSelector('input[type="file"]');
-        this.$imageInput.addEventListener('change', this.handleImageChange);
+            this.$imageInput = this.useSelector('input[type="file"]');
+            this.$imageInput.addEventListener('change', this.handleImageChange);
 
-        this.$prompts = new Prompts(
-            this.useSelector('[data-name="prompt"]'),
-            INITIAL_PROMPTS_STATE
-        );
-        this.$negativePrompts = new Prompts(
-            this.useSelector('[data-name="negative-prompt"]'),
-            INITIAL_PROMPTS_STATE
-        );
+            this.$prompts = new Prompts(
+                this.useSelector('[data-name="prompt"]'),
+                INITIAL_PROMPTS_STATE
+            );
+            this.$negativePrompts = new Prompts(
+                this.useSelector('[data-name="negative-prompt"]'),
+                INITIAL_PROMPTS_STATE
+            );
 
-        this.useSelector('[data-name="copy-prompt"]').addEventListener('click', this.handleCopyPrompt);
-        this.useSelector('[data-name="copy-negative-prompt"]').addEventListener('click', this.handleCopyNegativePrompt);
-        this.useSelector('[data-name="save-to-collection"]').addEventListener('click', this.handleSaveToCollection);
+            this.useSelector('[data-name="copy-prompt"]').addEventListener('click', this.handleCopyPrompt);
+            this.useSelector('[data-name="copy-negative-prompt"]').addEventListener('click', this.handleCopyNegativePrompt);
+            this.useSelector('[data-name="save-to-collection"]').addEventListener('click', this.handleSaveToCollection);
 
-        if (memo.image) {
-            this.readPrompt(memo.image);
-            this.showPreview(memo.image);
-        }
+            if (memo.image) {
+                this.readPrompt(memo.image);
+                this.showPreview(memo.image);
+            }
+        });
     }
 
     unmount() {

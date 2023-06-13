@@ -35,15 +35,13 @@ export default class Component<T extends HTMLElement = HTMLDivElement, K = unkno
     }
 
     rerender() {
-        window.requestAnimationFrame(() => {
-            if (this._isMounted) {
-                this.unmount();
-            } else {
-                this._isMounted = true;
-            }
-            this.$el.innerHTML = this.render();
-            this.mount();
-        });
+        if (this._isMounted) {
+            this.unmount();
+        } else {
+            this._isMounted = true;
+        }
+        this.$el.innerHTML = this.render();
+        this.mount();
     }
 
     setState(nextState: K | ((prevState: K) => K)) {
