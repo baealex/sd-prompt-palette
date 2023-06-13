@@ -21,6 +21,11 @@ export class Header extends Component {
             className: window.location.pathname === '/manage' ? styles.active : '',
         });
         new Link($links, {
+            text: 'Collection',
+            href: '/collection',
+            className: window.location.pathname === '/collection' ? styles.active : '',
+        });
+        new Link($links, {
             text: 'PNG Info',
             href: '/image-load',
             className: window.location.pathname === '/image-load' ? styles.active : '',

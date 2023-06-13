@@ -5,7 +5,7 @@ import crpyto from 'crypto';
 import { Controller } from '~/types';
 import models from '~/models';
 
-const imageDir = path.resolve('./client/dist/assets/images');
+const imageDir = path.resolve('./public/assets/images');
 
 function makePath(dirs: string[]) {
     let currentPath = '';
@@ -36,7 +36,10 @@ export const uploadImage: Controller = async (req, res) => {
     });
 
     if (exists) {
-        res.status(200).json({ url: exists.url }).end();
+        res.status(200).json({
+            id: exists.id,
+            url: exists.url
+        }).end();
         return;
     }
 
@@ -45,7 +48,7 @@ export const uploadImage: Controller = async (req, res) => {
         (new Date().getMonth() + 1).toString(),
         (new Date().getDate()).toString()
     ];
-    makePath(['./client/dist/assets', 'images', ...currentPath]);
+    makePath(['./public/assets', 'images', ...currentPath]);
 
     const ext = info.split(';')[0].split('/')[1];
     const fileName = `${Date.now()}.${ext}`;

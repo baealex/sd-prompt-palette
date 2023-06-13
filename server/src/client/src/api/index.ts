@@ -17,6 +17,19 @@ interface Category {
     keywords: Keyword[];
 }
 
+interface Image {
+    id: number;
+    url: string;
+}
+
+interface Collection {
+    id: number;
+    image: Image;
+    title: string;
+    prompt: string;
+    negativePrompt: string;
+}
+
 interface GraphqlResponse<T extends string, K> {
     data: {
         [key in T]: K;
@@ -100,4 +113,54 @@ export function deleteKeyword(data: { keywordId: number, categoryId: number }) {
             deleteKeyword(keywordId: ${data.keywordId}, categoryId: ${data.categoryId})
         }
     `);
+}
+
+export function getCollections() {
+    return graphQLRequest<'allCollections', Pick<Collection, 'id' | 'image' | 'title' | 'prompt' | 'negativePrompt'>[]>(`
+        query {
+            allCollections {
+                id
+                title
+                prompt
+                negativePrompt
+                image {
+                    id
+                    url
+                }
+            }
+        }
+    `);
+}
+
+export function createCollection(data: { title: string, prompt: string, negativePrompt: string, imageId: number }) {
+    return graphQLRequest<'createCollection', Pick<Collection, 'id' | 'prompt' | 'negativePrompt' | 'image'>>(`
+        mutation {
+            createCollection(title: "${data.title}", prompt: "${data.prompt}", negativePrompt: "${data.negativePrompt}", imageId: ${data.imageId}) {
+                id
+                title
+                prompt
+                negativePrompt
+                image {
+                    id
+                    url
+                }
+            }
+        }
+    `);
+}
+
+export function deleteCollection(data: { id: number }) {
+    return graphQLRequest<'deleteCollection', boolean>(`
+        mutation {
+            deleteCollection(id: ${data.id})
+        }
+    `);
+}
+
+export function imageUpload(data: { image: string }) {
+    return axios.request<{ id: number, url: string }>({
+        method: 'POST',
+        url: '/api/image',
+        data,
+    });
 }

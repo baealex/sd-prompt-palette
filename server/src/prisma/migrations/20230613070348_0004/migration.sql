@@ -7,14 +7,15 @@ CREATE TABLE "Image" (
 );
 
 -- CreateTable
-CREATE TABLE "Collect" (
+CREATE TABLE "Collection" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "imageId" INTEGER NOT NULL,
+    "title" TEXT DEFAULT '',
     "prompt" TEXT,
     "negativePrompt" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "Collect_imageId_fkey" FOREIGN KEY ("imageId") REFERENCES "Image" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT "Collection_imageId_fkey" FOREIGN KEY ("imageId") REFERENCES "Image" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- RedefineTables

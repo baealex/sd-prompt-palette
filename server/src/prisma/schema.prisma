@@ -68,6 +68,7 @@ model Collection {
   id             Int      @id @default(autoincrement())
   imageId        Int
   image          Image    @relation(fields: [imageId], references: [id])
+  title          String?  @default("")
   prompt         String?
   negativePrompt String?
   createdAt      DateTime @default(now())

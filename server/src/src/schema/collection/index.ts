@@ -7,6 +7,7 @@ export const CollectionType = gql`
     type Collection {
         id: ID!
         image: Image!
+        title: String!
         prompt: String!
         negativePrompt: String!
         createdAt: String!
@@ -29,7 +30,7 @@ export const CollectionQuery = gql`
 
 export const CollectionMutation = gql`
     type Mutation {
-        createCollection(imageId: ID!, prompt: String!, negativePrompt: String!): Collection!
+        createCollection(imageId: ID!, title: String!, prompt: String!, negativePrompt: String!): Collection!
         deleteCollection(id: ID!): Boolean!
     }
 `;
@@ -50,7 +51,7 @@ export const CollectionResolvers: IResolvers = {
         }),
     },
     Mutation: {
-        createCollection: async (_, { imageId, prompt, negativePrompt }: Collection) => {
+        createCollection: async (_, { imageId, title, prompt, negativePrompt }: Collection) => {
             imageId = Number(imageId);
 
             const collection = await models.collection.create({
@@ -60,6 +61,7 @@ export const CollectionResolvers: IResolvers = {
                             id: imageId,
                         },
                     },
+                    title,
                     prompt,
                     negativePrompt,
                 },
@@ -78,5 +80,12 @@ export const CollectionResolvers: IResolvers = {
 
             return true;
         },
-    }
+    },
+    Collection: {
+        image: (collection: Collection) => models.image.findUnique({
+            where: {
+                id: collection.imageId,
+            },
+        }),
+    },
 };

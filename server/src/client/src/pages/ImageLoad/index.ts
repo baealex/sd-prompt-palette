@@ -5,6 +5,8 @@ import { Header, Prompts } from '~/components';
 import { Component, html, htmlToElement } from '~/modules/core';
 import { snackBar } from '~/modules/ui/snack-bar';
 
+import { createCollection, imageUpload } from '~/api';
+
 const INITIAL_PROMPTS_STATE = {
     prompts: [],
     onClick: (e: any) => {
@@ -132,6 +134,11 @@ export class ImageLoad extends Component {
             </div>
         `));
         this.$negativePrompts = new Prompts(this.$promptContainer, INITIAL_PROMPTS_STATE);
+        this.$promptContainer.appendChild(htmlToElement(html`
+            <button id="save-to-collection">
+                Save to collection
+            </button>
+        `));
 
         this.$imageInput.addEventListener('change', this.handleImageChange);
         this.$imageLoader.addEventListener('click', this.handleImageLoaderClick);
@@ -146,6 +153,32 @@ export class ImageLoad extends Component {
             const prompts = this.$negativePrompts.state.prompts;
             navigator.clipboard.writeText(prompts.join(', '));
             snackBar('😍 Copied to clipboard');
+        });
+        this.$promptContainer.querySelector('#save-to-collection').addEventListener('click', async () => {
+            const prompts = this.$prompts.state.prompts;
+            const negativePrompts = this.$negativePrompts.state.prompts;
+            const image = memo.image;
+
+            if (!image || (prompts.length === 0 && negativePrompts.length === 0)) {
+                snackBar('😥 Cannot find image or prompt');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.readAsDataURL(image);
+            reader.onload = async (e) => {
+                const { data } = await imageUpload({ image: e.target.result.toString() });
+
+                const title = prompt('Input collection title') || '';
+
+                await createCollection({
+                    title,
+                    imageId: data.id,
+                    prompt: prompts.join(', '),
+                    negativePrompt: negativePrompts.join(', '),
+                });
+                snackBar('😍 Saved to collection');
+            };
         });
 
         if (memo.image) {

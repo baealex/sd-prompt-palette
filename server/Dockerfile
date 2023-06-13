@@ -12,9 +12,10 @@ COPY ./src/ ./
 
 RUN npm run build:client
 
-RUN mkdir /app/client/dist/assets
+RUN mkdir /app/public
+RUN mkdir /app/public/assets
 RUN ln -s /app/prisma /data
-RUN ln -s /app/client/dist/assets /assets
+RUN ln -s /app/public/assets /assets
 
 ENTRYPOINT ["npm", "run"]
 CMD ["start"]
