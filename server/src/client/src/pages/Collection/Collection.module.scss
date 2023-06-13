@@ -13,26 +13,54 @@
 .collectionItem {
     display: flex;
     width: 100%;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
     padding: 1rem;
-    border: 1px solid #ccc;
+    border: 1px solid #aaa;
     border-radius: 0.5rem;
-    box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.1);
-    transition: all 0.2s ease-in-out;
-    gap: 1rem;
+    gap: 1.5rem;
+    align-items: center;
 
-    img {
-        display: block;
-        width: auto;
-        height: 400px;
-        margin-bottom: 1rem;
+    &:nth-child(even) {
+        flex-direction: row-reverse;
     }
 
-    &:hover {
-        box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.2);
+    img {
+        width: 350px;
+        max-width: 350px;
+        height: 100%;
+        object-fit: contain;
+        border-radius: 0.5rem;
+    }
+
+    button {
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        border: none;
+        background-color: #000;
+        color: #fff;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 500;
+
+        svg {
+            width: 1rem;
+            height: 1rem;
+        }
     }
 
     @media (max-width: 768px) {
         width: 100%;
+        flex-direction: column;
+
+        &:nth-child(odd) {
+            flex-direction: column;
+        }
+
+        img {
+            width: 100%;
+            max-width: 100%;
+        }
     }
 }

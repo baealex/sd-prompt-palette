@@ -1,8 +1,9 @@
 import styles from './ImageLoad.module.scss';
+import icon from '~/icon';
 
 import { Header, Prompts } from '~/components';
 
-import { Component, html, htmlToElement } from '~/modules/core';
+import { Component, html } from '~/modules/core';
 import { snackBar } from '~/modules/ui/snack-bar';
 
 import { createCollection, imageUpload } from '~/api';
@@ -24,7 +25,6 @@ export class ImageLoad extends Component {
     $imageLoader: HTMLDivElement;
     $imagePreview: HTMLImageElement;
     $imageInput: HTMLInputElement;
-    $promptContainer: HTMLUListElement;
     $prompts: Prompts;
     $negativePrompts: Prompts;
 
@@ -111,83 +111,84 @@ export class ImageLoad extends Component {
         }
     };
 
+    handleCopyPrompt = () => {
+        const prompts = this.$prompts.state.prompts;
+        navigator.clipboard.writeText(prompts
+            .join(', ')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+        );
+        snackBar('😍 Copied to clipboard');
+    };
+
+    handleCopyNegativePrompt = () => {
+        const prompts = this.$negativePrompts.state.prompts;
+        navigator.clipboard.writeText(prompts
+            .join(', ')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+        );
+        snackBar('😍 Copied to clipboard');
+    };
+
+    handleSaveToCollection = async () => {
+        const prompts = this.$prompts.state.prompts;
+        const negativePrompts = this.$negativePrompts.state.prompts;
+        const image = memo.image;
+
+        if (!image || (prompts.length === 0 && negativePrompts.length === 0)) {
+            snackBar('😥 Cannot find image or prompt');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.readAsDataURL(image);
+        reader.onload = async (e) => {
+            const { data } = await imageUpload({ image: e.target.result.toString() });
+
+            const title = prompt('Input collection title') || '';
+
+            await createCollection({
+                title,
+                imageId: data.id,
+                prompt: prompts.join(', '),
+                negativePrompt: negativePrompts.join(', '),
+            });
+            snackBar('😍 Saved to collection');
+        };
+    };
+
+
     async mount() {
         document.title = 'Image Load | SD Prompt Palette';
 
-        this.$imageLoader = this.useSelector(`.${styles.imageLoader}`);
         this.$imagePreview = this.useSelector(`.${styles.imagePreview}`);
-        this.$imageInput = this.$imageLoader.querySelector('input[type="file"]');
-        this.$promptContainer = this.useSelector(`.${styles.promptContainer}`);
-        this.$promptContainer.appendChild(htmlToElement(html`
-            <div class="${styles.categoryHeader}">
-                <h2>Prompt</h2>
-                <button id="copy-all">
-                    copy all
-                </button>
-            </div>
-        `));
-        this.$prompts = new Prompts(this.$promptContainer, INITIAL_PROMPTS_STATE);
-        this.$promptContainer.appendChild(htmlToElement(html`
-            <div class="${styles.categoryHeader}" style="margin-top: 2rem;">
-                <h2>Negative Prompt</h2>
-                <button id="copy-all-negative">
-                    copy all
-                </button>
-            </div>
-        `));
-        this.$negativePrompts = new Prompts(this.$promptContainer, INITIAL_PROMPTS_STATE);
-        this.$promptContainer.appendChild(htmlToElement(html`
-            <button id="save-to-collection">
-                Save to collection
-            </button>
-        `));
 
-        this.$imageInput.addEventListener('change', this.handleImageChange);
+        this.$imageLoader = this.useSelector(`.${styles.imageLoader}`);
         this.$imageLoader.addEventListener('click', this.handleImageLoaderClick);
         this.$imageLoader.addEventListener('dragover', this.handleImageLoaderDrag);
         this.$imageLoader.addEventListener('drop', this.handleImageLoaderDrop);
-        this.$promptContainer.querySelector('#copy-all').addEventListener('click', () => {
-            const prompts = this.$prompts.state.prompts;
-            navigator.clipboard.writeText(prompts.join(', '));
-            snackBar('😍 Copied to clipboard');
-        });
-        this.$promptContainer.querySelector('#copy-all-negative').addEventListener('click', () => {
-            const prompts = this.$negativePrompts.state.prompts;
-            navigator.clipboard.writeText(prompts.join(', '));
-            snackBar('😍 Copied to clipboard');
-        });
-        this.$promptContainer.querySelector('#save-to-collection').addEventListener('click', async () => {
-            const prompts = this.$prompts.state.prompts;
-            const negativePrompts = this.$negativePrompts.state.prompts;
-            const image = memo.image;
 
-            if (!image || (prompts.length === 0 && negativePrompts.length === 0)) {
-                snackBar('😥 Cannot find image or prompt');
-                return;
-            }
+        this.$imageInput = this.useSelector('input[type="file"]');
+        this.$imageInput.addEventListener('change', this.handleImageChange);
 
-            const reader = new FileReader();
-            reader.readAsDataURL(image);
-            reader.onload = async (e) => {
-                const { data } = await imageUpload({ image: e.target.result.toString() });
+        this.$prompts = new Prompts(
+            this.useSelector('[data-name="prompt"]'),
+            INITIAL_PROMPTS_STATE
+        );
+        this.$negativePrompts = new Prompts(
+            this.useSelector('[data-name="negative-prompt"]'),
+            INITIAL_PROMPTS_STATE
+        );
 
-                const title = prompt('Input collection title') || '';
-
-                await createCollection({
-                    title,
-                    imageId: data.id,
-                    prompt: prompts.join(', '),
-                    negativePrompt: negativePrompts.join(', '),
-                });
-                snackBar('😍 Saved to collection');
-            };
-        });
+        this.useSelector('[data-name="copy-prompt"]').addEventListener('click', this.handleCopyPrompt);
+        this.useSelector('[data-name="copy-negative-prompt"]').addEventListener('click', this.handleCopyNegativePrompt);
+        this.useSelector('[data-name="save-to-collection"]').addEventListener('click', this.handleSaveToCollection);
 
         if (memo.image) {
             this.readPrompt(memo.image);
             this.showPreview(memo.image);
         }
-
     }
 
     unmount() {
@@ -197,8 +198,10 @@ export class ImageLoad extends Component {
         this.$imageLoader.removeEventListener('click', this.handleImageLoaderClick);
         this.$imageLoader.removeEventListener('dragover', this.handleImageLoaderDrag);
         this.$imageLoader.removeEventListener('drop', this.handleImageLoaderDrop);
+        this.useSelector('[data-name="copy-prompt"]').removeEventListener('click', this.handleCopyPrompt);
+        this.useSelector('[data-name="copy-negative-prompt"]').removeEventListener('click', this.handleCopyNegativePrompt);
+        this.useSelector('[data-name="save-to-collection"]').removeEventListener('click', this.handleSaveToCollection);
     }
-
 
     render() {
         return html`
@@ -211,7 +214,29 @@ export class ImageLoad extends Component {
                         클릭해서 업로드하기
                     </div>
                 </div>
-                <div class="${styles.promptContainer}"></div>
+                <div class="${styles.promptContainer}">
+                    <div class="${styles.categoryHeader}">
+                        <h2>Prompt</h2>
+                        <button data-name="copy-prompt">
+                            copy all
+                        </button>
+                    </div>
+                    <div data-name="prompt"></div>
+                    <div class="${styles.categoryHeader}">
+                        <h2>Negative Prompt</h2>
+                        <button data-name="copy-negative-prompt">
+                            copy all
+                        </button>
+                    </div>
+                    <div data-name="negative-prompt"></div>
+                    <button
+                        class="${styles.save}"
+                        data-name="save-to-collection"
+                    >
+                        ${icon.heart}
+                        Save to collection
+                    </button>
+                </div>
             </div>
         `;
     }

@@ -18,17 +18,8 @@ export class Manage extends Component {
         document.title = 'Manage | SD Prompt Palette';
 
         const router = useRouter();
-        const categoryWrap = document.createElement('div');
-        categoryWrap.innerHTML += html`
-            <h2>Add Category</h2>
-            <form>
-                <input type="text" name="category" placeholder="Category">
-                <button type="submit">+</button>
-            </form>
-        `;
-        this.$el.appendChild(categoryWrap);
 
-        categoryWrap.querySelector('form').addEventListener('submit', async (e) => {
+        this.useSelector('form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const formData = new FormData(this.useSelector('form'));
@@ -49,6 +40,14 @@ export class Manage extends Component {
     }
 
     render() {
-        return html``;
+        return html`
+            <h2>Add Category</h2>
+            <form>
+                <input type="text" name="category" placeholder="Category">
+                <button type="submit">
+                    +
+                </button>
+            </form>
+        `;
     }
 }

@@ -43,7 +43,11 @@ export const CollectionTypeDefs = `
 
 export const CollectionResolvers: IResolvers = {
     Query: {
-        allCollections: models.collection.findMany,
+        allCollections: () => models.collection.findMany({
+            orderBy: {
+                createdAt: 'desc',
+            },
+        }),
         collection: (_, { id }: Collection) => models.collection.findUnique({
             where: {
                 id: Number(id),

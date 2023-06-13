@@ -69,3 +69,21 @@
         cursor: pointer;
     }
 }
+
+.save {
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    border: none;
+    background-color: #000;
+    color: #fff;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+
+    svg {
+        width: 1rem;
+        height: 1rem;
+    }
+}

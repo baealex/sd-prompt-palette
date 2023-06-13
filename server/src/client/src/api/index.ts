@@ -1,34 +1,5 @@
 import axios from 'axios';
-
-interface KeywordToCategory {
-    id: number;
-    order: number;
-}
-
-interface Keyword {
-    id: number;
-    name: string;
-    categories: KeywordToCategory[];
-}
-
-interface Category {
-    id: number;
-    name: string;
-    keywords: Keyword[];
-}
-
-interface Image {
-    id: number;
-    url: string;
-}
-
-interface Collection {
-    id: number;
-    image: Image;
-    title: string;
-    prompt: string;
-    negativePrompt: string;
-}
+import { Category, Collection, Keyword } from '~/models/types';
 
 interface GraphqlResponse<T extends string, K> {
     data: {

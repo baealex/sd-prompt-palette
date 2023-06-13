@@ -1,19 +1,35 @@
 import styles from './Home.module.scss';
+import icon from '~/icon';
 
-import { Component, html, htmlToElement } from '~/modules/core';
+import { Component, html } from '~/modules/core';
 import { snackBar } from '~/modules/ui/snack-bar';
 
 import { getCategories, createKeyword, deleteKeyword, updateCategory, deleteCategory } from '~/api';
 import { Header } from '~/components/Header';
 import { contextMenu } from '~/modules/ui/context-menu';
 
-export class Home extends Component {
+interface State {
+    categories: {
+        id: number;
+        name: string;
+        keywords: {
+            id: number;
+            name: string;
+        }[];
+    }[];
+}
+
+export class Home extends Component<HTMLDivElement, State> {
     constructor($parent: HTMLElement) {
         new Header($parent);
         super($parent, { className: styles.Home });
+
+        getCategories().then(({ data: { allCategories } }) => {
+            this.setState({ categories: allCategories });
+        });
     }
 
-    handleClickKeyword = async (e: any) => {
+    handleClickKeyword = async (e) => {
         if (e.target.tagName === 'LI') {
             const $target = e.target as HTMLElement;
             const keyword = $target.textContent.trim();
@@ -22,8 +38,55 @@ export class Home extends Component {
         }
     };
 
-    handleContextMenu = async (e: any) => {
-        if (e.target.tagName === 'LI') {
+    handleContextMenu = async (e: MouseEvent) => {
+        const target = e.target as HTMLElement;
+        const { name } = target.dataset;
+
+        if (name === 'category') {
+            contextMenu.create({
+                top: e.clientY,
+                left: e.clientX,
+                menus: [
+                    {
+                        label: 'Rename',
+                        click: async () => {
+                            const name = prompt('Rename category', target.textContent);
+                            if (name === null) {
+                                return;
+                            }
+                            const { categoryId } = target.dataset;
+                            const { data } = await updateCategory({ id: Number(categoryId), name });
+                            this.setState((state) => ({
+                                categories: state.categories.map((category) => {
+                                    if (Number(category.id) === Number(categoryId)) {
+                                        return {
+                                            ...category,
+                                            name: data.updateCategory.name,
+                                        };
+                                    }
+                                    return category;
+                                }),
+                            }));
+                            snackBar('😍 Renamed');
+                        },
+                    },
+                    {
+                        label: 'Delete',
+                        click: async () => {
+                            const { categoryId } = target.dataset;
+                            await deleteCategory({ id: Number(categoryId) });
+                            this.setState((state) => ({
+                                categories: state.categories
+                                    .filter((category) => Number(category.id) !== Number(categoryId)),
+                            }));
+                            snackBar('😭 Deleted');
+                        },
+                    },
+                ]
+            });
+        }
+
+        if (name === 'keyword') {
             contextMenu.create({
                 top: e.clientY,
                 left: e.clientX,
@@ -34,134 +97,167 @@ export class Home extends Component {
                             const {
                                 id,
                                 categoryId,
-                            } = e.target.dataset;
-                            await deleteKeyword({
-                                keywordId: Number(id),
-                                categoryId: Number(categoryId),
-                            });
-                            e.target.remove();
-                            snackBar('😭 Deleted');
-                        },
-                    },
-                ]
-            });
-        }
-        if (e.target.tagName === 'H2') {
-            contextMenu.create({
-                top: e.clientY,
-                left: e.clientX,
-                menus: [
-                    {
-                        label: 'Rename',
-                        click: async () => {
-                            const name = prompt('Rename category', e.target.textContent);
-                            if (name === null) {
-                                return;
+                            } = target.dataset;
+                            try {
+                                await deleteKeyword({
+                                    keywordId: Number(id),
+                                    categoryId: Number(categoryId),
+                                });
+                                this.setState((state) => ({
+                                    categories: state.categories.map((category) => {
+                                        if (Number(category.id) === Number(categoryId)) {
+                                            return {
+                                                ...category,
+                                                keywords: category.keywords.filter((keyword) => Number(keyword.id) !== Number(id)),
+                                            };
+                                        }
+                                        return category;
+                                    }),
+                                }));
+                                snackBar('😭 Deleted');
+                            } catch (err) {
+                                snackBar('😭 Failed to delete');
                             }
-                            const { id } = e.target.parentElement.parentElement.dataset;
-                            const { data } = await updateCategory({ id, name });
-                            e.target.textContent = data.updateCategory.name;
-                            snackBar('😍 Renamed');
-                        },
-                    },
-                    {
-                        label: 'Delete',
-                        click: async () => {
-                            const { id } = e.target.parentElement.parentElement.dataset;
-                            await deleteCategory({ id });
-                            e.target.parentElement.parentElement.remove();
-                            snackBar('😭 Deleted');
-                        },
+                        }
                     },
                 ]
             });
         }
     };
 
+    handleSubmit = async (e) => {
+        e.preventDefault();
+
+        const { categoryId } = (e.target as HTMLElement).dataset;
+
+        const formData = new FormData(e.target);
+        const keyword = formData.get('keyword') as string;
+
+        if (keyword.trim() === '') {
+            snackBar('😭 Please enter a keyword');
+            return;
+        }
+
+        for (const item of keyword.split(',').map((item) => item.trim())) {
+            if (item === '') {
+                continue;
+            }
+
+            try {
+                const { data } = await createKeyword({
+                    categoryId: Number(categoryId),
+                    name: item.slice(0, 50).toLowerCase(),
+                });
+                this.setState((state) => {
+                    return {
+                        ...state,
+                        categories: state.categories.map((category) => {
+                            if (Number(category.id) === Number(categoryId)) {
+                                return {
+                                    ...category,
+                                    keywords: [
+                                        ...category.keywords,
+                                        {
+                                            id: data.createKeyword.id,
+                                            name: data.createKeyword.name,
+                                        },
+                                    ],
+                                };
+                            }
+                            return category;
+                        }),
+                    };
+                });
+            } catch (error) {
+                continue;
+            }
+        }
+
+        e.target.reset();
+    };
+
+    handleCopyKeywords = async (e) => {
+        const { categoryId } = (e.target as HTMLElement).dataset;
+
+        const keywords = this.state?.categories?.find((category) => {
+            return Number(category.id) === Number(categoryId);
+        })?.keywords?.map(({ name }) => name).join(', ');
+
+        if (keywords === undefined) {
+            return;
+        }
+
+        navigator.clipboard.writeText(keywords);
+        snackBar('😍 Copied to clipboard');
+    };
+
     async mount() {
         document.title = 'SD Prompt Palette';
 
-        const { data: { allCategories } } = await getCategories();
-
-        allCategories.forEach((category) => {
-            this.$el.appendChild(htmlToElement(html`
-                <div id="category-${category.id}" class="${styles.category}" data-id="${category.id}">
-                    <div class="${styles.categoryHeader}">
-                        <h2>${category.name}</h2>
-                        <button>
-                            copy all
-                        </button>
-                    </div>
-                    <ul>
-                        ${category.keywords.map(({ id, name }) => html`
-                            <li data-id="${id}" data-category-id="${category.id}">
-                                ${name}
-                            </li>
-                        `).join('')}
-                    </ul>
-                    <form name="${category.id}" class="${styles.form}">
-                        <input type="text" name="keyword" placeholder="Keyword">
-                        <button type="submit">+</button>
-                    </form>
-                </div>
-            `));
-
-            const $wrapper = this.useSelector(`#category-${category.id}`);
-            const $copyAll = $wrapper.querySelector('button');
-            const $items = $wrapper.querySelector('ul');
-            const $form = $wrapper.querySelector('form');
-
-            $copyAll.addEventListener('click', () => {
-                const keywords = Array.from($items.querySelectorAll('li')).map((item) => item.textContent.trim());
-                navigator.clipboard.writeText(keywords.join(', '));
-                snackBar('😍 Copied to clipboard');
-            });
-
-            $form.addEventListener('submit', async (event) => {
-                event.preventDefault();
-
-                const formData = new FormData($form);
-                const keyword = formData.get('keyword') as string;
-
-                if (keyword.trim() === '') {
-                    snackBar('😭 Please enter a keyword');
-                    return;
-                }
-
-                for (const item of keyword.split(',').map((item) => item.trim())) {
-                    if (item === '') {
-                        continue;
-                    }
-
-                    try {
-                        const { data } = await createKeyword({
-                            categoryId: category.id,
-                            name: item.slice(0, 50).toLowerCase(),
-                        });
-                        $items.appendChild(htmlToElement(html`
-                            <li data-id="${data.createKeyword.id}" data-category-id="${category.id}">
-                                ${data.createKeyword.name}
-                            </li>
-                        `));
-                    } catch (error) {
-                        continue;
-                    }
-                }
-
-                $form.reset();
-            });
-        });
-
         this.$el.addEventListener('click', this.handleClickKeyword);
         this.$el.addEventListener('contextmenu', this.handleContextMenu);
+        this.$el.querySelectorAll('form').forEach(($form) => {
+            $form.addEventListener('submit', this.handleSubmit);
+        });
+        this.$el.querySelectorAll('button[data-action="copy"]').forEach(($button) => {
+            $button.addEventListener('click', this.handleCopyKeywords);
+        });
     }
 
     unmount() {
         this.$el.removeEventListener('click', this.handleClickKeyword);
         this.$el.removeEventListener('contextmenu', this.handleContextMenu);
+        this.$el.querySelectorAll('form').forEach(($form) => {
+            $form.removeEventListener('submit', this.handleSubmit);
+        });
+        this.$el.querySelectorAll('button[data-action="copy"]').forEach(($button) => {
+            $button.removeEventListener('click', this.handleCopyKeywords);
+        });
     }
 
     render() {
-        return html``;
+        return html`
+            ${this.state?.categories?.map((category) => html`
+                <div class="${styles.category}">
+                    <div class="${styles.categoryHeader}">
+                        <h2 data-name="category" data-category-id="${category.id}">
+                            ${category.name}
+                        </h2>
+                        <button
+                            type="button"
+                            data-action="copy"
+                            data-category-id="${category.id}"
+                        >
+                            copy all
+                        </button>
+                    </div>
+                    <ul>
+                        ${category.keywords.map(({ id, name }) => html`
+                            <li
+                                data-name="keyword"
+                                data-id="${id}"
+                                data-category-id="${category.id}"
+                            >
+                                ${name}
+                            </li>
+                        `).join('')}
+                    </ul>
+                    <form
+                        name="${category.id}"
+                        class="${styles.form}"
+                        data-category-id="${category.id}"
+                    >
+                        <input
+                            type="text"
+                            name="keyword"
+                            placeholder="Keyword"
+                        >
+                        <button type="submit">
+                            ${icon.plus}
+                        </button>
+                    </form>
+                </div>
+            `).join('')}
+        `;
     }
 }
