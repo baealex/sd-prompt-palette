@@ -50,7 +50,7 @@ export class Home extends Component<HTMLDivElement, State> {
                     {
                         label: 'Rename',
                         click: async () => {
-                            const name = prompt('Rename category', target.textContent);
+                            const name = prompt('Rename category', target.textContent.trim());
                             if (name === null) {
                                 return;
                             }
