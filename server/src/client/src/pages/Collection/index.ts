@@ -1,20 +1,23 @@
 import styles from './Collection.module.scss';
 
-import { Header } from '~/components/Header';
+import { Header, Prompts } from '~/components';
 
 import { Component, html, htmlToElement } from '~/modules/core';
 import { snackBar } from '~/modules/ui/snack-bar';
-import { useRouter } from '~/modules/core/router';
 
 import { deleteCollection, getCollections } from '~/api';
-import { Prompts } from '~/components';
-import { contextMenu } from '~/modules/ui/context-menu';
 
 export class Collection extends Component {
     constructor($parent: HTMLElement) {
         new Header($parent);
         super($parent, { className: styles.Manage });
     }
+
+    handleCopy = (e: any) => {
+        const keyword = e.target.textContent;
+        navigator.clipboard.writeText(keyword);
+        snackBar('😍 Copied to clipboard');
+    };
 
     async mount() {
         document.title = 'Collection | SD Prompt Palette';
@@ -47,21 +50,14 @@ export class Collection extends Component {
             body.appendChild(htmlToElement('<h4>Prompt</h4>'));
             new Prompts(body as HTMLElement, {
                 prompts: collection.prompt.split(',').map((prompt) => prompt.trim()),
-                onClick: (e: any) => {
-                    const keyword = e.target.textContent;
-                    navigator.clipboard.writeText(keyword);
-                    snackBar('😍 Copied to clipboard');
-                }
+                onClick: this.handleCopy,
             });
             body.appendChild(htmlToElement('<h4>Negative Prompt</h4>'));
             new Prompts(body as HTMLElement, {
                 prompts: collection.negativePrompt.split(',').map((prompt) => prompt.trim()),
-                onClick: (e: any) => {
-                    const keyword = e.target.textContent;
-                    navigator.clipboard.writeText(keyword);
-                    snackBar('😍 Copied to clipboard');
-                }
+                onClick: this.handleCopy,
             });
+
             const $removeButton = $collectionItem.querySelector('.remove');
             $removeButton.addEventListener('click', async (e: any) => {
                 const id = e.target.dataset.id;

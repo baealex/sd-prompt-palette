@@ -1,6 +1,6 @@
 import styles from './Prompts.module.scss';
 
-import { Component } from '~/modules/core';
+import { Component, html } from '~/modules/core';
 
 interface State {
     prompts: string[];
@@ -40,8 +40,8 @@ export class Prompts extends Component<HTMLAnchorElement, State> {
     }
 
     render() {
-        return this.state.prompts.map((prompt) => {
-            return `<li>${prompt}</li>`;
-        }).join('');
+        return html`
+            ${this.state.prompts.map((prompt) => `<li>${prompt}</li>`).join('')}
+        `;
     }
 }

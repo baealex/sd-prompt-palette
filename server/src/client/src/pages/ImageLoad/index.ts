@@ -47,7 +47,7 @@ export class ImageLoad extends Component {
             const decodedData = atob(data);
 
             if (!decodedData.includes('parameters') || !decodedData.includes('Steps:')) {
-                snackBar('Cannot find prompt info');
+                snackBar('😥 Cannot find prompt info');
                 this.$prompts.setState({ prompts: [] });
                 this.$negativePrompts.setState({ prompts: [] });
                 return;
@@ -64,6 +64,8 @@ export class ImageLoad extends Component {
 
             const createPrompts = (prompt: string) => {
                 return prompt
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
                     .split(',')
                     .map((v) => v.trim())
                     .filter((v) => v);
