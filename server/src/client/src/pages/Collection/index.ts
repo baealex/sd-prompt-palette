@@ -92,14 +92,12 @@ export class Collection extends Component<HTMLDivElement, State> {
                 });
                 $collection.querySelector('[data-name="remove"]').addEventListener('click', this.handleDelete);
                 $collection.querySelector('[data-name="copy-prompt"]').addEventListener('click', () => {
-                    const prompts = ceratePrompts(prompt);
-                    navigator.clipboard.writeText(prompts.join(', '));
-                    snackBar(`😍 Copied ${prompts.length} prompts to clipboard`);
+                    navigator.clipboard.writeText(prompt);
+                    snackBar('😍 Copied prompts to clipboard');
                 });
                 $collection.querySelector('[data-name="copy-negative-prompt"]').addEventListener('click', () => {
-                    const prompts = ceratePrompts(negativePrompt);
-                    navigator.clipboard.writeText(prompts.join(', '));
-                    snackBar(`😍 Copied ${prompts.length} negative prompts to clipboard`);
+                    navigator.clipboard.writeText(negativePrompt);
+                    snackBar('😍 Copied negative prompts to clipboard');
                 });
             });
     }

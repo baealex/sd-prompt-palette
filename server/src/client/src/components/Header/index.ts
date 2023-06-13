@@ -3,6 +3,8 @@ import styles from './Header.module.scss';
 import { Component, html } from '~/modules/core';
 import { Link } from '../Link';
 
+import icon from '~/icon';
+
 export class Header extends Component {
     constructor($parent: HTMLElement) {
         super($parent, { tag: 'header', className: styles.header });
@@ -30,12 +32,18 @@ export class Header extends Component {
             href: '/image-load',
             className: window.location.pathname === '/image-load' ? styles.active : '',
         });
+
+        const $menu = this.useSelector(`.${styles.menu}`);
+        $menu.addEventListener('click', () => {
+            $links.classList.toggle(styles.active);
+        });
     }
 
     render() {
         return html`
             <h1>Prompt Palette</h1>
             <div class="${styles.links}"></div>
+            <button class="${styles.menu}">${icon.menu}</button>
         `;
     }
 }

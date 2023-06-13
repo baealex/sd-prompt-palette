@@ -52,15 +52,20 @@
 
     @media (max-width: 768px) {
         width: 100%;
-        flex-direction: column;
+        grid-template-areas:
+            "header"
+            "image"
+            "body";
 
         &:nth-child(even) {
-            flex-direction: column;
+            grid-template-areas:
+                "header"
+                "image"
+                "body";
         }
 
-        img {
+        .image {
             width: 100%;
-            max-width: 100%;
         }
     }
 }

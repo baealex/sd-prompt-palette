@@ -6,6 +6,7 @@
     background-color: #fff;
     border-bottom: 1px solid #eaeaea;
     height: 80px;
+    position: relative;
 
     h1 {
         font-size: 1.5rem;
@@ -26,5 +27,49 @@
 
     .active {
         color: #333;
+    }
+
+    @media (max-width: 768px) {
+        transform: translateX(100%);
+        flex-direction: column;
+        position: absolute;
+        background-color: #fff;
+        padding: 1.5rem 1rem;
+        top: 79px;
+        gap: 2rem;
+        left: 0;
+        width: 100%;
+        align-items: flex-start;
+        transition: transform 0.3s ease-in-out;
+
+        a {
+            width: 100%;
+            padding: 0.125rem 0;
+            font-size: 1.2rem;
+        }
+
+        &.active {
+            transform: translateX(0);
+        }
+    }
+}
+
+.menu {
+    cursor: pointer;
+    border: none;
+    display: none;
+    background-color: transparent;
+
+    &:hover {
+        box-shadow: none;
+    }
+
+    svg {
+        width: 1.8rem;
+        height: 1.8rem;
+    }
+
+    @media (max-width: 768px) {
+        display: block;
     }
 }
