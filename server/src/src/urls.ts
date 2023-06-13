@@ -3,4 +3,5 @@ import * as views from './views';
 import useAsync from './modules/use-async';
 
 export default Router()
-    .get('/home', useAsync(views.home));
+    .get('/home', useAsync(views.home))
+    .post('/image', useAsync(views.uploadImage));

@@ -11,7 +11,7 @@ export default express()
     .use(express.static(path.resolve('client/dist'), {
         extensions: ['html']
     }))
-    .use(express.json())
+    .use(express.json({ limit: '50mb' }))
     .use('/graphql', graphqlHTTP({
         schema,
         customFormatErrorFn(error) {

@@ -40,6 +40,8 @@ model Keyword {
   id         Int                 @id @default(autoincrement())
   name       String              @unique
   createdAt  DateTime            @default(now())
+  imageId    Int?
+  image      Image?              @relation(fields: [imageId], references: [id])
   updatedAt  DateTime            @updatedAt
   categories KeywordToCategory[]
 }
@@ -51,4 +53,23 @@ model KeywordToCategory {
   keywordId  Int
   category   Category @relation(fields: [categoryId], references: [id])
   categoryId Int
+}
+
+model Image {
+  id          Int          @id @default(autoincrement())
+  url         String       @unique
+  hash        String       @unique
+  createdAt   DateTime     @default(now())
+  keywords    Keyword[]
+  collections Collection[]
+}
+
+model Collection {
+  id             Int      @id @default(autoincrement())
+  imageId        Int
+  image          Image    @relation(fields: [imageId], references: [id])
+  prompt         String?
+  negativePrompt String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
