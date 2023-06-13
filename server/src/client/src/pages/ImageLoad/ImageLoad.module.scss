@@ -44,11 +44,11 @@
     }
 }
 
-.promptContainer {
+.container {
     display: block;
 }
 
-.categoryHeader {
+.header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -57,33 +57,5 @@
     h2 {
         margin: 0;
         padding: 0;
-    }
-
-    button {
-        padding: 0.5rem 1rem;
-        font-size: 1rem;
-        border: 1px solid #333;
-        border-radius: 0.5rem;
-        background-color: #333;
-        color: #fff;
-        cursor: pointer;
-    }
-}
-
-.save {
-    padding: 0.5rem 1rem;
-    border-radius: 50px;
-    border: none;
-    background-color: #000;
-    color: #fff;
-    font-size: 0.8rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 500;
-
-    svg {
-        width: 1rem;
-        height: 1rem;
     }
 }

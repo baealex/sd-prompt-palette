@@ -220,23 +220,27 @@ export class ImageLoad extends Component {
                         클릭해서 업로드하기
                     </div>
                 </div>
-                <div class="${styles.promptContainer}">
-                    <div class="${styles.categoryHeader}">
+                <div class="${styles.container}">
+                    <div class="${styles.header}">
                         <h2>Prompt</h2>
-                        <button data-name="copy-prompt">
-                            copy all
+                        <button class="secondary-button" data-name="copy-prompt">
+                            ${icon.draft} copy all
                         </button>
                     </div>
                     <div data-name="prompt"></div>
-                    <div class="${styles.categoryHeader}">
+                    <div class="${styles.header}">
                         <h2>Negative Prompt</h2>
-                        <button data-name="copy-negative-prompt">
-                            copy all
+                        <button class="secondary-button" data-name="copy-negative-prompt">
+                            ${icon.draft} copy all
                         </button>
                     </div>
                     <div data-name="negative-prompt"></div>
                     <button
-                        class="${styles.save}"
+                        style="
+                            display: inline-flex;
+                            margin-top: 1rem;
+                        "
+                        class="primary-button"
                         data-name="save-to-collection"
                     >
                         ${icon.heart}

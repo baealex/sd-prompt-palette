@@ -22,4 +22,44 @@ body {
 
 button {
     cursor: pointer;
+
+    &:hover {
+        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    }
+}
+
+.primary-button {
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    border: none;
+    background-color: #000;
+    color: #fff;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+
+    svg {
+        width: 1rem;
+        height: 1rem;
+    }
+}
+
+.secondary-button {
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    background-color: #fff;
+    border: 1px dashed #000;
+    color: #000;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+
+    svg {
+        width: 1rem;
+        height: 1rem;
+    }
 }

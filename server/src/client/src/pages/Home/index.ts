@@ -7,6 +7,7 @@ import { snackBar } from '~/modules/ui/snack-bar';
 import { getCategories, createKeyword, deleteKeyword, updateCategory, deleteCategory } from '~/api';
 import { Header } from '~/components/Header';
 import { contextMenu } from '~/modules/ui/context-menu';
+import { createFormState } from '~/modules/form';
 
 interface State {
     categories: {
@@ -19,10 +20,11 @@ interface State {
     }[];
 }
 
-const formState = {};
+const formState = createFormState();
 
 export class Home extends Component<HTMLDivElement, State> {
     constructor($parent: HTMLElement) {
+        formState.reset();
         new Header($parent);
         super($parent, { className: styles.Home });
 
@@ -31,8 +33,8 @@ export class Home extends Component<HTMLDivElement, State> {
         });
     }
 
-    handleClickKeyword = async (e) => {
-        if (e.target.tagName === 'LI') {
+    handleClickKeyword = async (e: MouseEvent) => {
+        if ((e.target as HTMLElement).tagName === 'LI') {
             const $target = e.target as HTMLElement;
             const keyword = $target.textContent.trim();
             navigator.clipboard.writeText(keyword);
@@ -150,8 +152,8 @@ export class Home extends Component<HTMLDivElement, State> {
                     categoryId: Number(categoryId),
                     name: item.slice(0, 50).toLowerCase(),
                 });
-                formState[categoryId] = '';
-                formState['focused'] = categoryId;
+                formState.set(categoryId, '');
+                formState.set('focused', categoryId);
                 this.setState((state) => {
                     return {
                         ...state,
@@ -201,12 +203,13 @@ export class Home extends Component<HTMLDivElement, State> {
         this.$el.addEventListener('contextmenu', this.handleContextMenu);
         this.$el.querySelectorAll('form').forEach(($form) => {
             const $input = $form.querySelector('input');
-            $input.value = formState[$form.dataset.categoryId] || '';
-            if (formState['focused'] === $form.dataset.categoryId) {
+            $input.value = formState.get($form.dataset.categoryId) || '';
+            if (formState.get('focused') === $form.dataset.categoryId) {
                 $input.focus();
+                formState.set('focused', '');
             }
             $input.addEventListener('change', (e) => {
-                formState[$form.dataset.categoryId] = (e.target as HTMLInputElement).value;
+                formState.set($form.dataset.categoryId, (e.target as HTMLInputElement).value);
             });
             $form.addEventListener('submit', this.handleSubmit);
         });
@@ -236,10 +239,11 @@ export class Home extends Component<HTMLDivElement, State> {
                         </h2>
                         <button
                             type="button"
+                            class="secondary-button"
                             data-action="copy"
                             data-category-id="${category.id}"
                         >
-                            copy all
+                            ${icon.draft} copy all
                         </button>
                     </div>
                     <ul>
@@ -261,10 +265,10 @@ export class Home extends Component<HTMLDivElement, State> {
                         <input
                             type="text"
                             name="keyword"
-                            placeholder="Keyword"
+                            placeholder="Enter a keyword"
                         >
-                        <button type="submit">
-                            ${icon.plus}
+                        <button type="submit" class="primary-button">
+                            add ${icon.plus}
                         </button>
                     </form>
                 </div>

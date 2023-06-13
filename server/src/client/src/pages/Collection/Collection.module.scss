@@ -10,44 +10,44 @@
     display: block;
 }
 
-.collectionItem {
-    display: flex;
+.item {
+    display: grid;
+    grid-template-areas:
+        "header header"
+        "image body";
     width: 100%;
     margin-bottom: 1.5rem;
-    padding: 1rem;
     border: 1px solid #aaa;
     border-radius: 0.5rem;
-    gap: 1.5rem;
     align-items: center;
 
     &:nth-child(even) {
-        flex-direction: row-reverse;
+        grid-template-areas:
+            "header header"
+            "body image";
     }
 
-    img {
-        width: 350px;
-        max-width: 350px;
-        height: 100%;
-        object-fit: contain;
-        border-radius: 0.5rem;
-    }
-
-    button {
-        padding: 0.5rem 1rem;
-        border-radius: 50px;
-        border: none;
-        background-color: #000;
-        color: #fff;
-        font-size: 0.8rem;
+    .header {
+        grid-area: header;
         display: flex;
+        justify-content: space-between;
         align-items: center;
-        gap: 0.5rem;
-        font-weight: 500;
+        border-bottom: 1px solid #aaa;
+        padding: 0 1.5rem;
+    }
 
-        svg {
-            width: 1rem;
-            height: 1rem;
-        }
+    .image {
+        padding: 1rem;
+        border-radius: 1.5rem;
+        grid-area: image;
+        width: 350px;
+        height: auto;
+        object-fit: contain;
+    }
+
+    .body {
+        grid-area: body;
+        padding: 1.5rem;
     }
 
     @media (max-width: 768px) {
