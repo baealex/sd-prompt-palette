@@ -16,6 +16,7 @@ export class Link extends Component<HTMLAnchorElement, State> {
             className: styles.Link + (initialState.className ? ` ${initialState.className}` : ''),
             initialState,
         });
+        this.$el.href = initialState.href;
     }
 
     mount() {

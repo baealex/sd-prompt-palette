@@ -1,14 +1,16 @@
 import styles from './Collection.module.scss';
 import icon from '~/icon';
 
-import { Header, Prompts } from '~/components';
+import { Header, Pagination, Prompts } from '~/components';
 
 import { Component, html, htmlToElement } from '~/modules/core';
 import { snackBar } from '~/modules/ui/snack-bar';
 
 import { deleteCollection, getCollections } from '~/api';
+import { CollectionNav } from '~/components/CollectionNav';
 
 interface State {
+    page: number;
     collections: {
         id: number;
         title: string;
@@ -20,15 +22,34 @@ interface State {
     }[];
 }
 
+const memo: State = {
+    page: 1,
+    collections: [],
+};
+
 export class Collection extends Component<HTMLDivElement, State> {
     constructor($parent: HTMLElement) {
         new Header($parent);
 
-        super($parent, { className: styles.Manage });
-
-        getCollections().then(({ data: { allCollections } }) => {
-            this.setState({ collections: allCollections });
+        super($parent, {
+            className: styles.Manage,
+            initialState: memo,
         });
+
+        getCollections({
+            page: this.state.page,
+            limit: 12,
+        }).then(({ data: { allCollections } }) => {
+            this.setState((state) => ({
+                ...state,
+                collections: allCollections
+            }));
+        });
+    }
+
+    setState(nextState: State | ((prevState: State) => State)): void {
+        super.setState(nextState);
+        Object.assign(memo, this.state);
     }
 
     handleCopyToClipboard = (e: MouseEvent) => {
@@ -44,6 +65,7 @@ export class Collection extends Component<HTMLDivElement, State> {
         const { id } = (e.target as HTMLElement).dataset;
         await deleteCollection({ id: Number(id) });
         this.setState((state) => ({
+            ...state,
             collections: state.collections.filter(
                 (collection) => Number(collection.id) !== Number(id)),
         }));
@@ -53,7 +75,23 @@ export class Collection extends Component<HTMLDivElement, State> {
     async mount() {
         document.title = 'Collection | SD Prompt Palette';
 
-        this.$el.querySelectorAll('[data-name="collection"]')
+        new CollectionNav(this.selectName('nav'));
+        new Pagination(this.selectName('pagination'), {
+            page: this.state?.page,
+            onClick: (page) => {
+                getCollections({
+                    page,
+                    limit: 24,
+                }).then(({ data: { allCollections } }) => {
+                    this.setState({
+                        page,
+                        collections: allCollections
+                    });
+                });
+            },
+        });
+
+        this.selectNames('collection')
             .forEach(($collection) => {
                 const $prompts = $collection.querySelector('[data-name="prompts"]');
 
@@ -105,6 +143,7 @@ export class Collection extends Component<HTMLDivElement, State> {
     render() {
         return html`
             <div class="${styles.container}">
+                <div data-name="nav"></div>
                 <div class="${styles.collection}">
                     ${this.state?.collections?.map((collection) => html`
                         <div
@@ -129,6 +168,7 @@ export class Collection extends Component<HTMLDivElement, State> {
                         </div>
                     `).join('')}
                 </div>
+                <div data-name="pagination"></div>
             </div>
         `;
     }

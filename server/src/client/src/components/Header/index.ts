@@ -5,12 +5,18 @@ import { Link } from '../Link';
 
 import icon from '~/icon';
 
+let lastCollectionPath = '/collection';
+
 export class Header extends Component {
     constructor($parent: HTMLElement) {
         super($parent, { tag: 'header', className: styles.header });
     }
 
     mount() {
+        if (window.location.pathname.includes('/collection')) {
+            lastCollectionPath = window.location.pathname;
+        }
+
         const $links = this.useSelector(`.${styles.links}`);
         new Link($links, {
             text: 'Home',
@@ -24,8 +30,8 @@ export class Header extends Component {
         });
         new Link($links, {
             text: 'Collection',
-            href: '/collection',
-            className: window.location.pathname === '/collection' ? styles.active : '',
+            href: lastCollectionPath,
+            className: window.location.pathname.includes('/collection') ? styles.active : '',
         });
         new Link($links, {
             text: 'PNG Info',

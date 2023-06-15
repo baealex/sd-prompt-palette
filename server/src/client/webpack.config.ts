@@ -88,6 +88,7 @@ export default (_, { mode }): Configuration | WebpackOptionsNormalized => ({
     ],
     target: ['web', 'es5'],
     output: {
+        publicPath: '/',
         path: path.resolve(__dirname, 'dist'),
         filename: '[name].[contenthash].js',
         clean: true,

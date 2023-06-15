@@ -30,8 +30,20 @@ export default class Component<T extends HTMLElement = HTMLDivElement, K = unkno
         return { ...this._state };
     }
 
+    selectName<T extends HTMLElement>(name: string): T {
+        return this.$el.querySelector(`[data-name="${name}"]`) as T;
+    }
+
+    selectNames<T extends HTMLElement>(name: string): T[] {
+        return Array.from(this.$el.querySelectorAll(`[data-name="${name}"]`)) as T[];
+    }
+
     useSelector<T extends HTMLElement>(selector: string): T {
         return this.$el.querySelector(selector) as T;
+    }
+
+    useSelectors<T extends HTMLElement>(selector: string): T[] {
+        return Array.from(this.$el.querySelectorAll(selector)) as T[];
     }
 
     rerender() {

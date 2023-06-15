@@ -1,5 +1,5 @@
 import { Router } from './modules/core/router';
-import { Home, Manage, ImageLoad, Collection } from './pages';
+import { Home, Manage, ImageLoad, Collection, CollectionGalley } from './pages';
 
 import './styles/main.scss';
 
@@ -8,7 +8,8 @@ import './styles/main.scss';
         .routes('/', Home)
         .routes('/manage', Manage)
         .routes('/image-load', ImageLoad)
-        .routes('/collection', Collection);
+        .routes('/collection', Collection)
+        .routes('/collection/galley', CollectionGalley);
 
     router.push(window.location.pathname, true);
 })();
