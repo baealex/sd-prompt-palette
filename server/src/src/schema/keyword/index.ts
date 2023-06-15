@@ -37,6 +37,7 @@ export const keywordMutation = gql`
     type Mutation {
         createKeyword(name: String!, categoryId: ID!): Keyword!
         createSampleImage(imageId: ID!, keywordId: ID!): Keyword!
+        updateKeywordOrder(categoryId: ID!, keywordId: ID!, order: Int!): Boolean!
         deleteKeyword(categoryId: ID!, keywordId: ID!): Boolean!
         deleteSampleImage(id: ID!): Boolean!
     }
@@ -166,6 +167,48 @@ export const keywordResolvers: IResolvers = {
                     },
                 },
             });
+        },
+        updateKeywordOrder: async (_, { categoryId, keywordId, order }: KeywordToCategory) => {
+            categoryId = Number(categoryId);
+            keywordId = Number(keywordId);
+
+            const keywords = await models.keywordToCategory.findMany({
+                where: {
+                    categoryId,
+                },
+                orderBy: {
+                    order: 'asc',
+                }
+            });
+
+            let idx = 1;
+            for (const keyword of keywords) {
+                if (keyword.keywordId === keywordId) {
+                    await models.keywordToCategory.update({
+                        where: {
+                            id: keyword.id,
+                        },
+                        data: {
+                            order,
+                        },
+                    });
+                } else {
+                    if (idx === order) {
+                        idx += 1;
+                    }
+                    await models.keywordToCategory.update({
+                        where: {
+                            id: keyword.id,
+                        },
+                        data: {
+                            order: idx,
+                        },
+                    });
+                    idx += 1;
+                }
+            }
+
+            return true;
         },
         deleteKeyword: async (_, { categoryId, keywordId }: KeywordToCategory) => {
             categoryId = Number(categoryId);

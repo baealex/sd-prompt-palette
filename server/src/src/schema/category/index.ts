@@ -85,27 +85,21 @@ export const categoryResolvers: IResolvers = {
         }
     },
     Category: {
-        keywords: (category: Category) => models.keyword.findMany({
-            where: {
-                categories: {
-                    some: {
-                        categoryId: category.id,
+        keywords: async (category: Category) => {
+            const keywords = await models.keywordToCategory.findMany({
+                where: {
+                    category: {
+                        id: category.id,
                     },
+                },
+                orderBy: {
+                    order: 'asc',
+                },
+                include: {
+                    keyword: true,
                 }
-            },
-            select: {
-                id: true,
-                name: true,
-                categories: {
-                    where: {
-                        categoryId: category.id,
-                    },
-                    select: {
-                        id: true,
-                        order: true,
-                    },
-                }
-            },
-        }),
+            });
+            return keywords.map(({ keyword }) => keyword);
+        },
     },
 };

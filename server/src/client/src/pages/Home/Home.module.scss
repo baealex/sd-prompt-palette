@@ -10,43 +10,69 @@
     border-bottom: 1px solid #aaa;
 }
 
-.category h2 {
-    margin-bottom: 0.5rem;
-}
-
-.category ul {
-    margin: 0;
-    padding: 0;
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    margin-bottom: 1rem;
-}
-
-.category ul li {
-    position: relative;
-    list-style: none;
-    background-color: #fff;
-    padding: 0.5rem 0.8rem;
-    border-radius: 0.5rem;
-    cursor: pointer;
-
-    img {
-        display: none;
-        position: absolute;
-        background: #fff;
-        border-radius: 0.5rem;
-        bottom: 0;
-        right: 0;
-        width: 100px;
-        height: auto;
-        transform: translate(100%, 100%);
-        z-index: 1;
+.category {
+    h2 {
+        margin-bottom: 0.5rem;
     }
 
-    &:hover {
-        img {
-            display: block;
+    ul {
+        position: relative;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+
+        .dropzone {
+            display: none;
+            position: relative;
+            width: 4px;
+            height: 40px;
+            background-color: #eee;
+
+            &.visible {
+                display: block;
+            }
+
+            &.hover {
+                background-color: #a00;
+            }
+        }
+
+        li {
+            position: relative;
+            list-style: none;
+            background-color: #fff;
+            padding: 0.5rem 0.8rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+
+            .dragHandle {
+                svg {
+                    width: 0.8rem;
+                    height: 0.8rem;
+                }
+            }
+
+            img {
+                display: none;
+                position: absolute;
+                background: #fff;
+                border-radius: 0.5rem;
+                bottom: 0;
+                right: 0;
+                width: 100px;
+                height: auto;
+                transform: translate(100%, 100%);
+                z-index: 1;
+            }
+
+            &:hover {
+                img {
+                    display: block;
+                }
+            }
         }
     }
 }

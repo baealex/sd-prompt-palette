@@ -4,7 +4,7 @@ import icon from '~/icon';
 import { Component, html } from '~/modules/core';
 import { snackBar } from '~/modules/ui/snack-bar';
 
-import { getCategories, createKeyword, deleteKeyword, updateCategory, deleteCategory, imageUpload, createSampleImage, deleteSampleImage } from '~/api';
+import { getCategories, createKeyword, deleteKeyword, updateCategory, deleteCategory, imageUpload, createSampleImage, deleteSampleImage, updateKeywordOrder } from '~/api';
 import { Header } from '~/components/Header';
 import { contextMenu } from '~/modules/ui/context-menu';
 import { createFormState } from '~/modules/form';
@@ -306,6 +306,52 @@ export class Home extends Component<HTMLDivElement, State> {
         this.$el.querySelectorAll('button[data-action="copy"]').forEach(($button) => {
             $button.addEventListener('click', this.handleCopyKeywords);
         });
+        this.selectNames('category').forEach(($category) => {
+            $category.querySelectorAll('li').forEach(($li) => {
+                let order = 0;
+
+                $li.addEventListener('dragstart', (e) => {
+                    $li.style.opacity = '0.4';
+                    $category.querySelectorAll('[data-name="dropzone"]').forEach(($dropzone) => {
+                        $dropzone.classList.add(styles.visible);
+
+                        $dropzone.addEventListener('dragenter', () => {
+                            order = Number(($dropzone as HTMLElement).dataset.order);
+                            $dropzone.classList.add(styles.hover);
+                        });
+
+                        $dropzone.addEventListener('dragleave', () => {
+                            order = 0;
+                            $dropzone.classList.remove(styles.hover);
+                        });
+
+                        $dropzone.addEventListener('dragover', (e) => {
+                            e.preventDefault();
+                        });
+                    });
+                });
+
+                $li.addEventListener('dragend', () => {
+                    if (order) {
+                        updateKeywordOrder({
+                            categoryId: Number($category.dataset.id),
+                            keywordId: Number($li.dataset.id),
+                            order,
+                        }).then(() => {
+                            getCategories().then(({ data: { allCategories } }) => {
+                                this.setState({ categories: allCategories });
+                            });
+                        });
+                    }
+
+                    $li.style.opacity = '1';
+                    $category.querySelectorAll('[data-name="dropzone"]').forEach(($dropzone) => {
+                        $dropzone.classList.remove(styles.visible);
+                        $dropzone.classList.remove(styles.hover);
+                    });
+                });
+            });
+        });
     }
 
     unmount() {
@@ -322,7 +368,7 @@ export class Home extends Component<HTMLDivElement, State> {
     render() {
         return html`
             ${this.state?.categories?.map((category) => html`
-                <div class="${styles.category}">
+                <div class="${styles.category}" data-name="category" data-id="${category.id}">
                     <div class="${styles.categoryHeader}">
                         <h2 data-name="category" data-category-id="${category.id}">
                             ${category.name}
@@ -337,8 +383,14 @@ export class Home extends Component<HTMLDivElement, State> {
                         </button>
                     </div>
                     <ul>
-                        ${category.keywords.map(({ id, name, image }) => html`
+                        ${category.keywords.map(({ id, name, image }, idx) => html`
+                            <span
+                                class="${styles.dropzone}"
+                                data-name="dropzone"
+                                data-order="${idx + 1}">
+                            </span>
                             <li
+                                draggable="true"
                                 data-name="keyword"
                                 data-id="${id}"
                                 data-category-id="${category.id}"

@@ -41,6 +41,10 @@ export function getCategories() {
                         id
                         url
                     }
+                    categories {
+                        id
+                        order
+                    }
                 }
             }
         }
@@ -88,6 +92,14 @@ export function createKeyword(data: { categoryId: number; name: string }) {
                     order
                 }
             }
+        }
+    `);
+}
+
+export function updateKeywordOrder(data: { keywordId: number, categoryId: number, order: number }) {
+    return graphQLRequest<'updateKeywordOrder', boolean>(`
+        mutation {
+            updateKeywordOrder(keywordId: ${data.keywordId}, categoryId: ${data.categoryId}, order: ${data.order})
         }
     `);
 }
