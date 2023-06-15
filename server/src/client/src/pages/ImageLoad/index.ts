@@ -19,6 +19,8 @@ const INITIAL_PROMPTS_STATE = {
 
 const memo = {
     image: null as File,
+    prompts: [],
+    negativePrompts: [],
 };
 
 export class ImageLoad extends Component {
@@ -48,8 +50,10 @@ export class ImageLoad extends Component {
 
             if (!decodedData.includes('parameters') || !decodedData.includes('Steps:')) {
                 snackBar('😥 Cannot find prompt info');
-                this.$prompts.setState({ prompts: [] });
-                this.$negativePrompts.setState({ prompts: [] });
+                memo.prompts = [];
+                memo.negativePrompts = [];
+                this.$prompts.setState({ prompts: memo.prompts });
+                this.$negativePrompts.setState({ prompts: memo.negativePrompts });
                 return;
             }
 
@@ -71,12 +75,10 @@ export class ImageLoad extends Component {
                     .filter((v) => v);
             };
 
-            this.$prompts.setState({
-                prompts: prompt ? createPrompts(prompt) : []
-            });
-            this.$negativePrompts.setState({
-                prompts: negativePrompt ? createPrompts(negativePrompt) : []
-            });
+            memo.prompts = prompt ? createPrompts(prompt) : [];
+            memo.negativePrompts = negativePrompt ? createPrompts(negativePrompt) : [];
+            this.$prompts.setState({ prompts: memo.prompts });
+            this.$negativePrompts.setState({ prompts: memo.negativePrompts });
         };
     };
 
@@ -179,11 +181,17 @@ export class ImageLoad extends Component {
 
             this.$prompts = new Prompts(
                 this.useSelector('[data-name="prompt"]'),
-                INITIAL_PROMPTS_STATE
+                {
+                    ...INITIAL_PROMPTS_STATE,
+                    prompts: memo.prompts,
+                }
             );
             this.$negativePrompts = new Prompts(
                 this.useSelector('[data-name="negative-prompt"]'),
-                INITIAL_PROMPTS_STATE
+                {
+                    ...INITIAL_PROMPTS_STATE,
+                    prompts: memo.negativePrompts,
+                }
             );
 
             this.useSelector('[data-name="copy-prompt"]').addEventListener('click', this.handleCopyPrompt);
@@ -191,7 +199,6 @@ export class ImageLoad extends Component {
             this.useSelector('[data-name="save-to-collection"]').addEventListener('click', this.handleSaveToCollection);
 
             if (memo.image) {
-                this.readPrompt(memo.image);
                 this.showPreview(memo.image);
             }
         });
