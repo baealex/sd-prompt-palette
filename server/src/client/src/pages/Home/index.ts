@@ -4,18 +4,22 @@ import icon from '~/icon';
 import { Component, html } from '~/modules/core';
 import { snackBar } from '~/modules/ui/snack-bar';
 
-import { getCategories, createKeyword, deleteKeyword, updateCategory, deleteCategory } from '~/api';
+import { getCategories, createKeyword, deleteKeyword, updateCategory, deleteCategory, imageUpload, createSampleImage, deleteSampleImage } from '~/api';
 import { Header } from '~/components/Header';
 import { contextMenu } from '~/modules/ui/context-menu';
 import { createFormState } from '~/modules/form';
 
 interface State {
-    categories: {
+    categories?: {
         id: number;
         name: string;
         keywords: {
             id: number;
             name: string;
+            image?: {
+                id: number;
+                url: string;
+            }
         }[];
     }[];
 }
@@ -124,7 +128,81 @@ export class Home extends Component<HTMLDivElement, State> {
                             }
                         }
                     },
-                ]
+                    {
+                        label: 'Upload Sample Image',
+                        click: async () => {
+                            const { id } = target.dataset;
+
+                            const $image = this.useSelector<HTMLInputElement>('[data-name="image"]');
+                            $image.click();
+                            $image.onchange = async () => {
+                                const file = $image.files[0];
+                                const reader = new FileReader();
+                                reader.onload = async (e) => {
+                                    try {
+                                        const { data } = await imageUpload({ image: e.target.result.toString() });
+                                        await createSampleImage({
+                                            imageId: data.id,
+                                            keywordId: Number(id),
+                                        });
+                                        this.setState((state) => ({
+                                            categories: state.categories.map((category) => {
+                                                return {
+                                                    ...category,
+                                                    keywords: category.keywords.map((keyword) => {
+                                                        if (Number(keyword.id) === Number(id)) {
+                                                            return {
+                                                                ...keyword,
+                                                                image: {
+                                                                    id: data.id,
+                                                                    url: data.url,
+                                                                },
+                                                            };
+                                                        }
+                                                        return keyword;
+                                                    }),
+                                                };
+                                            }),
+                                        }));
+                                        snackBar('😍 Sample image uploaded');
+                                    } catch (e) {
+                                        snackBar('😥 Failed to upload sample image');
+                                    }
+                                };
+                                reader.readAsDataURL(file);
+                            };
+                        }
+                    }]
+                    .concat(target.dataset.hasImage === 'true' ? [{
+                        label: 'Delete Sample Image',
+                        click: async () => {
+                            const { id } = target.dataset;
+                            try {
+                                await deleteSampleImage({
+                                    id: Number(id),
+                                });
+                                this.setState((state) => ({
+                                    categories: state.categories.map((category) => {
+                                        return {
+                                            ...category,
+                                            keywords: category.keywords.map((keyword) => {
+                                                if (Number(keyword.id) === Number(id)) {
+                                                    return {
+                                                        ...keyword,
+                                                        image: undefined,
+                                                    };
+                                                }
+                                                return keyword;
+                                            }),
+                                        };
+                                    }),
+                                }));
+                                snackBar('😭 Deleted sample image');
+                            } catch (err) {
+                                snackBar('😭 Failed to delete sample image');
+                            }
+                        }
+                    }] : []),
             });
         }
     };
@@ -247,13 +325,17 @@ export class Home extends Component<HTMLDivElement, State> {
                         </button>
                     </div>
                     <ul>
-                        ${category.keywords.map(({ id, name }) => html`
+                        ${category.keywords.map(({ id, name, image }) => html`
                             <li
                                 data-name="keyword"
                                 data-id="${id}"
                                 data-category-id="${category.id}"
+                                data-has-image="${image ? 'true' : 'false'}"
                             >
                                 ${name}
+                                ${image && html`
+                                    <img src="${image?.url}" alt="${name}" loading="lazy">
+                                `}
                             </li>
                         `).join('')}
                     </ul>
@@ -273,6 +355,7 @@ export class Home extends Component<HTMLDivElement, State> {
                     </form>
                 </div>
             `).join('')}
+            <input type="file" data-name="image" accept="image/*" hidden>
         `;
     }
 }

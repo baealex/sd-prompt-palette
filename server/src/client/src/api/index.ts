@@ -37,6 +37,10 @@ export function getCategories() {
                 keywords {
                     id
                     name
+                    image {
+                        id
+                        url
+                    }
                 }
             }
         }
@@ -147,6 +151,29 @@ export function deleteCollection(data: { id: number }) {
     return graphQLRequest<'deleteCollection', boolean>(`
         mutation {
             deleteCollection(id: ${data.id})
+        }
+    `);
+}
+
+export function createSampleImage(data: { imageId: number, keywordId: number }) {
+    return graphQLRequest<'createSampleImage', boolean>(`
+        mutation {
+            createSampleImage(imageId: ${data.imageId}, keywordId: ${data.keywordId}) {
+                id
+                name
+                image {
+                    id
+                    url
+                }
+            }
+        }
+    `);
+}
+
+export function deleteSampleImage(data: { id: number }) {
+    return graphQLRequest<'deleteSampleImage', boolean>(`
+        mutation {
+            deleteSampleImage(id: ${data.id})
         }
     `);
 }

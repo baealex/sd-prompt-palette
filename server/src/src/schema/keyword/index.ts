@@ -7,9 +7,15 @@ export const keywordType = gql`
     type Keyword {
         id: ID!
         name: String
+        image: Image
         createdAt: String!
         updatedAt: String!
         categories: [keywordToCategory!]!
+    }
+
+    type Image {
+        id: ID!
+        url: String!
     }
 
     type keywordToCategory {
@@ -30,7 +36,9 @@ export const keywordQuery = gql`
 export const keywordMutation = gql`
     type Mutation {
         createKeyword(name: String!, categoryId: ID!): Keyword!
+        createSampleImage(imageId: ID!, keywordId: ID!): Keyword!
         deleteKeyword(categoryId: ID!, keywordId: ID!): Boolean!
+        deleteSampleImage(id: ID!): Boolean!
     }
 `;
 
@@ -116,6 +124,49 @@ export const keywordResolvers: IResolvers = {
                 },
             });
         },
+        createSampleImage: async (_, { imageId, keywordId }: { imageId: number, keywordId: number }) => {
+            keywordId = Number(keywordId);
+            imageId = Number(imageId);
+
+            const keywordExists = await models.keyword.findFirst({
+                where: {
+                    id: keywordId,
+                },
+                select: {
+                    id: true,
+                },
+            });
+
+            if (!keywordExists) {
+                throw new Error('Keyword does not exist');
+            }
+
+            const imageExists = await models.image.findFirst({
+                where: {
+                    id: imageId,
+                },
+                select: {
+                    id: true,
+                },
+            });
+
+            if (!imageExists) {
+                throw new Error('Image does not exist');
+            }
+
+            return models.keyword.update({
+                where: {
+                    id: keywordId,
+                },
+                data: {
+                    image: {
+                        connect: {
+                            id: imageId,
+                        },
+                    },
+                },
+            });
+        },
         deleteKeyword: async (_, { categoryId, keywordId }: KeywordToCategory) => {
             categoryId = Number(categoryId);
             keywordId = Number(keywordId);
@@ -178,12 +229,59 @@ export const keywordResolvers: IResolvers = {
             }
 
             return true;
-        }
+        },
+        deleteSampleImage: async (_, { id }: Keyword) => {
+            id = Number(id);
+
+            const keyword = await models.keyword.findFirst({
+                where: {
+                    id,
+                },
+                select: {
+                    id: true,
+                    image: {
+                        select: {
+                            id: true,
+                        },
+                    },
+                },
+            });
+
+            if (!keyword) {
+                throw new Error('Keyword does not exist');
+            }
+
+            if (!keyword.image) {
+                throw new Error('Keyword does not have an image');
+            }
+
+            await models.keyword.update({
+                where: {
+                    id,
+                },
+                data: {
+                    image: {
+                        disconnect: true,
+                    },
+                },
+            });
+
+            return true;
+        },
     },
     Keyword: {
         categories: (keyword: Keyword) => models.keywordToCategory.findMany({
             where: {
                 keywordId: keyword.id,
+            },
+        }),
+        image: (keyword: Keyword) => models.image.findFirst({
+            where: {
+                keywords: {
+                    some: {
+                        id: keyword.id,
+                    },
+                }
             },
         }),
     },

@@ -24,11 +24,31 @@
 }
 
 .category ul li {
+    position: relative;
     list-style: none;
     background-color: #fff;
     padding: 0.5rem 0.8rem;
     border-radius: 0.5rem;
     cursor: pointer;
+
+    img {
+        display: none;
+        position: absolute;
+        background: #fff;
+        border-radius: 0.5rem;
+        bottom: 0;
+        right: 0;
+        width: 100px;
+        height: auto;
+        transform: translate(100%, 100%);
+        z-index: 1;
+    }
+
+    &:hover {
+        img {
+            display: block;
+        }
+    }
 }
 
 .form {
