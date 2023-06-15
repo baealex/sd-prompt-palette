@@ -29,11 +29,12 @@ export async function graphQLRequest<T extends string, K>(query: string): Promis
 }
 
 export function getCategories() {
-    return graphQLRequest<'allCategories', Pick<Category, 'id' | 'name' | 'keywords'>[]>(`
+    return graphQLRequest<'allCategories', Pick<Category, 'id' | 'name' | 'keywords' | 'order'>[]>(`
         query {
             allCategories {
                 id
                 name
+                order
                 keywords {
                     id
                     name
@@ -69,6 +70,14 @@ export function updateCategory(data: { id: number, name: string }) {
                 id
                 name
             }
+        }
+    `);
+}
+
+export function updateCategoryOrder(data: { id: number, order: number }) {
+    return graphQLRequest<'updateCategoryOrder', boolean>(`
+        mutation {
+            updateCategoryOrder(id: ${data.id}, order: ${data.order})
         }
     `);
 }

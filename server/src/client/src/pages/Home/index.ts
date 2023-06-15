@@ -4,7 +4,7 @@ import icon from '~/icon';
 import { Component, html } from '~/modules/core';
 import { snackBar } from '~/modules/ui/snack-bar';
 
-import { getCategories, createKeyword, deleteKeyword, updateCategory, deleteCategory, imageUpload, createSampleImage, deleteSampleImage, updateKeywordOrder } from '~/api';
+import { getCategories, createKeyword, deleteKeyword, updateCategory, deleteCategory, imageUpload, createSampleImage, deleteSampleImage, updateKeywordOrder, updateCategoryOrder } from '~/api';
 import { Header } from '~/components/Header';
 import { contextMenu } from '~/modules/ui/context-menu';
 import { createFormState } from '~/modules/form';
@@ -13,6 +13,7 @@ interface State {
     categories?: {
         id: number;
         name: string;
+        order: number;
         keywords: {
             id: number;
             name: string;
@@ -307,6 +308,21 @@ export class Home extends Component<HTMLDivElement, State> {
             $button.addEventListener('click', this.handleCopyKeywords);
         });
         this.selectNames('category').forEach(($category) => {
+            $category.querySelectorAll('[data-name="order"]').forEach(($order) => {
+                $order.addEventListener('click', (e) => {
+                    const { order } = (e.target as HTMLElement).dataset;
+                    console.log(order);
+                    updateCategoryOrder({
+                        id: Number($category.dataset.id),
+                        order: Number(order),
+                    }).then(() => {
+                        getCategories().then(({ data: { allCategories } }) => {
+                            this.setState({ categories: allCategories });
+                        });
+                    });
+                });
+            });
+
             $category.querySelectorAll('li').forEach(($li) => {
                 let order = 0;
 
@@ -369,54 +385,70 @@ export class Home extends Component<HTMLDivElement, State> {
         return html`
             ${this.state?.categories?.map((category) => html`
                 <div class="${styles.category}" data-name="category" data-id="${category.id}">
-                    <div class="${styles.categoryHeader}">
-                        <h2 data-name="category" data-category-id="${category.id}">
-                            ${category.name}
-                        </h2>
+                    <div class="${styles.categoryOrder}">
                         <button
-                            type="button"
-                            class="secondary-button"
-                            data-action="copy"
-                            data-category-id="${category.id}"
-                        >
-                            ${icon.draft} copy all
+                            data-name="order" 
+                            data-order="${category.order < 2 ? 1 : category.order - 1}"
+                            ${category.order < 2 ? 'disabled' : ''}>
+                            ${icon.arrowUp}
+                        </button>
+                        <button
+                            data-name="order"
+                            data-order="${category.order + 1}"
+                            ${category.order > this.state.categories.length - 1 ? 'disabled' : ''}>
+                            ${icon.arrowDown}
                         </button>
                     </div>
-                    <ul>
-                        ${category.keywords.map(({ id, name, image }, idx) => html`
-                            <span
-                                class="${styles.dropzone}"
-                                data-name="dropzone"
-                                data-order="${idx + 1}">
-                            </span>
-                            <li
-                                draggable="true"
-                                data-name="keyword"
-                                data-id="${id}"
+                    <div class="${styles.categoryContent}">
+                        <div class="${styles.categoryHeader}">
+                            <h2 data-name="category" data-category-id="${category.id}">
+                                ${category.name}
+                            </h2>
+                            <button
+                                type="button"
+                                class="secondary-button"
+                                data-action="copy"
                                 data-category-id="${category.id}"
-                                data-has-image="${image ? 'true' : 'false'}"
                             >
-                                ${name}
-                                ${image && html`
-                                    <img src="${image?.url}" alt="${name}" loading="lazy">
-                                `}
-                            </li>
-                        `).join('')}
-                    </ul>
-                    <form
-                        name="${category.id}"
-                        class="${styles.form}"
-                        data-category-id="${category.id}"
-                    >
-                        <input
-                            type="text"
-                            name="keyword"
-                            placeholder="Enter a keyword"
+                                ${icon.draft} copy all
+                            </button>
+                        </div>
+                        <ul>
+                            ${category.keywords.map(({ id, name, image }, idx) => html`
+                                <span
+                                    class="${styles.dropzone}"
+                                    data-name="dropzone"
+                                    data-order="${idx + 1}">
+                                </span>
+                                <li
+                                    draggable="true"
+                                    data-name="keyword"
+                                    data-id="${id}"
+                                    data-category-id="${category.id}"
+                                    data-has-image="${image ? 'true' : 'false'}"
+                                >
+                                    ${name}
+                                    ${image && html`
+                                        <img src="${image?.url}" alt="${name}" loading="lazy">
+                                    `}
+                                </li>
+                            `).join('')}
+                        </ul>
+                        <form
+                            name="${category.id}"
+                            class="${styles.form}"
+                            data-category-id="${category.id}"
                         >
-                        <button type="submit" class="primary-button">
-                            add ${icon.plus}
-                        </button>
-                    </form>
+                            <input
+                                type="text"
+                                name="keyword"
+                                placeholder="Enter a keyword"
+                            >
+                            <button type="submit" class="primary-button">
+                                add ${icon.plus}
+                            </button>
+                        </form>
+                    </div>
                 </div>
             `).join('')}
             <input type="file" data-name="image" accept="image/*" hidden>

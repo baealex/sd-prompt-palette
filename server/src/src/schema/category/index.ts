@@ -8,6 +8,7 @@ export const categoryType = gql`
     type Category {
         id: ID!
         name: String
+        order: Int!
         createdAt: String!
         updatedAt: String!
         keywords: [Keyword!]!
@@ -27,6 +28,7 @@ export const categoryMutation = gql`
     type Mutation {
         createCategory(name: String!): Category!
         updateCategory(id: ID!, name: String): Category!
+        updateCategoryOrder(id: ID!, order: Int!): Boolean!
         deleteCategory(id: ID!): Boolean!
     }
 `;
@@ -39,7 +41,13 @@ export const categoryTypeDefs = `
 
 export const categoryResolvers: IResolvers = {
     Query: {
-        allCategories: models.category.findMany,
+        allCategories: () => {
+            return models.category.findMany({
+                orderBy: {
+                    order: 'asc',
+                },
+            });
+        },
         category: (_, { id }: Category) => models.category.findUnique({
             where: {
                 id: Number(id),
@@ -47,11 +55,19 @@ export const categoryResolvers: IResolvers = {
         }),
     },
     Mutation: {
-        createCategory: async (_, { name }: Category) => models.category.create({
-            data: {
-                name,
-            },
-        }),
+        createCategory: async (_, { name }: Category) => {
+            const lastOrder = await models.category.findFirst({
+                orderBy: {
+                    order: 'desc',
+                },
+            });
+            return models.category.create({
+                data: {
+                    name,
+                    order: lastOrder ? lastOrder.order + 1 : 1,
+                },
+            });
+        },
         updateCategory: async (_, { id, name }: Category) => models.category.update({
             where: {
                 id: Number(id),
@@ -60,6 +76,44 @@ export const categoryResolvers: IResolvers = {
                 name,
             },
         }),
+        updateCategoryOrder: async (_, { id, order }: Category) => {
+            id = Number(id);
+
+            const categories = await models.category.findMany({
+                orderBy: {
+                    order: 'asc',
+                },
+            });
+
+            let idx = 1;
+            for (const category of categories) {
+                if (category.id === id) {
+                    await models.category.update({
+                        where: {
+                            id,
+                        },
+                        data: {
+                            order,
+                        },
+                    });
+                } else {
+                    if (idx === order) {
+                        idx += 1;
+                    }
+                    await models.category.update({
+                        where: {
+                            id: category.id,
+                        },
+                        data: {
+                            order: idx,
+                        },
+                    });
+                    idx += 1;
+                }
+            }
+
+            return true;
+        },
         deleteCategory: async (_, { id }: Category) => {
             await models.keywordToCategory.deleteMany({
                 where: {
