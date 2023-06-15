@@ -26,15 +26,27 @@ interface State {
 
 const formState = createFormState();
 
+const memo: State = {
+    categories: [],
+};
+
 export class Home extends Component<HTMLDivElement, State> {
     constructor($parent: HTMLElement) {
         formState.reset();
         new Header($parent);
-        super($parent, { className: styles.Home });
+        super($parent, {
+            className: styles.Home,
+            initialState: memo,
+        });
 
         getCategories().then(({ data: { allCategories } }) => {
             this.setState({ categories: allCategories });
         });
+    }
+
+    setState(nextState: State | ((prevState: State) => State)): void {
+        super.setState(nextState);
+        Object.assign(memo, this.state);
     }
 
     handleClickKeyword = async (e: MouseEvent) => {
