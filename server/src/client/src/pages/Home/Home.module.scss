@@ -66,9 +66,9 @@
 
         .dropzone {
             display: none;
-            position: relative;
-            width: 4px;
+            width: 8px;
             height: 40px;
+            border-radius: 0.5rem;
             background-color: #eee;
 
             &.visible {

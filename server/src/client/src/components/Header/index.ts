@@ -41,6 +41,7 @@ export class Header extends Component {
 
         const $menu = this.useSelector(`.${styles.menu}`);
         $menu.addEventListener('click', () => {
+            $menu.classList.toggle(styles.active);
             $links.classList.toggle(styles.active);
         });
     }

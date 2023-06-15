@@ -73,7 +73,7 @@ export class CollectionGalley extends Component<HTMLDivElement, State> {
     };
 
     async mount() {
-        document.title = 'Collection | SD Prompt Palette';
+        document.title = 'Collection Galley | SD Prompt Palette';
 
         new CollectionNav(this.selectName('nav'));
         new Pagination(this.selectName('pagination'), {

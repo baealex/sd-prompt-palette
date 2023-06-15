@@ -11,11 +11,12 @@
     column-gap: 16px;
 
     img {
-        pposition: relative;
+        position: relative;
         display: inline-block;
         width: 100%;
         height: auto;
         object-fit: contain;
         margin-bottom: 16px;
+        border-radius: 8px;
     }
 }
