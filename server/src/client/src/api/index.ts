@@ -7,6 +7,16 @@ interface GraphqlResponse<T extends string, K> {
     };
 }
 
+export interface Order {
+    orderBy?: string;
+    order?: 'asc' | 'desc';
+}
+
+export interface Pagination {
+    limit?: number;
+    page?: number;
+}
+
 export async function graphQLRequest<T extends string, K>(query: string): Promise<GraphqlResponse<T, K>> {
     const { data } = await axios.request<GraphqlResponse<T, K>>({
         method: 'POST',
@@ -86,10 +96,23 @@ export function deleteKeyword(data: { keywordId: number, categoryId: number }) {
     `);
 }
 
-export function getCollections() {
+export function getCollections(data: Order & Pagination = {}) {
+    const {
+        page = 1,
+        limit = 10,
+        order = 'desc',
+        orderBy = 'createdAt',
+    } = data;
+    const offset = (page - 1) * limit;
+
     return graphQLRequest<'allCollections', Pick<Collection, 'id' | 'image' | 'title' | 'prompt' | 'negativePrompt'>[]>(`
         query {
-            allCollections {
+            allCollections(
+                limit: ${limit},
+                offset: ${offset},
+                orderBy: "${orderBy}",
+                order: "${order}"
+            ) {
                 id
                 title
                 prompt

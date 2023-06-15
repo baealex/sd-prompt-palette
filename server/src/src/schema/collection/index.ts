@@ -1,6 +1,6 @@
 import { IResolvers } from '@graphql-tools/utils';
 
-import models, { Collection } from '~/models';
+import models, { Collection, Order, Pagination } from '~/models';
 import { gql } from '~/modules/graphql';
 
 export const CollectionType = gql`
@@ -23,7 +23,7 @@ export const CollectionType = gql`
 
 export const CollectionQuery = gql`
     type Query {
-        allCollections: [Collection!]!
+        allCollections(orderBy: String, order: String, limit: Int, offset: Int): [Collection!]!
         collection(id: ID!): Collection!
     }
 `;
@@ -43,10 +43,12 @@ export const CollectionTypeDefs = `
 
 export const CollectionResolvers: IResolvers = {
     Query: {
-        allCollections: () => models.collection.findMany({
+        allCollections: (_, { orderBy, order, limit, offset }: Order & Pagination) => models.collection.findMany({
             orderBy: {
-                createdAt: 'desc',
+                [orderBy || 'createdAt']: order || 'desc',
             },
+            take: limit,
+            skip: offset,
         }),
         collection: (_, { id }: Collection) => models.collection.findUnique({
             where: {
