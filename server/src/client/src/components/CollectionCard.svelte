@@ -72,8 +72,14 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
             border-bottom: 1px solid #aaa;
-            padding: 0 1.5rem;
+            padding: 1.5rem;
+
+            h2 {
+                margin: 0;
+            }
         }
 
         .image {

@@ -13,7 +13,9 @@
 </script>
 
 <nav class="header">
-    <h1>Prompt Palette</h1>
+    <Link to="/">
+        <h1>Prompt Palette</h1>
+    </Link>
     <div class="links">
         <Link to="/">Home</Link>
         <Link to={collectionPath}>Collection</Link>
