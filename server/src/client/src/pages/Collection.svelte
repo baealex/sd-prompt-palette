@@ -48,7 +48,7 @@
     <CollectionNav />
     <div class="collection">
         {#each collections.value as collection}
-            <div class="item" data-name="collection">
+            <div class="item">
                 <div class="header">
                     <h2>{collection.title}</h2>
                     <button

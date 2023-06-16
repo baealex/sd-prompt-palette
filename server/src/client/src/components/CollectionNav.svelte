@@ -1,10 +1,18 @@
 <script lang="ts">
     import { Link } from "svelte-routing";
+    import List from "../icons/List.svelte";
+    import Grid from "../icons/Grid.svelte";
 </script>
 
 <div class="collection-nav">
-    <Link to="/collection">List</Link>
-    <Link to="/collection/galley">Grid</Link>
+    <Link to="/collection">
+        <List />
+        List
+    </Link>
+    <Link to="/collection/galley">
+        <Grid />
+        Grid
+    </Link>
 </div>
 
 <style lang="scss">
@@ -32,6 +40,11 @@
                 background-color: #aaa;
                 color: #fff;
             }
+        }
+
+        :global(svg) {
+            width: 1rem;
+            height: 1rem;
         }
 
         :global([aria-current="page"]) {

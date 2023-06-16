@@ -13,7 +13,11 @@
     let imageRef: HTMLImageElement;
     let helpRef: HTMLDivElement;
 
-    const loader = useMemo({
+    const loader = useMemo<{
+        image: File;
+        promptText: string;
+        negativePromptText: string;
+    }>({
         key: ["image-load"],
         defaultValue: {
             image: null,
