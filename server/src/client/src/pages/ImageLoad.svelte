@@ -35,13 +35,7 @@
         memoLoader(loader);
     });
 
-    const handleClickLoader = () => {
-        inputRef.click();
-    };
-
-    const handleChangeImage = async (e: Event) => {
-        loader.image = (e.target as HTMLInputElement).files[0];
-
+    const loadImage = async () => {
         helpRef.style.display = "none";
         imageRef.style.display = "block";
         imageRef.src = URL.createObjectURL(loader.image);
@@ -70,6 +64,25 @@
                 };
             },
         });
+    };
+
+    const handleClickLoader = () => {
+        inputRef.click();
+    };
+
+    const handleDragOver = (e: DragEvent) => {
+        e.preventDefault();
+    };
+
+    const handleDropImage = (e: DragEvent) => {
+        e.preventDefault();
+        loader.image = e.dataTransfer.files[0];
+        loadImage();
+    };
+
+    const handleChangeImage = async (e: Event) => {
+        loader.image = (e.target as HTMLInputElement).files[0];
+        loadImage();
     };
 
     const handleSave = async () => {
@@ -108,7 +121,12 @@
         on:click={handleClickLoader}
         on:keydown={handleClickLoader}
     >
-        <div class="image-preview">
+        <div
+            class="image-preview"
+            on:drag={handleDragOver}
+            on:dragover={handleDragOver}
+            on:drop={handleDropImage}
+        >
             <div bind:this={helpRef}>
                 이미지를 끌어 놓으세요
                 <span>-또는-</span>

@@ -18,6 +18,11 @@
         []
     );
 
+    let [selected, memoSelected] = useMemoState<string[]>(
+        ["selected"],
+        categories.map((category) => category.name)
+    );
+
     onMount(() => {
         getCategories().then(({ data }) => {
             categories = data.allCategories;
@@ -26,6 +31,7 @@
 
     onDestroy(() => {
         memoKeywords(keywords);
+        memoSelected(selected);
         memoCategories(categories);
     });
 
@@ -37,7 +43,7 @@
     const handleSubmitGenerate = (e: Event) => {
         e.preventDefault();
 
-        const selected = Array.from(
+        selected = Array.from(
             (e.target as HTMLFormElement).querySelectorAll("input")
         )
             .filter((el) => el.checked)
@@ -58,7 +64,11 @@
     <form on:submit={handleSubmitGenerate}>
         {#each categories as category}
             <label class="checkbox-wrapper">
-                <input type="checkbox" name={category.name} />
+                <input
+                    type="checkbox"
+                    name={category.name}
+                    checked={selected.includes(category.name)}
+                />
                 <div class="checkbox" />
                 {category.name}
             </label>
