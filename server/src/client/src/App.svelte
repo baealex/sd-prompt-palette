@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Router, Route } from "svelte-routing";
 
-  import Header from "./components/Header.svelte";
+  import SiteHeader from "./components/SiteHeader.svelte";
   import Home from "./pages/Home.svelte";
   import Collection from "./pages/Collection.svelte";
   import CollectionDetail from "./pages/CollectionDetail.svelte";
@@ -11,7 +11,7 @@
 
 <main>
   <Router>
-    <Header />
+    <SiteHeader />
     <Route path="/" component={Home} />
     <Route path="/collection" component={Collection} />
     <Route path="/collection/galley" component={CollectionGalley} />

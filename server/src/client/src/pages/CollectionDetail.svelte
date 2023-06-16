@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { Collection } from "../models/types";
-    import { snackBar } from "../modules/snack-bar";
+    import { snackBar } from "../modules/ui/snack-bar";
     import { useMemoState } from "../modules/memo";
 
     import { deleteCollection, getCollection } from "../api";
@@ -9,7 +9,7 @@
 
     export let id;
 
-    let [collection, setCollection] = useMemoState<Collection>(
+    let [collection, memoCollection] = useMemoState<Collection>(
         ["collection", id],
         null
     );
@@ -23,7 +23,7 @@
     });
 
     onDestroy(() => {
-        if (collection) setCollection(collection);
+        memoCollection(collection);
     });
 
     const handleCopyText = (text: string) => {

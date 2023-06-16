@@ -1,31 +1,35 @@
 <script lang="ts">
-    import { onMount } from "svelte";
+    import { onDestroy, onMount } from "svelte";
 
     import type { Collection } from "../models/types";
 
     import CollectionNav from "../components/CollectionNav.svelte";
     import CollectionCard from "../components/CollectionCard.svelte";
 
-    import { useMemo } from "../modules/memo";
-    import { snackBar } from "../modules/snack-bar";
+    import { useMemoState } from "../modules/memo";
+    import { snackBar } from "../modules/ui/snack-bar";
 
     import { deleteCollection, getCollections } from "../api";
 
     import pathStore from "../store/path";
 
-    onMount(() => {
-        pathStore.set({ colllection: "/collection" });
-    });
-
     let page = 1;
     const limit = 9999;
-    const collections = useMemo<Collection[]>({
-        key: ["collections", page],
-        defaultValue: [],
+    let [collections, memoCollections] = useMemoState<Collection[]>(
+        ["collections", page],
+        []
+    );
+
+    onMount(() => {
+        pathStore.set({ colllection: "/collection" });
+
+        getCollections({ page, limit }).then(({ data }) => {
+            collections = data.allCollections;
+        });
     });
 
-    getCollections({ page, limit }).then(({ data }) => {
-        collections.value = data.allCollections;
+    onDestroy(() => {
+        memoCollections(collections);
     });
 
     const handleCopyText = (text: string) => {
@@ -36,7 +40,7 @@
     const handleDelete = async (id: number) => {
         if (confirm("Are you sure you want to delete this collection?")) {
             await deleteCollection({ id });
-            collections.value = collections.value.filter((c) => c.id !== id);
+            collections = collections.filter((c) => c.id !== id);
             snackBar("Deleted collection");
         }
     };
@@ -45,7 +49,7 @@
 <div class="container">
     <CollectionNav />
     <div class="collection">
-        {#each collections.value as collection}
+        {#each collections as collection}
             <CollectionCard
                 title={collection.title}
                 image={collection.image.url}

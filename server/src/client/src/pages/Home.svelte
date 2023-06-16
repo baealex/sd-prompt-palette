@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { onDestroy, onMount } from "svelte";
+
     import type { Category } from "../models/types";
 
     import CategoryHeader from "../components/CategoryHeader.svelte";
@@ -20,9 +22,9 @@
         updateKeywordOrder,
     } from "../api";
     import type { Keyword } from "../models/types";
-    import { snackBar } from "../modules/snack-bar";
-    import { contextMenu } from "../modules/context-menu";
-    import { useMemo } from "../modules/memo";
+    import { snackBar } from "../modules/ui/snack-bar";
+    import { contextMenu } from "../modules/ui/context-menu";
+    import { useMemoState } from "../modules/memo";
     import Plus from "../icons/Plus.svelte";
     import { imageToBase64 } from "../modules/image";
 
@@ -30,13 +32,19 @@
     let image: File;
     let pendingUploadImageKeywordId: number;
 
-    const categoires = useMemo<Category[]>({
-        key: "categories",
-        defaultValue: [],
+    let [categoires, memoCategories] = useMemoState<Category[]>(
+        "categories",
+        []
+    );
+
+    onMount(() => {
+        getCategories().then(({ data }) => {
+            categoires = data.allCategories;
+        });
     });
 
-    getCategories().then(({ data }) => {
-        categoires.value = data.allCategories;
+    onDestroy(() => {
+        memoCategories(categoires);
     });
 
     const handleClickCopyAll = (keywords: Keyword[]) => {
@@ -65,7 +73,7 @@
                             id: category.id,
                             name: title,
                         });
-                        categoires.value = categoires.value.map((c) => {
+                        categoires = categoires.map((c) => {
                             if (c.id === category.id) {
                                 c.name = title;
                             }
@@ -77,7 +85,7 @@
                     label: "Delete",
                     click: async () => {
                         await deleteCategory({ id: category.id });
-                        categoires.value = categoires.value
+                        categoires = categoires
                             .filter((c) => c.id !== category.id)
                             .map((c) => ({ ...c, order: c.order - 1 }));
                     },
@@ -102,7 +110,7 @@
                             categoryId,
                             keywordId: keyword.id,
                         });
-                        categoires.value = categoires.value.map((c) => {
+                        categoires = categoires.map((c) => {
                             if (c.id === categoryId) {
                                 c.keywords = c.keywords.filter(
                                     (k) => k.id !== keyword.id
@@ -122,21 +130,17 @@
                                   await deleteSampleImage({
                                       id: keyword.id,
                                   });
-                                  categoires.value = categoires.value.map(
-                                      (c) => {
-                                          if (c.id === categoryId) {
-                                              c.keywords = c.keywords.map(
-                                                  (k) => {
-                                                      if (k.id === keyword.id) {
-                                                          k.image = null;
-                                                      }
-                                                      return k;
-                                                  }
-                                              );
-                                          }
-                                          return c;
+                                  categoires = categoires.map((c) => {
+                                      if (c.id === categoryId) {
+                                          c.keywords = c.keywords.map((k) => {
+                                              if (k.id === keyword.id) {
+                                                  k.image = null;
+                                              }
+                                              return k;
+                                          });
                                       }
-                                  );
+                                      return c;
+                                  });
                               },
                           },
                       ]
@@ -169,7 +173,7 @@
                 keywordId: pendingUploadImageKeywordId,
                 imageId: imageData.id,
             });
-            categoires.value = categoires.value.map((c) => {
+            categoires = categoires.map((c) => {
                 c.keywords = c.keywords.map((k) => {
                     if (k.id === pendingUploadImageKeywordId) {
                         return {
@@ -202,14 +206,14 @@
 
         const { data } = await createCategory({ name });
 
-        categoires.value = [
+        categoires = [
             {
                 id: data.createCategory.id,
                 name: data.createCategory.name,
                 order: data.createCategory.order,
                 keywords: [],
             },
-            ...categoires.value.map((c) => {
+            ...categoires.map((c) => {
                 c.order += 1;
                 return c;
             }),
@@ -240,7 +244,7 @@
                 name: keyword,
             });
 
-            categoires.value = categoires.value.map((c) => {
+            categoires = categoires.map((c) => {
                 if (Number(c.id) === Number(categoryId)) {
                     c.keywords.push({
                         id: data.createKeyword.id,
@@ -266,7 +270,7 @@
             order,
         });
         const { data } = await getCategories();
-        categoires.value = data.allCategories;
+        categoires = data.allCategories;
     };
 
     const handleDragEndKeyword = async (
@@ -280,7 +284,7 @@
             order: dropPoint,
         });
         const { data } = await getCategories();
-        categoires.value = data.allCategories;
+        categoires = data.allCategories;
     };
 </script>
 
@@ -292,7 +296,7 @@
             <Plus />
         </button>
     </form>
-    {#each categoires.value as category}
+    {#each categoires as category}
         <div class="category">
             <div class="order">
                 <button
@@ -303,7 +307,7 @@
                     <ArrowUp />
                 </button>
                 <button
-                    disabled={category.order === categoires.value.length}
+                    disabled={category.order === categoires.length}
                     on:click={(e) =>
                         handleClickChangeOrder(e, category, category.order + 1)}
                 >
