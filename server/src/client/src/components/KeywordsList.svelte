@@ -1,20 +1,56 @@
 <script lang="ts">
     import type { Keyword } from "../models/types";
 
+    let dragging = false;
+    let dropPoint = 0;
+
     export let keywords: Keyword[] = [];
+    export let canDrag = false;
+    export let onDragEnd: (keyword: Keyword, dropPoint: number) => void = null;
     export let onClick: (keyword: Keyword) => void;
     export let onContextMenu: (e: MouseEvent, keyword: Keyword) => void = null;
+
+    const handleDragStart = () => {
+        dragging = true;
+    };
+
+    const handleDragEnd = (keyword: Keyword, dropPoint: number) => {
+        dragging = false;
+        onDragEnd?.(keyword, dropPoint);
+        dropPoint = 0;
+    };
 </script>
 
-<ul class="prompt-list">
-    {#each keywords as keyword}
+<ul class="keyword-list">
+    {#each keywords as keyword, index}
+        {#if canDrag}
+            <span
+                class="dragPoint"
+                on:dragenter={(e) => {
+                    dropPoint = index + 1;
+                }}
+                on:dragleave={(e) => {
+                    dropPoint = 0;
+                }}
+                on:dragover={(e) => {
+                    e.preventDefault();
+                }}
+                style="
+                    display: {dragging ? 'block' : 'none'};
+                    background: {dropPoint === index + 1 ? '#f00' : '#fff'}
+                "
+            />
+        {/if}
         <li
-            class="prompt"
+            class="keyword"
             on:keydown={(e) => {
                 if (e.key === "Enter") {
                     onClick(keyword);
                 }
             }}
+            draggable={canDrag}
+            on:dragstart={handleDragStart}
+            on:dragend={() => handleDragEnd(keyword, dropPoint)}
             on:click={() => onClick(keyword)}
             on:contextmenu={(e) => onContextMenu(e, keyword)}
         >
@@ -31,7 +67,7 @@
 </ul>
 
 <style lang="scss">
-    .prompt-list {
+    .keyword-list {
         position: relative;
         margin: 0;
         padding: 0;
@@ -41,20 +77,24 @@
         margin-bottom: 1rem;
     }
 
-    .prompt {
+    .dragPoint {
+        display: none;
+        top: 0;
+        left: 0;
+        width: 0.5rem;
+        height: 40px;
+        background: #fff;
+        border-radius: 0.5rem;
+        z-index: 2;
+    }
+
+    .keyword {
         position: relative;
         list-style: none;
         background-color: #fff;
         padding: 0.5rem 0.8rem;
         border-radius: 0.5rem;
         cursor: pointer;
-
-        .dragHandle {
-            svg {
-                width: 0.8rem;
-                height: 0.8rem;
-            }
-        }
 
         img {
             display: none;

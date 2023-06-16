@@ -17,6 +17,7 @@
         imageUpload,
         updateCategory,
         updateCategoryOrder,
+        updateKeywordOrder,
     } from "../api";
     import type { Keyword } from "../models/types";
     import { snackBar } from "../modules/snack-bar";
@@ -25,7 +26,7 @@
     import Plus from "../icons/Plus.svelte";
     import { imageToBase64 } from "../modules/image";
 
-    let inputRef: HTMLImageElement;
+    let inputRef: HTMLInputElement;
     let image: File;
     let pendingUploadImageKeywordId: number;
 
@@ -267,6 +268,20 @@
         const { data } = await getCategories();
         categoires.value = data.allCategories;
     };
+
+    const handleDragEndKeyword = async (
+        category: Category,
+        keyword: Keyword,
+        dropPoint: number
+    ) => {
+        await updateKeywordOrder({
+            categoryId: category.id,
+            keywordId: keyword.id,
+            order: dropPoint,
+        });
+        const { data } = await getCategories();
+        categoires.value = data.allCategories;
+    };
 </script>
 
 <div class="layout">
@@ -303,7 +318,11 @@
                         handleContextMenuCategory(e, category)}
                 />
                 <KeywordsList
+                    canDrag={true}
                     keywords={category.keywords}
+                    onDragEnd={(keyword, dropPoint) => {
+                        handleDragEndKeyword(category, keyword, dropPoint);
+                    }}
                     onClick={handleClickKeyword}
                     onContextMenu={(e, keyword) =>
                         handleContextMenuKeyword(e, keyword, category.id)}
