@@ -87,7 +87,8 @@
             image: await imageToBase64(loader.value.image),
         });
 
-        const title = prompt("Enter a title for this collection");
+        const title = prompt("Enter a title for this collection") || "";
+
         await createCollection({
             imageId: data.id,
             title,
@@ -181,7 +182,7 @@
     }
 
     .image-loader {
-        height: 300px;
+        height: 500px;
         border: 1px dashed #888;
         display: flex;
         justify-content: center;
@@ -198,7 +199,7 @@
 
         img {
             max-width: 100%;
-            height: 300px;
+            height: 500px;
             object-fit: contain;
         }
 

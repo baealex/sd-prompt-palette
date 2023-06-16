@@ -11,34 +11,31 @@
     export let onContextMenu: (e: MouseEvent, keyword: Keyword) => void = null;
 
     const handleDragStart = () => {
+        dropPoint = 0;
         dragging = true;
     };
 
     const handleDragEnd = (keyword: Keyword, dropPoint: number) => {
         dragging = false;
+        if (dropPoint === 0) return;
         onDragEnd?.(keyword, dropPoint);
-        dropPoint = 0;
     };
 </script>
 
 <ul class="keyword-list">
     {#each keywords as keyword, index}
-        {#if canDrag}
+        {#if canDrag && dragging}
             <span
-                class="dragPoint"
-                on:dragenter={(e) => {
+                class={`dragPoint ${dropPoint === index + 1 ? "active" : ""}`}
+                on:dragenter={() => {
                     dropPoint = index + 1;
                 }}
-                on:dragleave={(e) => {
+                on:dragleave={() => {
                     dropPoint = 0;
                 }}
                 on:dragover={(e) => {
                     e.preventDefault();
                 }}
-                style="
-                    display: {dragging ? 'block' : 'none'};
-                    background: {dropPoint === index + 1 ? '#f00' : '#fff'}
-                "
             />
         {/if}
         <li
@@ -78,7 +75,6 @@
     }
 
     .dragPoint {
-        display: none;
         top: 0;
         left: 0;
         width: 0.5rem;
@@ -86,6 +82,10 @@
         background: #fff;
         border-radius: 0.5rem;
         z-index: 2;
+
+        &.active {
+            background: #f00;
+        }
     }
 
     .keyword {
