@@ -33,3 +33,16 @@ export function useMemo<T>({ key, defaultValue }: UseMemoProps<T>) {
 
     return new Proxy(key, defaultValue);
 }
+
+export function useMemoState<T>(key: Key, defaultValue: T): [T, (value: T) => void] {
+    if (Array.isArray(key)) {
+        key = key.join('.');
+    }
+
+    return [
+        memo.get(key) ?? defaultValue,
+        (value: T) => {
+            memo.set(key, value);
+        }
+    ];
+}

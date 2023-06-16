@@ -1,23 +1,29 @@
 <script lang="ts">
-    import CategoryHeader from "../components/CategoryHeader.svelte";
-    import KeywordsList from "../components/KeywordsList.svelte";
-    import Delete from "../icons/Delete.svelte";
-
     import type { Collection } from "../models/types";
     import { snackBar } from "../modules/snack-bar";
-    import { useMemo } from "../modules/memo";
+    import { useMemoState } from "../modules/memo";
 
     import { deleteCollection, getCollection } from "../api";
+    import CollectionCard from "../components/CollectionCard.svelte";
+    import { onDestroy, onMount } from "svelte";
 
     export let id;
 
-    const collection = useMemo<Collection>({
-        key: ["collection", id],
-        defaultValue: null,
+    let [collection, setCollection] = useMemoState<Collection>(
+        ["collection", id],
+        null
+    );
+
+    onMount(() => {
+        if (!id || collection) return;
+
+        getCollection({ id }).then(({ data }) => {
+            collection = data.collection;
+        });
     });
 
-    getCollection({ id }).then(({ data }) => {
-        collection.value = data.collection;
+    onDestroy(() => {
+        if (collection) setCollection(collection);
     });
 
     const handleCopyText = (text: string) => {
@@ -34,56 +40,17 @@
 
 <div class="container">
     <div class="collection">
-        {#if collection.value == null}
+        {#if collection == null}
             <p>Loading...</p>
         {:else}
-            <div class="item" data-name="collection">
-                <div class="header">
-                    <h2>{collection.value.title}</h2>
-                    <button
-                        class="primary-button"
-                        on:click={() => handleDelete(collection.value.id)}
-                    >
-                        <Delete />
-                        Remove
-                    </button>
-                </div>
-                <img
-                    class="image"
-                    src={collection.value.image.url}
-                    alt={collection.value.title}
-                />
-                <div class="body">
-                    <CategoryHeader
-                        title="Prompt"
-                        onClickCopy={() =>
-                            handleCopyText(collection.value.prompt)}
-                    />
-                    <KeywordsList
-                        keywords={collection.value.prompt
-                            .split(",")
-                            .map((p) => ({
-                                id: Math.random(),
-                                name: p.trim(),
-                            }))}
-                        onClick={(keyword) => handleCopyText(keyword.name)}
-                    />
-                    <CategoryHeader
-                        title="Negative Prompt"
-                        onClickCopy={() =>
-                            handleCopyText(collection.value.negativePrompt)}
-                    />
-                    <KeywordsList
-                        keywords={collection.value.negativePrompt
-                            .split(",")
-                            .map((p) => ({
-                                id: Math.random(),
-                                name: p.trim(),
-                            }))}
-                        onClick={(keyword) => handleCopyText(keyword.name)}
-                    />
-                </div>
-            </div>
+            <CollectionCard
+                title={collection.title}
+                image={collection.image.url}
+                prompt={collection.prompt}
+                negativePrompt={collection.negativePrompt}
+                onClickCopy={handleCopyText}
+                onClickDelete={() => handleDelete(collection.id)}
+            />
         {/if}
     </div>
 </div>
@@ -94,70 +61,6 @@
 
         @media (max-width: 768px) {
             padding: 1rem;
-        }
-    }
-
-    .collection {
-        display: block;
-    }
-
-    .item {
-        display: grid;
-        grid-template-areas:
-            "header header"
-            "image body";
-        width: 100%;
-        margin-bottom: 1.5rem;
-        border: 1px solid #aaa;
-        border-radius: 0.5rem;
-        align-items: center;
-
-        &:nth-child(even) {
-            grid-template-areas:
-                "header header"
-                "body image";
-        }
-
-        .header {
-            grid-area: header;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #aaa;
-            padding: 0 1.5rem;
-        }
-
-        .image {
-            padding: 1rem;
-            border-radius: 1.5rem;
-            grid-area: image;
-            width: 350px;
-            height: auto;
-            object-fit: contain;
-        }
-
-        .body {
-            grid-area: body;
-            padding: 1.5rem;
-        }
-
-        @media (max-width: 768px) {
-            width: 100%;
-            grid-template-areas:
-                "header"
-                "image"
-                "body";
-
-            &:nth-child(even) {
-                grid-template-areas:
-                    "header"
-                    "image"
-                    "body";
-            }
-
-            .image {
-                width: 100%;
-            }
         }
     }
 </style>
