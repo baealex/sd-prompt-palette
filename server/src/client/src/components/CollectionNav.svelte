@@ -9,7 +9,7 @@
         <List />
         List
     </Link>
-    <Link to="/collection/galley">
+    <Link to="/collection/gallery">
         <Grid />
         Grid
     </Link>

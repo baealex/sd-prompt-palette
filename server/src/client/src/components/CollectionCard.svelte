@@ -55,6 +55,7 @@
         grid-template-areas:
             "header header"
             "image body";
+        grid-template-columns: 350px auto;
         width: 100%;
         margin-bottom: 1.5rem;
         border: 1px solid #aaa;
@@ -65,6 +66,7 @@
             grid-template-areas:
                 "header header"
                 "body image";
+            grid-template-columns: auto 350px;
         }
 
         .header {
@@ -102,12 +104,14 @@
                 "header"
                 "image"
                 "body";
+            grid-template-columns: 1fr;
 
             &:nth-child(even) {
                 grid-template-areas:
                     "header"
                     "image"
                     "body";
+                grid-template-columns: 1fr;
             }
 
             .image {

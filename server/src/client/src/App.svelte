@@ -16,7 +16,7 @@
     <Route path="/" component={Home} />
     <Route path="/idea" component={Idea} />
     <Route path="/collection" component={Collection} />
-    <Route path="/collection/galley" component={CollectionGalley} />
+    <Route path="/collection/gallery" component={CollectionGalley} />
     <Route path="/collection/:id" let:params>
       <CollectionDetail id={params.id} />
     </Route>

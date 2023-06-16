@@ -19,7 +19,7 @@
     );
 
     onMount(() => {
-        pathStore.set({ colllection: "/collection" });
+        pathStore.set({ colllection: "/collection/gallery" });
 
         getCollections({ page, limit }).then(({ data }) => {
             collections = data.allCollections;
