@@ -3,6 +3,7 @@
 
   import SiteHeader from "./components/SiteHeader.svelte";
   import Home from "./pages/Home.svelte";
+  import Idea from "./pages/Idea.svelte";
   import Collection from "./pages/Collection.svelte";
   import CollectionDetail from "./pages/CollectionDetail.svelte";
   import CollectionGalley from "./pages/CollectionGalley.svelte";
@@ -13,6 +14,7 @@
   <Router>
     <SiteHeader />
     <Route path="/" component={Home} />
+    <Route path="/idea" component={Idea} />
     <Route path="/collection" component={Collection} />
     <Route path="/collection/galley" component={CollectionGalley} />
     <Route path="/collection/:id" let:params>

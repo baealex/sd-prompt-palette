@@ -18,6 +18,7 @@
     </Link>
     <div class="links">
         <Link to="/">Home</Link>
+        <Link to="/idea">Idea</Link>
         <Link to={collectionPath}>Collection</Link>
         <Link to="/image-load">PNG Info</Link>
     </div>
