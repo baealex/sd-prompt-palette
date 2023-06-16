@@ -19,7 +19,7 @@ export default express()
             return error;
         },
     }))
-    .use('/assets/', express.static(path.resolve('public/assets')))
+    .use('/assets/images/', express.static(path.resolve('public/assets/images/')))
     .use('/api/', router)
     .get('*', (req, res) => {
         if (req.path.startsWith('/api/')) {

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Category, Collection, Keyword } from '~/models/types';
+import type { Category, Collection, Keyword } from '../models/types';
 
 interface GraphqlResponse<T extends string, K> {
     data: {
@@ -53,11 +53,12 @@ export function getCategories() {
 }
 
 export function createCategory(data: { name: string }) {
-    return graphQLRequest<'createCategory', Pick<Category, 'id' | 'name'>>(`
+    return graphQLRequest<'createCategory', Pick<Category, 'id' | 'name' | 'order'>>(`
         mutation {
             createCategory(name: "${data.name}") {
                 id
                 name
+                order
             }
         }
     `);

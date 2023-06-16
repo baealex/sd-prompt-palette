@@ -56,15 +56,25 @@ export const categoryResolvers: IResolvers = {
     },
     Mutation: {
         createCategory: async (_, { name }: Category) => {
-            const lastOrder = await models.category.findFirst({
+            const categories = await models.category.findMany({
                 orderBy: {
                     order: 'desc',
                 },
             });
+            for (const category of categories) {
+                await models.category.update({
+                    where: {
+                        id: category.id,
+                    },
+                    data: {
+                        order: category.order + 1,
+                    },
+                });
+            }
             return models.category.create({
                 data: {
                     name,
-                    order: lastOrder ? lastOrder.order + 1 : 1,
+                    order: 1,
                 },
             });
         },
@@ -134,6 +144,21 @@ export const categoryResolvers: IResolvers = {
                     id: Number(id),
                 },
             });
+            const categories = await models.category.findMany({
+                orderBy: {
+                    order: 'desc',
+                },
+            });
+            for (const category of categories) {
+                await models.category.update({
+                    where: {
+                        id: category.id,
+                    },
+                    data: {
+                        order: category.order - 1,
+                    },
+                });
+            }
 
             return true;
         }
