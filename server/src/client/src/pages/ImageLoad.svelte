@@ -1,67 +1,94 @@
 <script lang="ts">
+    import { onMount } from "svelte";
     import { createCollection, imageUpload } from "../api";
     import CategoryHeader from "../components/CategoryHeader.svelte";
     import KeywordsList from "../components/KeywordsList.svelte";
     import Heart from "../icons/Heart.svelte";
 
     import { imageToBase64, readPromptInfo } from "../modules/image";
+    import { useMemo } from "../modules/memo";
     import { snackBar } from "../modules/snack-bar";
 
     let inputRef: HTMLInputElement;
     let imageRef: HTMLImageElement;
     let helpRef: HTMLDivElement;
-    let promptText = "";
-    let negativePromptText = "";
+
+    const loader = useMemo({
+        key: ["image-load"],
+        defaultValue: {
+            image: null,
+            promptText: "",
+            negativePromptText: "",
+        },
+    });
+
+    onMount(() => {
+        if (loader.value.image) {
+            helpRef.style.display = "none";
+            imageRef.style.display = "block";
+            imageRef.src = URL.createObjectURL(loader.value.image);
+        }
+    });
 
     const handleClickLoader = () => {
         inputRef.click();
     };
 
     const handleChangeImage = async (e: Event) => {
-        const file = (e.target as HTMLInputElement).files[0];
+        loader.value = {
+            ...loader.value,
+            image: (e.target as HTMLInputElement).files[0],
+        };
 
         helpRef.style.display = "none";
         imageRef.style.display = "block";
-        imageRef.src = URL.createObjectURL(file);
+        imageRef.src = URL.createObjectURL(loader.value.image);
 
-        const base64 = await imageToBase64(file);
+        const base64 = await imageToBase64(loader.value.image);
         readPromptInfo(base64, {
             onError: (err) => {
-                promptText = "";
-                negativePromptText = "";
+                loader.value = {
+                    ...loader.value,
+                    promptText: "",
+                    negativePromptText: "",
+                };
                 snackBar(err);
             },
             onSuccess: (info) => {
-                promptText = info.prompt
-                    .split(",")
-                    .filter((t) => t.trim())
-                    .join(", ");
-                negativePromptText = info.negativePrompt
-                    .split(",")
-                    .filter((t) => t.trim())
-                    .join(", ");
+                loader.value = {
+                    ...loader.value,
+                    promptText: info.prompt
+                        .split(",")
+                        .filter((t) => t.trim())
+                        .join(", "),
+                    negativePromptText: info.negativePrompt
+                        .split(",")
+                        .filter((t) => t.trim())
+                        .join(", "),
+                };
             },
         });
     };
 
     const handleSave = async () => {
-        const file = inputRef.files[0];
-
-        if (!file || (!promptText && !negativePromptText)) {
+        if (
+            !loader.value.image ||
+            (!loader.value.promptText && !loader.value.negativePromptText)
+        ) {
             snackBar("Please load an sd image first");
             return;
         }
 
         const { data } = await imageUpload({
-            image: await imageToBase64(file),
+            image: await imageToBase64(loader.value.image),
         });
 
         const title = prompt("Enter a title for this collection");
         await createCollection({
             imageId: data.id,
             title,
-            prompt: promptText,
-            negativePrompt: negativePromptText,
+            prompt: loader.value.promptText,
+            negativePrompt: loader.value.negativePromptText,
         });
         snackBar(`Saved collection: ${title}`);
     };
@@ -97,10 +124,10 @@
     <div>
         <CategoryHeader
             title="Prompt"
-            onClickCopy={() => handleCopyText(promptText)}
+            onClickCopy={() => handleCopyText(loader.value.promptText)}
         />
         <KeywordsList
-            keywords={promptText
+            keywords={loader.value.promptText
                 .split(",")
                 .filter((p) => p.trim())
                 .map((p) => ({
@@ -111,10 +138,10 @@
         />
         <CategoryHeader
             title="Negative Prompt"
-            onClickCopy={() => handleCopyText(negativePromptText)}
+            onClickCopy={() => handleCopyText(loader.value.negativePromptText)}
         />
         <KeywordsList
-            keywords={negativePromptText
+            keywords={loader.value.negativePromptText
                 .split(",")
                 .filter((p) => p.trim())
                 .map((p) => ({

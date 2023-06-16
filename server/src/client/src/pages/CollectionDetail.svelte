@@ -1,33 +1,23 @@
 <script lang="ts">
-    import { onMount } from "svelte";
-
-    import type { Collection } from "../models/types";
-
     import CategoryHeader from "../components/CategoryHeader.svelte";
-    import CollectionNav from "../components/CollectionNav.svelte";
     import KeywordsList from "../components/KeywordsList.svelte";
     import Delete from "../icons/Delete.svelte";
 
-    import { useMemo } from "../modules/memo";
+    import type { Collection } from "../models/types";
     import { snackBar } from "../modules/snack-bar";
+    import { useMemo } from "../modules/memo";
 
-    import { deleteCollection, getCollections } from "../api";
+    import { deleteCollection, getCollection } from "../api";
 
-    import pathStore from "../store/path";
+    export let id;
 
-    onMount(() => {
-        pathStore.set({ colllection: "/collection" });
+    const collection = useMemo<Collection>({
+        key: ["collection", id],
+        defaultValue: null,
     });
 
-    let page = 1;
-    const limit = 9999;
-    const collections = useMemo<Collection[]>({
-        key: ["collections", page],
-        defaultValue: [],
-    });
-
-    getCollections({ page, limit }).then(({ data }) => {
-        collections.value = data.allCollections;
+    getCollection({ id }).then(({ data }) => {
+        collection.value = data.collection;
     });
 
     const handleCopyText = (text: string) => {
@@ -38,22 +28,21 @@
     const handleDelete = async (id: number) => {
         if (confirm("Are you sure you want to delete this collection?")) {
             await deleteCollection({ id });
-            collections.value = collections.value.filter((c) => c.id !== id);
-            snackBar("Deleted collection");
         }
     };
 </script>
 
 <div class="container">
-    <CollectionNav />
     <div class="collection">
-        {#each collections.value as collection}
+        {#if collection.value == null}
+            <p>Loading...</p>
+        {:else}
             <div class="item" data-name="collection">
                 <div class="header">
-                    <h2>{collection.title}</h2>
+                    <h2>{collection.value.title}</h2>
                     <button
                         class="primary-button"
-                        on:click={() => handleDelete(collection.id)}
+                        on:click={() => handleDelete(collection.value.id)}
                     >
                         <Delete />
                         Remove
@@ -61,28 +50,31 @@
                 </div>
                 <img
                     class="image"
-                    src={collection.image.url}
-                    alt={collection.title}
+                    src={collection.value.image.url}
+                    alt={collection.value.title}
                 />
                 <div class="body">
                     <CategoryHeader
                         title="Prompt"
-                        onClickCopy={() => handleCopyText(collection.prompt)}
+                        onClickCopy={() =>
+                            handleCopyText(collection.value.prompt)}
                     />
                     <KeywordsList
-                        keywords={collection.prompt.split(",").map((p) => ({
-                            id: Math.random(),
-                            name: p.trim(),
-                        }))}
+                        keywords={collection.value.prompt
+                            .split(",")
+                            .map((p) => ({
+                                id: Math.random(),
+                                name: p.trim(),
+                            }))}
                         onClick={(keyword) => handleCopyText(keyword.name)}
                     />
                     <CategoryHeader
                         title="Negative Prompt"
                         onClickCopy={() =>
-                            handleCopyText(collection.negativePrompt)}
+                            handleCopyText(collection.value.negativePrompt)}
                     />
                     <KeywordsList
-                        keywords={collection.negativePrompt
+                        keywords={collection.value.negativePrompt
                             .split(",")
                             .map((p) => ({
                                 id: Math.random(),
@@ -92,7 +84,7 @@
                     />
                 </div>
             </div>
-        {/each}
+        {/if}
     </div>
 </div>
 

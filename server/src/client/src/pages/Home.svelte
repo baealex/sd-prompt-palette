@@ -18,12 +18,16 @@
     import type { Keyword } from "../models/types";
     import { snackBar } from "../modules/snack-bar";
     import { contextMenu } from "../modules/context-menu";
+    import { useMemo } from "../modules/memo";
     import Plus from "../icons/Plus.svelte";
 
-    let categoires: Category[] = [];
+    const categoires = useMemo<Category[]>({
+        key: "categories",
+        defaultValue: [],
+    });
 
     getCategories().then(({ data }) => {
-        categoires = data.allCategories;
+        categoires.value = data.allCategories;
     });
 
     const handleClickCopyAll = (keywords: Keyword[]) => {
@@ -53,16 +57,19 @@
                             id: category.id,
                             name: title,
                         });
-                        categoires[
-                            categoires.findIndex((c) => c.id === category.id)
-                        ].name = title;
+                        categoires.value = categoires.value.map((c) => {
+                            if (c.id === category.id) {
+                                c.name = title;
+                            }
+                            return c;
+                        });
                     },
                 },
                 {
                     label: "Delete",
                     click: async () => {
                         await deleteCategory({ id: category.id });
-                        categoires = categoires
+                        categoires.value = categoires.value
                             .filter((c) => c.id !== category.id)
                             .map((c) => ({ ...c, order: c.order - 1 }));
                     },
@@ -87,7 +94,7 @@
                             categoryId,
                             keywordId: keyword.id,
                         });
-                        categoires = categoires.map((c) => {
+                        categoires.value = categoires.value.map((c) => {
                             if (c.id === categoryId) {
                                 c.keywords = c.keywords.filter(
                                     (k) => k.id !== keyword.id
@@ -115,14 +122,14 @@
 
         const { data } = await createCategory({ name });
 
-        categoires = [
+        categoires.value = [
             {
                 id: data.createCategory.id,
                 name: data.createCategory.name,
                 order: data.createCategory.order,
                 keywords: [],
             },
-            ...categoires.map((c) => {
+            ...categoires.value.map((c) => {
                 c.order += 1;
                 return c;
             }),
@@ -153,7 +160,7 @@
                 name: keyword,
             });
 
-            categoires = categoires.map((c) => {
+            categoires.value = categoires.value.map((c) => {
                 if (Number(c.id) === Number(categoryId)) {
                     c.keywords.push({
                         id: data.createKeyword.id,
@@ -179,7 +186,7 @@
             order,
         });
         const { data } = await getCategories();
-        categoires = data.allCategories;
+        categoires.value = data.allCategories;
     };
 </script>
 
@@ -191,7 +198,7 @@
             <Plus />
         </button>
     </form>
-    {#each categoires as category}
+    {#each categoires.value as category}
         <div class="category">
             <div class="order">
                 <button
@@ -202,7 +209,7 @@
                     <ArrowUp />
                 </button>
                 <button
-                    disabled={category.order === categoires.length}
+                    disabled={category.order === categoires.value.length}
                     on:click={(e) =>
                         handleClickChangeOrder(e, category, category.order + 1)}
                 >

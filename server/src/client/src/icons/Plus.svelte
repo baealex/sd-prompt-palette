@@ -8,5 +8,7 @@
     stroke-width="2"
     stroke-linecap="round"
     stroke-linejoin="round"
-    class="ai ai-Plus"><path d="M12 20v-8m0 0V4m0 8h8m-8 0H4" /></svg
+    class="ai ai-Plus"
 >
+    <path d="M12 20v-8m0 0V4m0 8h8m-8 0H4" />
+</svg>

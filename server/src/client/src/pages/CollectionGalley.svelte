@@ -6,29 +6,36 @@
     import type { Collection } from "../models/types";
 
     import { getCollections } from "../api";
+    import { Link } from "svelte-routing";
+    import { useMemo } from "../modules/memo";
 
     onMount(() => {
         pathStore.set({ colllection: "/collection/galley" });
     });
 
-    let collections: Collection[] = [];
     let page = 1;
     const limit = 9999;
+    const collections = useMemo<Collection[]>({
+        key: ["collections", page],
+        defaultValue: [],
+    });
 
     getCollections({ page, limit }).then(({ data }) => {
-        collections = data.allCollections;
+        collections.value = data.allCollections;
     });
 </script>
 
 <div class="container">
     <CollectionNav />
     <div class="collection">
-        {#each collections as collection}
-            <img
-                class="image"
-                src={collection.image.url}
-                alt={collection.title}
-            />
+        {#each collections.value as collection}
+            <Link to={`/collection/${collection.id}`}>
+                <img
+                    class="image"
+                    src={collection.image.url}
+                    alt={collection.title}
+                />
+            </Link>
         {/each}
         <div data-name="pagination" />
     </div>

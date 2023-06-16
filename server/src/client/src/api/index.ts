@@ -122,6 +122,23 @@ export function deleteKeyword(data: { keywordId: number, categoryId: number }) {
     `);
 }
 
+export function getCollection(data: { id: number }) {
+    return graphQLRequest<'collection', Pick<Collection, 'id' | 'title' | 'prompt' | 'negativePrompt' | 'image'>>(`
+        query {
+            collection(id: ${data.id}) {
+                id
+                title
+                prompt
+                negativePrompt
+                image {
+                    id
+                    url
+                }
+            }
+        }
+    `);
+}
+
 export function getCollections(data: Order & Pagination = {}) {
     const {
         page = 1,
