@@ -10,10 +10,22 @@
     {#each keywords as keyword}
         <li
             class="prompt"
+            on:keydown={(e) => {
+                if (e.key === "Enter") {
+                    onClick(keyword);
+                }
+            }}
             on:click={() => onClick(keyword)}
             on:contextmenu={(e) => onContextMenu(e, keyword)}
         >
             {keyword.name}
+            {#if keyword.image}
+                <img
+                    loading="lazy"
+                    src={keyword.image.url}
+                    alt={keyword.name}
+                />
+            {/if}
         </li>
     {/each}
 </ul>
@@ -51,7 +63,7 @@
             border-radius: 0.5rem;
             bottom: 0;
             right: 0;
-            width: 100px;
+            width: 120px;
             height: auto;
             transform: translate(100%, 100%);
             z-index: 1;

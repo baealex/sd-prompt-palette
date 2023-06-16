@@ -9,9 +9,12 @@
     import {
         createCategory,
         createKeyword,
+        createSampleImage,
         deleteCategory,
         deleteKeyword,
+        deleteSampleImage,
         getCategories,
+        imageUpload,
         updateCategory,
         updateCategoryOrder,
     } from "../api";
@@ -20,6 +23,11 @@
     import { contextMenu } from "../modules/context-menu";
     import { useMemo } from "../modules/memo";
     import Plus from "../icons/Plus.svelte";
+    import { imageToBase64 } from "../modules/image";
+
+    let inputRef: HTMLImageElement;
+    let image: File;
+    let pendingUploadImageKeywordId: number;
 
     const categoires = useMemo<Category[]>({
         key: "categories",
@@ -41,7 +49,6 @@
     };
 
     const handleContextMenuCategory = (e: MouseEvent, category: Category) => {
-        console.log(category);
         contextMenu.create({
             top: e.clientY,
             left: e.clientX,
@@ -105,8 +112,80 @@
                         snackBar("Removed keyword");
                     },
                 },
-            ],
+            ].concat(
+                keyword.image
+                    ? [
+                          {
+                              label: "Remove sample image",
+                              click: async () => {
+                                  await deleteSampleImage({
+                                      id: keyword.id,
+                                  });
+                                  categoires.value = categoires.value.map(
+                                      (c) => {
+                                          if (c.id === categoryId) {
+                                              c.keywords = c.keywords.map(
+                                                  (k) => {
+                                                      if (k.id === keyword.id) {
+                                                          k.image = null;
+                                                      }
+                                                      return k;
+                                                  }
+                                              );
+                                          }
+                                          return c;
+                                      }
+                                  );
+                              },
+                          },
+                      ]
+                    : [
+                          {
+                              label: "Add sample image",
+                              click: async () => {
+                                  pendingUploadImageKeywordId = keyword.id;
+                                  inputRef.click();
+                              },
+                          },
+                      ]
+            ),
         });
+    };
+
+    const handleChangeImage = async (e: Event) => {
+        image = (e.target as HTMLInputElement).files[0];
+
+        if (!image) {
+            pendingUploadImageKeywordId = undefined;
+            return;
+        }
+
+        if (pendingUploadImageKeywordId) {
+            const { data: imageData } = await imageUpload({
+                image: await imageToBase64(image),
+            });
+            await createSampleImage({
+                keywordId: pendingUploadImageKeywordId,
+                imageId: imageData.id,
+            });
+            categoires.value = categoires.value.map((c) => {
+                c.keywords = c.keywords.map((k) => {
+                    if (k.id === pendingUploadImageKeywordId) {
+                        return {
+                            ...k,
+                            image: {
+                                id: imageData.id,
+                                url: imageData.url,
+                            },
+                        };
+                    }
+                    return k;
+                });
+                return c;
+            });
+            pendingUploadImageKeywordId = undefined;
+            snackBar("Added sample image");
+        }
     };
 
     const handleSubmitCategory = async (e: Event) => {
@@ -247,6 +326,13 @@
             </div>
         </div>
     {/each}
+    <input
+        bind:this={inputRef}
+        type="file"
+        accept="image/*"
+        style="display: none;"
+        on:change={handleChangeImage}
+    />
 </div>
 
 <style lang="scss">
