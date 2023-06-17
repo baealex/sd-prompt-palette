@@ -48,7 +48,7 @@ export const uploadImage: Controller = async (req, res) => {
         (new Date().getMonth() + 1).toString(),
         (new Date().getDate()).toString()
     ];
-    makePath(['./public/assets', 'images', ...currentPath]);
+    makePath(['./public', 'assets', 'images', ...currentPath]);
 
     const ext = info.split(';')[0].split('/')[1];
     const fileName = `${Date.now()}.${ext}`;
