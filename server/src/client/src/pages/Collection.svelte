@@ -1,7 +1,9 @@
 <script lang="ts">
-    import { afterUpdate, onDestroy, onMount } from "svelte";
+    import { onDestroy, onMount } from "svelte";
+    import { derived, get } from "svelte/store";
 
-    import { CollectionModel } from "../models/collection";
+    import { collectionModel } from "../models/collection";
+    import type { CollectionModel } from "../models/collection";
 
     import CollectionNav from "../components/CollectionNav.svelte";
     import CollectionCard from "../components/CollectionCard.svelte";
@@ -20,26 +22,19 @@
         []
     );
 
+    $: resolveCollections = derived(collections, () =>
+        collections.map((collection) => ({
+            ...collection,
+            ...get(collection),
+        }))
+    );
+
     onMount(() => {
         pathStore.set({ colllection: "/collection" });
 
         getCollections({ page, limit }).then(({ data }) => {
-            collections = data.allCollections.map(CollectionModel.from);
+            collections = data.allCollections.map(collectionModel);
         });
-    });
-
-    afterUpdate(() => {
-        if (collections instanceof Array) {
-            collections.forEach((collection) => {
-                if (collection instanceof CollectionModel) {
-                    collection.subscribe((state) => {
-                        collections = collections.map((c) =>
-                            c.id === state.id ? CollectionModel.from(state) : c
-                        );
-                    });
-                }
-            });
-        }
     });
 
     onDestroy(() => {
@@ -54,7 +49,9 @@
     const handleDelete = async (collection: CollectionModel) => {
         const success = await collection.delete();
         if (success) {
-            collections = collections.filter((c) => c.id !== collection.id);
+            collections = collections.filter(
+                (c) => get(c).id !== get(collection).id
+            );
         }
     };
 
@@ -66,7 +63,7 @@
 <div class="container">
     <CollectionNav />
     <div class="collection">
-        {#each collections as collection}
+        {#each $resolveCollections as collection}
             <CollectionCard
                 title={collection.title}
                 image={collection.image.url}

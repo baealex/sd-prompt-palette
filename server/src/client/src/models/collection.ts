@@ -1,89 +1,82 @@
-import { BaseModel } from './base-model';
-import type { Collection, Image } from './types';
+import { writable } from 'svelte/store';
 
-import { graphQLRequest } from '../api';
+import type { Collection } from './types';
 
 import { snackBar } from '../modules/ui/snack-bar';
 import { contextMenu } from '../modules/ui/context-menu';
 
-export class CollectionModel extends BaseModel<Collection> {
-    id: number;
-    image: Image;
-    title: string;
-    prompt: string;
-    negativePrompt: string;
+import { graphQLRequest } from '../api';
 
-    constructor(state: Collection) {
-        super();
+export function collectionModel(state: Collection) {
+    const store = writable<Collection>(state);
 
-        this.id = state.id;
-        this.title = state.title;
-        this.image = state.image;
-        this.prompt = state.prompt;
-        this.negativePrompt = state.negativePrompt;
-    }
+    const methods = {
+        async updateTitle(newTitle: string) {
+            const { data } = await graphQLRequest<'updateCollection', Pick<Collection, 'title'>>(`
+                mutation {
+                    updateCollection(id: ${state.id}, title: "${newTitle}") {
+                        title
+                    }
+                }
+            `);
 
-    async updateTitle(newTitle: string) {
-        const { data } = await graphQLRequest<'updateCollection', Pick<Collection, 'title'>>(`
-            mutation {
-                updateCollection(id: ${this.id}, title: "${newTitle}") {
-                    title
+            state.title = data.updateCollection.title;
+
+            store.update(_ => ({ ...state }));
+        },
+        async delete() {
+            if (confirm('Are you sure you want to delete this collection?')) {
+                try {
+                    await graphQLRequest<'deleteCollection', boolean>(`
+                        mutation {
+                            deleteCollection(id: ${state.id})
+                        }
+                    `);
+                    snackBar('Collection deleted');
+                    return true;
+                }
+                catch (e) {
+                    snackBar('Failed to delete collection');
+                    console.error(e);
+                    return false;
                 }
             }
-        `);
-        this.setState({ ...this, title: data.updateCollection.title });
-    }
+            return false;
+        },
+        contextMenu(e: MouseEvent) {
+            e.preventDefault();
 
-    async delete() {
-        if (confirm('Are you sure you want to delete this collection?')) {
-            try {
-                await graphQLRequest<'deleteCollection', boolean>(`
-                    mutation {
-                        deleteCollection(id: ${this.id})
-                    }
-                `);
-                snackBar('Collection deleted');
-                return true;
-            }
-            catch (e) {
-                snackBar('Failed to delete collection');
-                console.error(e);
-                return false;
-            }
-        }
-        return false;
-    }
-
-    async contextMenu(e: MouseEvent) {
-        e.preventDefault();
-
-        contextMenu.create({
-            top: e.clientY,
-            left: e.clientX,
-            menus: [
-                {
-                    label: 'Rename',
-                    click: () => {
-                        const title = prompt(
-                            'Enter a new title',
-                            this.title,
-                        );
-                        if (title) {
-                            this.updateTitle(title);
-                        }
+            contextMenu.create({
+                top: e.clientY,
+                left: e.clientX,
+                menus: [
+                    {
+                        label: 'Rename',
+                        click: () => {
+                            const title = prompt(
+                                'Enter a new title',
+                                state.title,
+                            );
+                            if (title) {
+                                this.updateTitle(title);
+                            }
+                        },
                     },
-                },
-                {
-                    label: 'Delete',
-                    click: () => {
-                        this.delete();
+                    {
+                        label: 'Delete',
+                        click: () => {
+                            this.delete();
+                        },
                     },
-                },
-            ],
-        });
-    }
+                ],
+            });
+        },
+    };
 
-    static from(state: Collection) {
-        return new CollectionModel(state);
-    }
+    return {
+        ...store,
+        ...methods,
+    };
 }
+
+export type CollectionModel = ReturnType<typeof collectionModel>;

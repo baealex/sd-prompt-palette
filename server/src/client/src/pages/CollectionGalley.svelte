@@ -1,28 +1,37 @@
 <script lang="ts">
     import { onDestroy, onMount } from "svelte";
-    import { Link } from "svelte-routing";
+    import { derived, get } from "svelte/store";
 
     import CollectionNav from "../components/CollectionNav.svelte";
 
-    import type { Collection } from "../models/types";
+    import { collectionModel } from "../models/collection";
+    import type { CollectionModel } from "../models/collection";
 
     import { getCollections } from "../api";
+    import { Link } from "svelte-routing";
     import { useMemoState } from "../modules/memo";
 
     import pathStore from "../store/path";
 
     let page = 1;
     const limit = 9999;
-    let [collections, memoCollections] = useMemoState<Collection[]>(
+    let [collections, memoCollections] = useMemoState<CollectionModel[]>(
         ["collections", page],
         []
+    );
+
+    $: resolveCollections = derived(collections, () =>
+        collections.map((collection) => ({
+            ...collection,
+            ...get(collection),
+        }))
     );
 
     onMount(() => {
         pathStore.set({ colllection: "/collection/gallery" });
 
         getCollections({ page, limit }).then(({ data }) => {
-            collections = data.allCollections;
+            collections = data.allCollections.map(collectionModel);
         });
     });
 
@@ -34,11 +43,10 @@
 <div class="container">
     <CollectionNav />
     <div class="collection">
-        {#each collections as collection}
+        {#each $resolveCollections as collection}
             <Link to={`/collection/${collection.id}`}>
                 <img
                     class="image"
-                    loading="lazy"
                     src={collection.image.url}
                     alt={collection.title}
                 />

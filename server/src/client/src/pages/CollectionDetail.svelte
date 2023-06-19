@@ -1,9 +1,10 @@
 <script lang="ts">
-    import { afterUpdate, onDestroy, onMount } from "svelte";
+    import { onDestroy, onMount } from "svelte";
 
     import CollectionCard from "../components/CollectionCard.svelte";
 
-    import { CollectionModel } from "../models/collection";
+    import { collectionModel } from "../models/collection";
+    import type { CollectionModel } from "../models/collection";
 
     import { snackBar } from "../modules/ui/snack-bar";
     import { useMemoState } from "../modules/memo";
@@ -21,16 +22,8 @@
         if (!id || collection) return;
 
         API.getCollection({ id }).then(({ data }) => {
-            collection = CollectionModel.from(data.collection);
+            collection = collectionModel(data.collection);
         });
-    });
-
-    afterUpdate(() => {
-        if (collection instanceof CollectionModel) {
-            collection.subscribe((state) => {
-                collection = CollectionModel.from(state);
-            });
-        }
     });
 
     onDestroy(() => {
@@ -57,10 +50,10 @@
             <p>Loading...</p>
         {:else}
             <CollectionCard
-                title={collection.title}
-                image={collection.image.url}
-                prompt={collection.prompt}
-                negativePrompt={collection.negativePrompt}
+                title={$collection.title}
+                image={$collection.image.url}
+                prompt={$collection.prompt}
+                negativePrompt={$collection.negativePrompt}
                 onClickCopy={handleCopyText}
                 onClickDelete={handleDelete}
                 onContextMenu={handleConextMenu}
