@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { onDestroy, onMount } from "svelte";
+    import { afterUpdate, onDestroy, onMount } from "svelte";
 
-    import type { Collection } from "../models/types";
+    import { CollectionModel } from "../models/collection";
 
     import CollectionNav from "../components/CollectionNav.svelte";
     import CollectionCard from "../components/CollectionCard.svelte";
@@ -9,13 +9,13 @@
     import { useMemoState } from "../modules/memo";
     import { snackBar } from "../modules/ui/snack-bar";
 
-    import { deleteCollection, getCollections } from "../api";
+    import { getCollections } from "../api";
 
     import pathStore from "../store/path";
 
     let page = 1;
     const limit = 9999;
-    let [collections, memoCollections] = useMemoState<Collection[]>(
+    let [collections, memoCollections] = useMemoState<CollectionModel[]>(
         ["collections", page],
         []
     );
@@ -24,8 +24,22 @@
         pathStore.set({ colllection: "/collection" });
 
         getCollections({ page, limit }).then(({ data }) => {
-            collections = data.allCollections;
+            collections = data.allCollections.map(CollectionModel.from);
         });
+    });
+
+    afterUpdate(() => {
+        if (collections instanceof Array) {
+            collections.forEach((collection) => {
+                if (collection instanceof CollectionModel) {
+                    collection.subscribe((state) => {
+                        collections = collections.map((c) =>
+                            c.id === state.id ? CollectionModel.from(state) : c
+                        );
+                    });
+                }
+            });
+        }
     });
 
     onDestroy(() => {
@@ -37,12 +51,15 @@
         snackBar("Copied to clipboard");
     };
 
-    const handleDelete = async (id: number) => {
-        if (confirm("Are you sure you want to delete this collection?")) {
-            await deleteCollection({ id });
-            collections = collections.filter((c) => c.id !== id);
-            snackBar("Deleted collection");
+    const handleDelete = async (collection: CollectionModel) => {
+        const success = await collection.delete();
+        if (success) {
+            collections = collections.filter((c) => c.id !== collection.id);
         }
+    };
+
+    const handleConextMenu = (e: MouseEvent, collection: CollectionModel) => {
+        collection.contextMenu(e);
     };
 </script>
 
@@ -56,7 +73,8 @@
                 prompt={collection.prompt}
                 negativePrompt={collection.negativePrompt}
                 onClickCopy={handleCopyText}
-                onClickDelete={() => handleDelete(collection.id)}
+                onClickDelete={() => handleDelete(collection)}
+                onContextMenu={(e) => handleConextMenu(e, collection)}
             />
         {/each}
     </div>

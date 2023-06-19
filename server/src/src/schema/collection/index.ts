@@ -31,6 +31,7 @@ export const CollectionQuery = gql`
 export const CollectionMutation = gql`
     type Mutation {
         createCollection(imageId: ID!, title: String!, prompt: String!, negativePrompt: String!): Collection!
+        updateCollection(id: ID!, imageId: ID, title: String, prompt: String, negativePrompt: String): Collection!
         deleteCollection(id: ID!): Boolean!
     }
 `;
@@ -67,6 +68,28 @@ export const CollectionResolvers: IResolvers = {
                             id: imageId,
                         },
                     },
+                    title,
+                    prompt,
+                    negativePrompt,
+                },
+            });
+
+            return collection;
+        },
+        updateCollection: async (_, { id, imageId, title, prompt, negativePrompt }: Partial<Collection>) => {
+            id = Number(id);
+            imageId = Number(imageId);
+
+            const collection = await models.collection.update({
+                where: {
+                    id,
+                },
+                data: {
+                    image: imageId ? {
+                        connect: {
+                            id: imageId,
+                        },
+                    } : undefined,
                     title,
                     prompt,
                     negativePrompt,

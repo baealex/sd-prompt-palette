@@ -1,15 +1,18 @@
 <script lang="ts">
-    import type { Collection } from "../models/types";
+    import { afterUpdate, onDestroy, onMount } from "svelte";
+
+    import CollectionCard from "../components/CollectionCard.svelte";
+
+    import { CollectionModel } from "../models/collection";
+
     import { snackBar } from "../modules/ui/snack-bar";
     import { useMemoState } from "../modules/memo";
 
-    import { deleteCollection, getCollection } from "../api";
-    import CollectionCard from "../components/CollectionCard.svelte";
-    import { onDestroy, onMount } from "svelte";
+    import * as API from "../api";
 
     export let id;
 
-    let [collection, memoCollection] = useMemoState<Collection>(
+    let [collection, memoCollection] = useMemoState<CollectionModel>(
         ["collection", id],
         null
     );
@@ -17,9 +20,17 @@
     onMount(() => {
         if (!id || collection) return;
 
-        getCollection({ id }).then(({ data }) => {
-            collection = data.collection;
+        API.getCollection({ id }).then(({ data }) => {
+            collection = CollectionModel.from(data.collection);
         });
+    });
+
+    afterUpdate(() => {
+        if (collection instanceof CollectionModel) {
+            collection.subscribe((state) => {
+                collection = CollectionModel.from(state);
+            });
+        }
     });
 
     onDestroy(() => {
@@ -31,10 +42,12 @@
         snackBar("Copied to clipboard");
     };
 
-    const handleDelete = async (id: number) => {
-        if (confirm("Are you sure you want to delete this collection?")) {
-            await deleteCollection({ id });
-        }
+    const handleDelete = () => {
+        collection.delete();
+    };
+
+    const handleConextMenu = (e: MouseEvent) => {
+        collection.contextMenu(e);
     };
 </script>
 
@@ -49,7 +62,8 @@
                 prompt={collection.prompt}
                 negativePrompt={collection.negativePrompt}
                 onClickCopy={handleCopyText}
-                onClickDelete={() => handleDelete(collection.id)}
+                onClickDelete={handleDelete}
+                onContextMenu={handleConextMenu}
             />
         {/if}
     </div>

@@ -9,6 +9,7 @@
     export let negativePrompt: string;
     export let onClickCopy: (text: string) => void;
     export let onClickDelete: () => void;
+    export let onContextMenu: (e: MouseEvent) => void = null;
 
     const createKeywords = (text: string) =>
         text
@@ -22,13 +23,13 @@
 
 <div class="item">
     <div class="header">
-        <h2>{title}</h2>
+        <h2 on:contextmenu={onContextMenu}>{title}</h2>
         <button class="primary-button" on:click={onClickDelete}>
             <Delete />
             Remove
         </button>
     </div>
-    <img class="image" src={image} alt={title} />
+    <img class="image" loading="lazy" src={image} alt={title} />
     <div class="body">
         <CategoryHeader
             title="Prompt"

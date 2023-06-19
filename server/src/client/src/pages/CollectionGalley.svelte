@@ -38,6 +38,7 @@
             <Link to={`/collection/${collection.id}`}>
                 <img
                     class="image"
+                    loading="lazy"
                     src={collection.image.url}
                     alt={collection.title}
                 />
