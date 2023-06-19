@@ -19,7 +19,7 @@
     );
 
     onMount(() => {
-        if (!id || collection) return;
+        if (!id) return;
 
         API.getCollection({ id }).then(({ data }) => {
             collection = collectionModel(data.collection);

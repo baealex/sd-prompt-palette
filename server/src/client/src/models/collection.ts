@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+import { Writable, writable } from 'svelte/store';
 
 import type { Collection } from './types';
 
@@ -63,7 +63,7 @@ export function collectionModel(state: Collection) {
                         },
                     },
                     {
-                        label: 'Delete',
+                        label: 'Remove',
                         click: () => {
                             this.delete();
                         },
@@ -73,10 +73,7 @@ export function collectionModel(state: Collection) {
         },
     };
 
-    return {
-        ...store,
-        ...methods,
-    };
+    return Object.assign(store, methods);
 }
 
-export type CollectionModel = ReturnType<typeof collectionModel>;
+export type CollectionModel = Writable<Collection> & ReturnType<typeof collectionModel>;

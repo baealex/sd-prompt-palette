@@ -52,7 +52,6 @@
                 />
             </Link>
         {/each}
-        <div data-name="pagination" />
     </div>
 </div>
 
