@@ -1,5 +1,5 @@
 import express from 'express';
-import { graphqlHTTP } from 'express-graphql';
+import { createHandler } from 'graphql-http/lib/use/express';
 import path from 'path';
 
 import expressLogger, { logger } from './modules/logger';
@@ -12,9 +12,9 @@ export default express()
         extensions: ['html']
     }))
     .use(express.json({ limit: '50mb' }))
-    .use('/graphql', graphqlHTTP({
+    .use('/graphql', createHandler({
         schema,
-        customFormatErrorFn(error) {
+        formatError(error) {
             logger.error(error.message);
             return error;
         },
