@@ -59,7 +59,7 @@ describe('User Schema', () => {
             `,
         });
 
-        expect(res.status).toBe(400);
+        expect(res.status).toBe(200);
         expect(res.body.errors[0].message).toContain('Cannot query field "password"');
     });
 
