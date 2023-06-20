@@ -6,7 +6,7 @@
   import Idea from "./pages/Idea.svelte";
   import Collection from "./pages/Collection.svelte";
   import CollectionDetail from "./pages/CollectionDetail.svelte";
-  import CollectionGalley from "./pages/CollectionGalley.svelte";
+  import CollectionGallery from "./pages/CollectionGallery.svelte";
   import ImageLoad from "./pages/ImageLoad.svelte";
 </script>
 
@@ -16,7 +16,7 @@
     <Route path="/" component={Home} />
     <Route path="/idea" component={Idea} />
     <Route path="/collection" component={Collection} />
-    <Route path="/collection/gallery" component={CollectionGalley} />
+    <Route path="/collection/gallery" component={CollectionGallery} />
     <Route path="/collection/:id" let:params>
       <CollectionDetail id={params.id} />
     </Route>
