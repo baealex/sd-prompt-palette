@@ -21,7 +21,8 @@
     let slideShowRef: HTMLDivElement = null;
 
     let index = 0;
-    let threeRandomCollections: Collection[] = [];
+    let transition = true;
+    let randomCollections: Collection[] = [];
 
     $: resolveRandomCollections = derived(collections, () =>
         collections
@@ -33,17 +34,17 @@
     );
 
     const setRandomCollections = () => {
-        threeRandomCollections = [
+        randomCollections = [
             $resolveRandomCollections[index],
             $resolveRandomCollections[index + 1] ??
                 $resolveRandomCollections[0],
-            $resolveRandomCollections[index + 2] ??
-                $resolveRandomCollections[1],
         ];
         index += 1;
-        if (index >= $resolveRandomCollections.length - 1) {
+        if (index >= $resolveRandomCollections.length) {
             index = 0;
         }
+        transition = false;
+        setTimeout(() => (transition = true), 0);
     };
 
     onMount(() => {
@@ -54,7 +55,7 @@
         });
 
         slideShowRef.addEventListener(
-            "animationiteration",
+            "animationend",
             setRandomCollections,
             false
         );
@@ -66,20 +67,24 @@
         memoCollections(collections);
 
         slideShowRef.removeEventListener(
-            "animationiteration",
+            "animationend",
             setRandomCollections,
             false
         );
     });
 </script>
 
-<div bind:this={slideShowRef} class="slide-show">
-    {#if threeRandomCollections.length === 0}
+<div
+    bind:this={slideShowRef}
+    data-index={index}
+    class={`slide-show ${transition && "transition"}`}
+>
+    {#if randomCollections.length === 0}
         <div class="item">
             <span>Generating a show for you...</span>
         </div>
     {/if}
-    {#each threeRandomCollections as randomCollection}
+    {#each randomCollections as randomCollection}
         <div class="item">
             <div
                 class="background"
@@ -101,10 +106,7 @@
 
 <style lang="scss">
     @keyframes slide-show {
-        0% {
-            transform: translate(0, 0);
-        }
-        85% {
+        90% {
             transform: translate(0, 0);
         }
         100% {
@@ -116,7 +118,10 @@
         position: relative;
         width: 100%;
         height: 100vh;
-        animation: slide-show 6s ease-in-out infinite;
+    }
+
+    .transition {
+        animation: slide-show 6s ease-out 1;
     }
 
     .item {
@@ -154,7 +159,7 @@
             top: 40px;
             left: 40px;
             font-size: 1.2rem;
-            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            text-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
             font-weight: bold;
             color: #eee;
         }
