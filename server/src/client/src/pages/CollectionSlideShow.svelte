@@ -83,20 +83,17 @@
         <div class="item">
             <div
                 class="background"
-                style="
-                    background-image: url({randomCollection.image.url});
-                    filter: blur(30px);
-                "
+                style="background-image: url({randomCollection.image.url});"
             />
-            <Link to={`/collection/${randomCollection.id}`}>
-                <img
-                    class="image"
-                    src={randomCollection.image.url}
-                    alt={randomCollection.title}
-                />
-            </Link>
+            <img
+                class="image"
+                src={randomCollection.image.url}
+                alt={randomCollection.title}
+            />
             <div class="title">
-                {randomCollection.title}
+                <Link to={`/collection/${randomCollection.id}`}>
+                    {randomCollection.title}
+                </Link>
             </div>
         </div>
     {/each}
@@ -138,6 +135,7 @@
             left: -10%;
             width: 120%;
             height: 120%;
+            filter: blur(30px);
             background-size: cover;
             background-repeat: no-repeat;
         }
@@ -153,7 +151,7 @@
 
         .title {
             position: absolute;
-            bottom: 40px;
+            top: 40px;
             left: 40px;
             font-size: 1.2rem;
             text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
