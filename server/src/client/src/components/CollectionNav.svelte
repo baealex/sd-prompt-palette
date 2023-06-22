@@ -2,6 +2,7 @@
     import { Link } from "svelte-routing";
     import List from "../icons/List.svelte";
     import Grid from "../icons/Grid.svelte";
+    import Image from "../icons/Image.svelte";
 </script>
 
 <div class="collection-nav">
@@ -12,6 +13,10 @@
     <Link to="/collection/gallery">
         <Grid />
         Grid
+    </Link>
+    <Link to="/collection/slide-show">
+        <Image />
+        Show
     </Link>
 </div>
 
