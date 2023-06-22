@@ -56,14 +56,6 @@
 </div>
 
 <style lang="scss">
-    .container {
-        padding: 2rem;
-
-        @media (max-width: 768px) {
-            padding: 1rem;
-        }
-    }
-
     .collection {
         column-width: 350px;
         column-gap: 16px;

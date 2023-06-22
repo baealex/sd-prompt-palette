@@ -60,7 +60,7 @@
     };
 </script>
 
-<div class="container">
+<div class="container grid">
     <form on:submit={handleSubmitGenerate}>
         {#each categories as category}
             <label class="checkbox-wrapper">
@@ -97,19 +97,16 @@
 </div>
 
 <style lang="scss">
-    .container {
-        padding: 2rem;
+    .grid {
         display: grid;
         grid-template-columns: 1fr 3fr;
         gap: 2rem;
 
         @media (max-width: 1024px) {
-            padding: 1rem;
             grid-template-columns: 1fr 2fr;
         }
 
         @media (max-width: 768px) {
-            padding: 1rem;
             grid-template-columns: 1fr;
         }
     }

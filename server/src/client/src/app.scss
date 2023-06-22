@@ -68,3 +68,11 @@ a {
     height: 1rem;
   }
 }
+
+.container {
+  padding: 2rem;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+}

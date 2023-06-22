@@ -6,7 +6,7 @@
     import Heart from "../icons/Heart.svelte";
 
     import { imageToBase64, readPromptInfo } from "../modules/image";
-    import { useMemo, useMemoState } from "../modules/memo";
+    import { useMemoState } from "../modules/memo";
     import { snackBar } from "../modules/ui/snack-bar";
 
     let inputRef: HTMLInputElement;
@@ -35,6 +35,14 @@
         memoLoader(loader);
     });
 
+    const cleanPromptText = (text: string) => {
+        return text
+            .split(",")
+            .map((t) => t.trim())
+            .filter((t) => t)
+            .join(", ");
+    };
+
     const loadImage = async () => {
         helpRef.style.display = "none";
         imageRef.style.display = "block";
@@ -53,14 +61,8 @@
             onSuccess: (info) => {
                 loader = {
                     ...loader,
-                    promptText: info.prompt
-                        .split(",")
-                        .filter((t) => t.trim())
-                        .join(", "),
-                    negativePromptText: info.negativePrompt
-                        .split(",")
-                        .filter((t) => t.trim())
-                        .join(", "),
+                    promptText: cleanPromptText(info.prompt),
+                    negativePromptText: cleanPromptText(info.negativePrompt),
                 };
             },
         });
@@ -103,8 +105,8 @@
         await createCollection({
             imageId: data.id,
             title,
-            prompt: loader.promptText,
-            negativePrompt: loader.negativePromptText,
+            prompt: cleanPromptText(loader.promptText),
+            negativePrompt: cleanPromptText(loader.negativePromptText),
         });
         snackBar(`Saved collection: ${title}`);
     };
@@ -179,14 +181,6 @@
 </div>
 
 <style lang="scss">
-    .container {
-        padding: 2rem;
-
-        @media (max-width: 768px) {
-            padding: 1rem;
-        }
-    }
-
     .grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);

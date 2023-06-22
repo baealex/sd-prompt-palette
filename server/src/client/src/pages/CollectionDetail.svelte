@@ -61,13 +61,3 @@
         {/if}
     </div>
 </div>
-
-<style lang="scss">
-    .container {
-        padding: 2rem;
-
-        @media (max-width: 768px) {
-            padding: 1rem;
-        }
-    }
-</style>
