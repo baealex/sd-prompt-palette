@@ -2,8 +2,11 @@
     import { Link } from "svelte-routing";
     import pathStore from "../store/path";
     import { onMount } from "svelte";
+    import Menu from "../icons/Menu.svelte";
+    import Cross from "../icons/Cross.svelte";
 
     let collectionPath = pathStore.state.colllection;
+    let menuOpen = false;
 
     onMount(() => {
         pathStore.subscribe((state) => {
@@ -16,7 +19,14 @@
     <Link to="/">
         <h1>Prompt Palette</h1>
     </Link>
-    <div class="links">
+    <button class="menu" on:click={() => (menuOpen = !menuOpen)}>
+        {#if menuOpen}
+            <Cross />
+        {:else}
+            <Menu />
+        {/if}
+    </button>
+    <div class="links {menuOpen ? 'open' : ''}">
         <Link to="/">Home</Link>
         <Link to="/idea">Idea</Link>
         <Link to={collectionPath}>Collection</Link>
@@ -52,6 +62,48 @@
 
         :global([aria-current="page"]) {
             color: #333;
+        }
+
+        @media (max-width: 768px) {
+            display: none;
+
+            &.open {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                background-color: #fff;
+                width: 100%;
+                gap: 1.5rem;
+                padding: 2rem 1rem;
+                position: absolute;
+                top: 80px;
+                left: 0;
+                z-index: 1;
+            }
+        }
+    }
+
+    .menu {
+        display: none;
+        background-color: transparent;
+        border: none;
+        outline: none;
+        padding: 0;
+        margin: 0;
+        color: #000;
+        font-size: 1.5rem;
+
+        &:hover {
+            box-shadow: none;
+        }
+
+        :global(svg) {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            display: flex;
         }
     }
 </style>
