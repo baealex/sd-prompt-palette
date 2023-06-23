@@ -7,7 +7,7 @@ import { contextMenu } from '../modules/ui/context-menu';
 
 import { graphQLRequest } from '../api';
 
-export function collectionModel(state: Collection) {
+export function collectionState(state: Collection) {
     const store = writable<Collection>(state);
 
     const methods = {
@@ -76,4 +76,4 @@ export function collectionModel(state: Collection) {
     return Object.assign(store, methods);
 }
 
-export type CollectionModel = Writable<Collection> & ReturnType<typeof collectionModel>;
+export type CollectionState = Writable<Collection> & ReturnType<typeof collectionState>;

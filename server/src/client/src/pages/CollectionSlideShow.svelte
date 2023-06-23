@@ -3,8 +3,8 @@
     import { derived, get } from "svelte/store";
     import { Link } from "svelte-routing";
 
-    import { collectionModel } from "../models/collection";
-    import type { CollectionModel } from "../models/collection";
+    import { collectionState } from "../models/collection";
+    import type { CollectionState } from "../models/collection";
 
     import { getCollections } from "../api";
     import { useMemoState } from "../modules/memo";
@@ -13,7 +13,7 @@
 
     let page = 1;
     const limit = 9999;
-    let [collections, memoCollections] = useMemoState<CollectionModel[]>(
+    let [collections, memoCollections] = useMemoState<CollectionState[]>(
         ["collections", page],
         []
     );
@@ -51,7 +51,7 @@
         document.body.style.overflow = "hidden";
 
         getCollections({ page, limit }).then(({ data }) => {
-            collections = data.allCollections.map(collectionModel);
+            collections = data.allCollections.map(collectionState);
         });
 
         slideShowRef.addEventListener(

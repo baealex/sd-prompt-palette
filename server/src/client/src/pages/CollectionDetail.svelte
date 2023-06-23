@@ -3,8 +3,8 @@
 
     import CollectionCard from "../components/CollectionCard.svelte";
 
-    import { collectionModel } from "../models/collection";
-    import type { CollectionModel } from "../models/collection";
+    import { collectionState } from "../models/collection";
+    import type { CollectionState } from "../models/collection";
 
     import { snackBar } from "../modules/ui/snack-bar";
     import { useMemoState } from "../modules/memo";
@@ -13,7 +13,7 @@
 
     export let id;
 
-    let [collection, memoCollection] = useMemoState<CollectionModel>(
+    let [collection, memoCollection] = useMemoState<CollectionState>(
         ["collection", id],
         null
     );
@@ -22,7 +22,7 @@
         if (!id) return;
 
         API.getCollection({ id }).then(({ data }) => {
-            collection = collectionModel(data.collection);
+            collection = collectionState(data.collection);
         });
     });
 

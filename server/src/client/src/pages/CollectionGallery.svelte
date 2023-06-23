@@ -4,8 +4,8 @@
 
     import CollectionNav from "../components/CollectionNav.svelte";
 
-    import { collectionModel } from "../models/collection";
-    import type { CollectionModel } from "../models/collection";
+    import { collectionState } from "../models/collection";
+    import type { CollectionState } from "../models/collection";
 
     import { getCollections } from "../api";
     import { Link } from "svelte-routing";
@@ -15,7 +15,7 @@
 
     let page = 1;
     const limit = 9999;
-    let [collections, memoCollections] = useMemoState<CollectionModel[]>(
+    let [collections, memoCollections] = useMemoState<CollectionState[]>(
         ["collections", page],
         []
     );
@@ -31,7 +31,7 @@
         pathStore.set({ colllection: "/collection/gallery" });
 
         getCollections({ page, limit }).then(({ data }) => {
-            collections = data.allCollections.map(collectionModel);
+            collections = data.allCollections.map(collectionState);
         });
     });
 

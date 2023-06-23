@@ -2,8 +2,8 @@
     import { onDestroy, onMount } from "svelte";
     import { derived, get } from "svelte/store";
 
-    import { collectionModel } from "../models/collection";
-    import type { CollectionModel } from "../models/collection";
+    import { collectionState } from "../models/collection";
+    import type { CollectionState } from "../models/collection";
 
     import CollectionNav from "../components/CollectionNav.svelte";
     import CollectionCard from "../components/CollectionCard.svelte";
@@ -17,7 +17,7 @@
 
     let page = 1;
     const limit = 9999;
-    let [collections, memoCollections] = useMemoState<CollectionModel[]>(
+    let [collections, memoCollections] = useMemoState<CollectionState[]>(
         ["collections", page],
         []
     );
@@ -33,7 +33,7 @@
         pathStore.set({ colllection: "/collection" });
 
         getCollections({ page, limit }).then(({ data }) => {
-            collections = data.allCollections.map(collectionModel);
+            collections = data.allCollections.map(collectionState);
         });
     });
 
@@ -46,7 +46,7 @@
         snackBar("Copied to clipboard");
     };
 
-    const handleDelete = async (collection: CollectionModel) => {
+    const handleDelete = async (collection: CollectionState) => {
         const success = await collection.delete();
         if (success) {
             collections = collections.filter(
@@ -55,7 +55,7 @@
         }
     };
 
-    const handleConextMenu = (e: MouseEvent, collection: CollectionModel) => {
+    const handleConextMenu = (e: MouseEvent, collection: CollectionState) => {
         collection.contextMenu(e);
     };
 </script>
