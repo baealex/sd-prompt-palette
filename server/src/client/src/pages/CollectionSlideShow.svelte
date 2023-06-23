@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onDestroy, onMount } from "svelte";
+    import { afterUpdate, onDestroy, onMount } from "svelte";
     import { derived, get } from "svelte/store";
     import { Link } from "svelte-routing";
 
@@ -10,6 +10,8 @@
     import { useMemoState } from "../modules/memo";
 
     import type { Collection } from "../models/types";
+    import Play from "../icons/Play.svelte";
+    import Pause from "../icons/Pause.svelte";
 
     let page = 1;
     const limit = 9999;
@@ -20,8 +22,8 @@
 
     let slideShowRef: HTMLDivElement = null;
 
+    let play = true;
     let index = 0;
-    let transition = true;
     let randomCollections: Collection[] = [];
 
     $: resolveRandomCollections = derived(collections, () =>
@@ -43,8 +45,8 @@
         if (index >= $resolveRandomCollections.length) {
             index = 0;
         }
-        transition = false;
-        setTimeout(() => (transition = true), 0);
+        play = false;
+        setTimeout(() => (play = true), 0);
     };
 
     onMount(() => {
@@ -77,7 +79,7 @@
 <div
     bind:this={slideShowRef}
     data-index={index}
-    class={`slide-show ${transition && "transition"}`}
+    class={`slide-show ${play && "transition"}`}
 >
     {#if randomCollections.length === 0}
         <div class="item">
@@ -103,6 +105,13 @@
         </div>
     {/each}
 </div>
+<button class="play" on:click={() => (play = !play)}>
+    {#if play}
+        <Play />
+    {:else}
+        <Pause />
+    {/if}
+</button>
 
 <style lang="scss">
     @keyframes slide-show {
@@ -162,6 +171,28 @@
             text-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
             font-weight: bold;
             color: #eee;
+        }
+    }
+
+    .play {
+        position: fixed;
+        bottom: 40px;
+        right: 40px;
+        z-index: 2;
+        background: transparent;
+        border: none;
+        outline: none;
+        opacity: 0.15;
+
+        :global(svg) {
+            width: 1.5rem;
+            height: 1.5rem;
+            color: #fff;
+        }
+
+        &:hover {
+            opacity: 1;
+            box-shadow: none;
         }
     }
 </style>
