@@ -7,6 +7,7 @@
     import KeywordsList from "../components/KeywordsList.svelte";
     import CategoryHeader from "../components/CategoryHeader.svelte";
     import { snackBar } from "../modules/ui/snack-bar";
+    import Checkbox from "../components/Checkbox.svelte";
 
     let [categories, memoCategories] = useMemoState<Category[]>(
         ["categories"],
@@ -40,14 +41,19 @@
         snackBar("Copied to clipboard");
     };
 
+    const handleChangeCheckbox = (e: Event) => {
+        const checkbox = e.target as HTMLInputElement;
+        const name = checkbox.name;
+
+        if (checkbox.checked) {
+            selected = [...selected, name];
+        } else {
+            selected = selected.filter((el) => el !== name);
+        }
+    };
+
     const handleSubmitGenerate = (e: Event) => {
         e.preventDefault();
-
-        selected = Array.from(
-            (e.target as HTMLFormElement).querySelectorAll("input")
-        )
-            .filter((el) => el.checked)
-            .map((el) => el.name);
 
         keywords = categories
             .filter((category) => selected.includes(category.name))
@@ -63,15 +69,12 @@
 <div class="container grid">
     <form on:submit={handleSubmitGenerate}>
         {#each categories as category}
-            <label class="checkbox-wrapper">
-                <input
-                    type="checkbox"
-                    name={category.name}
-                    checked={selected.includes(category.name)}
-                />
-                <div class="checkbox" />
-                {category.name}
-            </label>
+            <Checkbox
+                name={category.name}
+                label={category.name}
+                checked={selected.includes(category.name)}
+                onChange={handleChangeCheckbox}
+            />
         {/each}
         <button class="primary-button">
             <Data />
@@ -118,31 +121,5 @@
         padding: 1rem;
         border: 1px solid #ccc;
         border-radius: 0.5rem;
-    }
-
-    .checkbox-wrapper {
-        font-size: 1rem;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: #333;
-
-        input {
-            display: none;
-        }
-
-        .checkbox {
-            width: 1rem;
-            height: 1rem;
-            border: 1px solid #ccc;
-            border-radius: 0.25rem;
-            background-color: #fff;
-        }
-
-        input:checked + .checkbox {
-            background-color: #333;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M9.172 16.172a.5.5 0 0 1-.707 0L4.5 12.207l1.414-1.414L9.172 13.58l7.88-7.88 1.414 1.414z'/%3E%3C/svg%3E");
-        }
     }
 </style>
