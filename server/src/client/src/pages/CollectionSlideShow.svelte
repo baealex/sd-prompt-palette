@@ -107,9 +107,9 @@
 </div>
 <button class="play" on:click={() => (play = !play)}>
     {#if play}
-        <Play />
-    {:else}
         <Pause />
+    {:else}
+        <Play />
     {/if}
 </button>
 
