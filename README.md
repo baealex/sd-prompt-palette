@@ -34,10 +34,7 @@
 
 ```
 git clone https://github.com/baealex/sd-prompt-palette
-cd server/src
-npm i
-npm run build:client
-npm run start
+cd sd-prompt-palette/server/src && npm i && npm run build:client && npm run start
 ```
 
 `http://localhost:3332`로 접속할 수 있습니다.
@@ -46,7 +43,7 @@ npm run start
 
 ```
 git clone https://github.com/baealex/sd-prompt-palette
-git pull && docker-compose pull && docker-compose up -d
+cd sd-prompt-palette && git pull && docker-compose pull && docker-compose up -d
 ```
 
 `http://localhost:3000`로 접속할 수 있습니다.
