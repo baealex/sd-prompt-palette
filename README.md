@@ -24,7 +24,7 @@
 
 ## Demo site
 
-[sd-prompt-palette.vvip.page](https://sd-prompt-palette.vvip.page/)
+[sd-prompt-palette-demo.baejino.com](https://sd-prompt-palette-demo.baejino.com/)
 
 <br>
 
