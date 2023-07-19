@@ -6,5 +6,5 @@ services:
     ports:
       - 3000:3332
     volumes:
-      - ./server/src/prisma:/data
+      - ./data:/data
       - ./assets:/assets

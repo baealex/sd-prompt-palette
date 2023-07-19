@@ -42,8 +42,11 @@ cd sd-prompt-palette/server/src && npm i && npm run build:client && npm run star
 ### use Docker
 
 ```
-git clone https://github.com/baealex/sd-prompt-palette
-cd sd-prompt-palette && git pull && docker-compose pull && docker-compose up -d
+docker run \
+    -v ./data:/data \
+    -v ./assets:/assets \
+    -p 3332:3332 \
+    baealex/sd-prompt-palette
 ```
 
-`http://localhost:3000`로 접속할 수 있습니다.
+`http://localhost:3332`로 접속할 수 있습니다.
