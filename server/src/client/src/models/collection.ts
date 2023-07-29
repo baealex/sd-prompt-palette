@@ -1,6 +1,6 @@
 import { writable } from 'svelte/store';
 import type { Writable } from 'svelte/store';
-import { toast } from '@baejino/ui';
+import { confirm, prompt, toast } from '@baejino/ui';
 
 import type { Collection } from './types';
 
@@ -26,7 +26,7 @@ export function collectionState(state: Collection) {
             store.update(_ => ({ ...state }));
         },
         async delete() {
-            if (confirm('Are you sure you want to delete this collection?')) {
+            if (await confirm('Are you sure you want to delete this collection?')) {
                 try {
                     await graphQLRequest<'deleteCollection', boolean>(`
                         mutation {
@@ -53,8 +53,8 @@ export function collectionState(state: Collection) {
                 menus: [
                     {
                         label: 'Rename',
-                        click: () => {
-                            const title = prompt(
+                        click: async () => {
+                            const title = await prompt(
                                 'Enter a new title',
                                 state.title,
                             );

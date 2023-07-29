@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onDestroy, onMount } from "svelte";
-    import { toast } from "@baejino/ui";
+    import { prompt, toast } from "@baejino/ui";
 
     import { CategoryHeader, KeywordsList } from "~/components";
 
@@ -102,7 +102,11 @@
             image: await imageToBase64(loader.image),
         });
 
-        const title = prompt("Enter a title for this collection") || "";
+        const title = await prompt("Enter a title for this collection");
+
+        if (!title) {
+            return;
+        }
 
         await API.createCollection({
             imageId: data.id,
@@ -110,7 +114,7 @@
             prompt: cleanPromptText(loader.promptText),
             negativePrompt: cleanPromptText(loader.negativePromptText),
         });
-        toast(`Saved collection: ${title}`);
+        toast(`Saved to collection`);
     };
 
     const handleCopyText = (text: string) => {

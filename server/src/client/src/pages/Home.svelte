@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onDestroy, onMount } from "svelte";
-    import { toast } from "@baejino/ui";
+    import { prompt, toast } from "@baejino/ui";
 
     import type { Category } from "../models/types";
 
@@ -65,10 +65,13 @@
                 {
                     label: "Rename",
                     click: async () => {
-                        const title = prompt(
+                        const title = await prompt(
                             "Enter new category name",
                             category.name
                         );
+                        if (!title) {
+                            return;
+                        }
                         await updateCategory({
                             id: category.id,
                             name: title,
