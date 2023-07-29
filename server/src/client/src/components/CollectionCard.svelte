@@ -1,7 +1,8 @@
 <script lang="ts">
-    import Delete from "../icons/Delete.svelte";
     import CategoryHeader from "./CategoryHeader.svelte";
     import KeywordsList from "./KeywordsList.svelte";
+
+    import { Delete } from "~/icons";
 
     export let title: string;
     export let image: string;

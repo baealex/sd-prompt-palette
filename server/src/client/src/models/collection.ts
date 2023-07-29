@@ -1,8 +1,9 @@
-import { Writable, writable } from 'svelte/store';
+import { writable } from 'svelte/store';
+import type { Writable } from 'svelte/store';
+import { toast } from '@baejino/ui';
 
 import type { Collection } from './types';
 
-import { snackBar } from '../modules/ui/snack-bar';
 import { contextMenu } from '../modules/ui/context-menu';
 
 import { graphQLRequest } from '../api';
@@ -32,11 +33,11 @@ export function collectionState(state: Collection) {
                             deleteCollection(id: ${state.id})
                         }
                     `);
-                    snackBar('Collection deleted');
+                    toast('Collection deleted');
                     return true;
                 }
                 catch (e) {
-                    snackBar('Failed to delete collection');
+                    toast('Failed to delete collection');
                     console.error(e);
                     return false;
                 }

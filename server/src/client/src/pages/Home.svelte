@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onDestroy, onMount } from "svelte";
+    import { toast } from "@baejino/ui";
 
     import type { Category } from "../models/types";
 
@@ -22,7 +23,6 @@
         updateKeywordOrder,
     } from "../api";
     import type { Keyword } from "../models/types";
-    import { snackBar } from "../modules/ui/snack-bar";
     import { contextMenu } from "../modules/ui/context-menu";
     import { useMemoState } from "../modules/memo";
     import Plus from "../icons/Plus.svelte";
@@ -49,12 +49,12 @@
 
     const handleClickCopyAll = (keywords: Keyword[]) => {
         navigator.clipboard.writeText(keywords.map((k) => k.name).join(", "));
-        snackBar("Copied all keywords");
+        toast("Copied all keywords");
     };
 
     const handleClickKeyword = (keyword: Keyword) => {
         navigator.clipboard.writeText(keyword.name);
-        snackBar("Copied keyword");
+        toast("Copied keyword");
     };
 
     const handleContextMenuCategory = (e: MouseEvent, category: Category) => {
@@ -118,7 +118,7 @@
                             }
                             return c;
                         });
-                        snackBar("Removed keyword");
+                        toast("Removed keyword");
                     },
                 },
             ].concat(
@@ -189,7 +189,7 @@
                 return c;
             });
             pendingUploadImageKeywordId = undefined;
-            snackBar("Added sample image");
+            toast("Added sample image");
         }
     };
 
@@ -200,7 +200,7 @@
         const name = formData.get("name") as string;
 
         if (!name) {
-            snackBar("Please enter a category name");
+            toast("Please enter a category name");
             return;
         }
 
@@ -218,7 +218,7 @@
                 return c;
             }),
         ];
-        snackBar("Added category");
+        toast("Added category");
         target.reset();
     };
 
@@ -230,7 +230,7 @@
         const keywords = formData.get("keyword") as string;
 
         if (!keywords) {
-            snackBar("Please enter a keyword");
+            toast("Please enter a keyword");
             return;
         }
 
@@ -255,7 +255,7 @@
                 return c;
             });
         }
-        snackBar("Added keywords");
+        toast("Added keywords");
         target.reset();
     };
 

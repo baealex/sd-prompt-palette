@@ -1,13 +1,15 @@
 <script lang="ts">
     import { onDestroy, onMount } from "svelte";
-    import { createCollection, imageUpload } from "../api";
-    import CategoryHeader from "../components/CategoryHeader.svelte";
-    import KeywordsList from "../components/KeywordsList.svelte";
-    import Heart from "../icons/Heart.svelte";
+    import { toast } from "@baejino/ui";
 
-    import { imageToBase64, readPromptInfo } from "../modules/image";
-    import { useMemoState } from "../modules/memo";
-    import { snackBar } from "../modules/ui/snack-bar";
+    import { CategoryHeader, KeywordsList } from "~/components";
+
+    import { Heart } from "~/icons";
+
+    import { imageToBase64, readPromptInfo } from "~/modules/image";
+    import { useMemoState } from "~/modules/memo";
+
+    import * as API from "~/api";
 
     let inputRef: HTMLInputElement;
     let imageRef: HTMLImageElement;
@@ -56,7 +58,7 @@
                     promptText: "",
                     negativePromptText: "",
                 };
-                snackBar(err);
+                toast(err);
             },
             onSuccess: (info) => {
                 loader = {
@@ -92,28 +94,28 @@
             !loader.image ||
             (!loader.promptText && !loader.negativePromptText)
         ) {
-            snackBar("Please load an sd image first");
+            toast("Please load an sd image first");
             return;
         }
 
-        const { data } = await imageUpload({
+        const { data } = await API.imageUpload({
             image: await imageToBase64(loader.image),
         });
 
         const title = prompt("Enter a title for this collection") || "";
 
-        await createCollection({
+        await API.createCollection({
             imageId: data.id,
             title,
             prompt: cleanPromptText(loader.promptText),
             negativePrompt: cleanPromptText(loader.negativePromptText),
         });
-        snackBar(`Saved collection: ${title}`);
+        toast(`Saved collection: ${title}`);
     };
 
     const handleCopyText = (text: string) => {
         navigator.clipboard.writeText(text);
-        snackBar("Copied to clipboard");
+        toast("Copied to clipboard");
     };
 </script>
 

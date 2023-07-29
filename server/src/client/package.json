@@ -16,6 +16,8 @@
     "vite": "^4.3.9"
   },
   "dependencies": {
+    "@baejino/style": "^0.0.4",
+    "@baejino/ui": "^0.0.4",
     "axios": "^0.21.1",
     "badland": "^0.2.4"
   }

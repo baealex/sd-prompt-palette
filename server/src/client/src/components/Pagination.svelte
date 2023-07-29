@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { getPageRange } from "../modules/page";
+    import { getPageRange } from "~/modules/page";
 
     export let currentPage = 1;
     export let totalPages = 1;

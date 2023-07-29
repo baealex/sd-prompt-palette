@@ -1,17 +1,18 @@
 <script lang="ts">
     import { onDestroy, onMount } from "svelte";
     import { derived, get } from "svelte/store";
-
-    import CollectionNav from "../components/CollectionNav.svelte";
-
-    import { collectionState } from "../models/collection";
-    import type { CollectionState } from "../models/collection";
-
-    import { getCollections } from "../api";
     import { Link } from "svelte-routing";
-    import { useMemoState } from "../modules/memo";
 
-    import pathStore from "../store/path";
+    import { CollectionNav } from "~/components";
+
+    import { collectionState } from "~/models/collection";
+    import type { CollectionState } from "~/models/collection";
+
+    import { useMemoState } from "~/modules/memo";
+
+    import pathStore from "~/store/path";
+
+    import { getCollections } from "~/api";
 
     let page = 1;
     const limit = 9999;

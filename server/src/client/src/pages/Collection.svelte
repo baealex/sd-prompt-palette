@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onDestroy, onMount } from "svelte";
     import { derived, get } from "svelte/store";
+    import { toast } from "@baejino/ui";
 
     import { collectionState } from "../models/collection";
     import type { CollectionState } from "../models/collection";
@@ -9,7 +10,6 @@
     import CollectionCard from "../components/CollectionCard.svelte";
 
     import { useMemoState } from "../modules/memo";
-    import { snackBar } from "../modules/ui/snack-bar";
 
     import { getCollections } from "../api";
 
@@ -43,7 +43,7 @@
 
     const handleCopyText = (text: string) => {
         navigator.clipboard.writeText(text);
-        snackBar("Copied to clipboard");
+        toast("Copied to clipboard");
     };
 
     const handleDelete = async (collection: CollectionState) => {

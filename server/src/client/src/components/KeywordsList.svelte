@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { Keyword } from "../models/types";
+    import type { Keyword } from "~/models/types";
 
     let dragging = false;
     let dropPoint = 0;

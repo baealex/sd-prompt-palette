@@ -1,6 +1,5 @@
 <script lang="ts">
-    import Draft from "../icons/Draft.svelte";
-    import type { Category, Keyword } from "../models/types";
+    import { Draft } from "~/icons";
 
     export let title: string;
     export let onClickCopy: () => void;

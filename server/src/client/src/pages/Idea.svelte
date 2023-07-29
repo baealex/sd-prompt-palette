@@ -1,13 +1,16 @@
 <script lang="ts">
     import { onDestroy, onMount } from "svelte";
-    import type { Category, Keyword } from "../models/types";
-    import { useMemoState } from "../modules/memo";
-    import { getCategories } from "../api";
-    import Data from "../icons/Data.svelte";
-    import KeywordsList from "../components/KeywordsList.svelte";
-    import CategoryHeader from "../components/CategoryHeader.svelte";
-    import { snackBar } from "../modules/ui/snack-bar";
-    import Checkbox from "../components/Checkbox.svelte";
+    import { toast } from "@baejino/ui";
+
+    import type { Category, Keyword } from "~/models/types";
+
+    import { KeywordsList, CategoryHeader, Checkbox } from "~/components";
+
+    import { Data } from "~/icons";
+
+    import { useMemoState } from "~/modules/memo";
+
+    import { getCategories } from "~/api";
 
     let [categories, memoCategories] = useMemoState<Category[]>(
         ["categories"],
@@ -38,7 +41,7 @@
 
     const handleCopyText = (text: string) => {
         navigator.clipboard.writeText(text);
-        snackBar("Copied to clipboard");
+        toast("Copied to clipboard");
     };
 
     const handleChangeCheckbox = (e: Event) => {

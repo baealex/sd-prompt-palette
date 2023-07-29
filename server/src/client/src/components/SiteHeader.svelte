@@ -1,9 +1,10 @@
 <script lang="ts">
-    import { Link } from "svelte-routing";
-    import pathStore from "../store/path";
     import { onMount } from "svelte";
-    import Menu from "../icons/Menu.svelte";
-    import Cross from "../icons/Cross.svelte";
+    import { Link } from "svelte-routing";
+
+    import { Menu, Cross } from "~/icons";
+
+    import pathStore from "~/store/path";
 
     let collectionPath = pathStore.state.colllection;
     let menuOpen = false;

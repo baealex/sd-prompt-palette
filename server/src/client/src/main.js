@@ -1,6 +1,4 @@
-import './app.scss';
-import './context-menu.scss';
-import './snack-bar.scss';
+import './styles/app.scss';
 
 import App from './App.svelte';
 

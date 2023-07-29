@@ -1,17 +1,17 @@
 <script lang="ts">
-    import { afterUpdate, onDestroy, onMount } from "svelte";
+    import { onDestroy, onMount } from "svelte";
     import { derived, get } from "svelte/store";
     import { Link } from "svelte-routing";
 
-    import { collectionState } from "../models/collection";
-    import type { CollectionState } from "../models/collection";
+    import { Play, Pause } from "~/icons";
 
-    import { getCollections } from "../api";
-    import { useMemoState } from "../modules/memo";
+    import type { Collection } from "~/models/types";
+    import { collectionState } from "~/models/collection";
+    import type { CollectionState } from "~/models/collection";
 
-    import type { Collection } from "../models/types";
-    import Play from "../icons/Play.svelte";
-    import Pause from "../icons/Pause.svelte";
+    import { useMemoState } from "~/modules/memo";
+
+    import { getCollections } from "~/api";
 
     let page = 1;
     const limit = 9999;
