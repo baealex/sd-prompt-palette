@@ -2,31 +2,18 @@
     import { onDestroy, onMount } from "svelte";
     import { prompt, toast } from "@baejino/ui";
 
-    import type { Category } from "../models/types";
+    import type { Category } from "~/models/types";
+    import type { Keyword } from "~/models/types";
 
-    import CategoryHeader from "../components/CategoryHeader.svelte";
-    import KeywordsList from "../components/KeywordsList.svelte";
-    import ArrowUp from "../icons/ArrowUp.svelte";
-    import ArrowDown from "../icons/ArrowDown.svelte";
+    import { CategoryHeader, KeywordsList } from "~/components";
 
-    import {
-        createCategory,
-        createKeyword,
-        createSampleImage,
-        deleteCategory,
-        deleteKeyword,
-        deleteSampleImage,
-        getCategories,
-        imageUpload,
-        updateCategory,
-        updateCategoryOrder,
-        updateKeywordOrder,
-    } from "../api";
-    import type { Keyword } from "../models/types";
-    import { contextMenu } from "../modules/ui/context-menu";
-    import { useMemoState } from "../modules/memo";
-    import Plus from "../icons/Plus.svelte";
-    import { imageToBase64 } from "../modules/image";
+    import { ArrowUp, ArrowDown, Plus } from "~/icons";
+
+    import { contextMenu } from "~/modules/ui/context-menu";
+    import { useMemoState } from "~/modules/memo";
+    import { imageToBase64 } from "~/modules/image";
+
+    import * as API from "~/api";
 
     let inputRef: HTMLInputElement;
     let image: File;
@@ -38,7 +25,7 @@
     );
 
     onMount(() => {
-        getCategories().then(({ data }) => {
+        API.getCategories().then(({ data }) => {
             categoires = data.allCategories;
         });
     });
@@ -72,7 +59,7 @@
                         if (!title) {
                             return;
                         }
-                        await updateCategory({
+                        await API.updateCategory({
                             id: category.id,
                             name: title,
                         });
@@ -87,7 +74,7 @@
                 {
                     label: "Delete",
                     click: async () => {
-                        await deleteCategory({ id: category.id });
+                        await API.deleteCategory({ id: category.id });
                         categoires = categoires
                             .filter((c) => c.id !== category.id)
                             .map((c) => ({ ...c, order: c.order - 1 }));
@@ -109,7 +96,7 @@
                 {
                     label: "Delete",
                     click: async () => {
-                        await deleteKeyword({
+                        await API.deleteKeyword({
                             categoryId,
                             keywordId: keyword.id,
                         });
@@ -130,7 +117,7 @@
                           {
                               label: "Remove sample image",
                               click: async () => {
-                                  await deleteSampleImage({
+                                  await API.deleteSampleImage({
                                       id: keyword.id,
                                   });
                                   categoires = categoires.map((c) => {
@@ -169,10 +156,10 @@
         }
 
         if (pendingUploadImageKeywordId) {
-            const { data: imageData } = await imageUpload({
+            const { data: imageData } = await API.imageUpload({
                 image: await imageToBase64(image),
             });
-            await createSampleImage({
+            await API.createSampleImage({
                 keywordId: pendingUploadImageKeywordId,
                 imageId: imageData.id,
             });
@@ -207,7 +194,7 @@
             return;
         }
 
-        const { data } = await createCategory({ name });
+        const { data } = await API.createCategory({ name });
 
         categoires = [
             {
@@ -242,7 +229,7 @@
                 continue;
             }
 
-            const { data } = await createKeyword({
+            const { data } = await API.createKeyword({
                 categoryId: Number(categoryId),
                 name: keyword,
             });
@@ -268,11 +255,11 @@
         order: number
     ) => {
         e.stopPropagation();
-        await updateCategoryOrder({
+        await API.updateCategoryOrder({
             id: category.id,
             order,
         });
-        const { data } = await getCategories();
+        const { data } = await API.getCategories();
         categoires = data.allCategories;
     };
 
@@ -281,12 +268,12 @@
         keyword: Keyword,
         dropPoint: number
     ) => {
-        await updateKeywordOrder({
+        await API.updateKeywordOrder({
             categoryId: category.id,
             keywordId: keyword.id,
             order: dropPoint,
         });
-        const { data } = await getCategories();
+        const { data } = await API.getCategories();
         categoires = data.allCategories;
     };
 </script>
@@ -394,7 +381,7 @@
             }
         }
 
-        button svg {
+        button :global(svg) {
             width: 0.8rem;
             height: 0.8rem;
         }
@@ -481,7 +468,7 @@
             }
         }
 
-        button svg {
+        button :global(svg) {
             width: 0.8rem;
             height: 0.8rem;
         }

@@ -224,16 +224,4 @@
             color: #aaa;
         }
     }
-
-    .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-
-        h2 {
-            margin: 0;
-            padding: 0;
-        }
-    }
 </style>

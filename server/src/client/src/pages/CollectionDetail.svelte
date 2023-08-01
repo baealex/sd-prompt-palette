@@ -2,14 +2,14 @@
     import { onDestroy, onMount } from "svelte";
     import { toast } from "@baejino/ui";
 
-    import CollectionCard from "../components/CollectionCard.svelte";
+    import { CollectionCard } from "~/components";
 
-    import { collectionState } from "../models/collection";
-    import type { CollectionState } from "../models/collection";
+    import { collectionState } from "~/models/collection";
+    import type { CollectionState } from "~/models/collection";
 
-    import { useMemoState } from "../modules/memo";
+    import { useMemoState } from "~/modules/memo";
 
-    import * as API from "../api";
+    import * as API from "~/api";
 
     export let id;
 

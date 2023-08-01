@@ -3,17 +3,16 @@
     import { derived, get } from "svelte/store";
     import { toast } from "@baejino/ui";
 
-    import { collectionState } from "../models/collection";
-    import type { CollectionState } from "../models/collection";
+    import { collectionState } from "~/models/collection";
+    import type { CollectionState } from "~/models/collection";
 
-    import CollectionNav from "../components/CollectionNav.svelte";
-    import CollectionCard from "../components/CollectionCard.svelte";
+    import { CollectionNav, CollectionCard } from "~/components";
 
-    import { useMemoState } from "../modules/memo";
+    import { useMemoState } from "~/modules/memo";
 
-    import { getCollections } from "../api";
+    import { getCollections } from "~/api";
 
-    import pathStore from "../store/path";
+    import pathStore from "~/store/path";
 
     let page = 1;
     const limit = 9999;
