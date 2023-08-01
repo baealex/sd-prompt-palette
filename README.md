@@ -24,7 +24,7 @@
 
 ## Demo site
 
-[sd-prompt-palette-demo.baejino.com](https://sd-prompt-palette-demo.baejino.com/)
+[demo-prompt-palette.baejino.com](https://demo-prompt-palette.baejino.com/)
 
 <br>
 
