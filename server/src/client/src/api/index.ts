@@ -163,6 +163,8 @@ export function getCollections(data: Order & Pagination = {}) {
                 image {
                     id
                     url
+                    width
+                    height
                 }
             }
         }
@@ -218,7 +220,7 @@ export function deleteSampleImage(data: { id: number }) {
 }
 
 export function imageUpload(data: { image: string }) {
-    return axios.request<{ id: number, url: string }>({
+    return axios.request<{ id: number, url: string, width: number, height: number }>({
         method: 'POST',
         url: '/api/image',
         data,

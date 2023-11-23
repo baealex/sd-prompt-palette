@@ -19,19 +19,19 @@
     let image: File;
     let pendingUploadImageKeywordId: number;
 
-    let [categoires, memoCategories] = useMemoState<Category[]>(
+    let [categories, memoCategories] = useMemoState<Category[]>(
         "categories",
         []
     );
 
     onMount(() => {
         API.getCategories().then(({ data }) => {
-            categoires = data.allCategories;
+            categories = data.allCategories;
         });
     });
 
     onDestroy(() => {
-        memoCategories(categoires);
+        memoCategories(categories);
     });
 
     const handleClickCopyAll = (keywords: Keyword[]) => {
@@ -63,7 +63,7 @@
                             id: category.id,
                             name: title,
                         });
-                        categoires = categoires.map((c) => {
+                        categories = categories.map((c) => {
                             if (c.id === category.id) {
                                 c.name = title;
                             }
@@ -75,7 +75,7 @@
                     label: "Delete",
                     click: async () => {
                         await API.deleteCategory({ id: category.id });
-                        categoires = categoires
+                        categories = categories
                             .filter((c) => c.id !== category.id)
                             .map((c) => ({ ...c, order: c.order - 1 }));
                     },
@@ -100,7 +100,7 @@
                             categoryId,
                             keywordId: keyword.id,
                         });
-                        categoires = categoires.map((c) => {
+                        categories = categories.map((c) => {
                             if (c.id === categoryId) {
                                 c.keywords = c.keywords.filter(
                                     (k) => k.id !== keyword.id
@@ -111,6 +111,10 @@
                         toast("Removed keyword");
                     },
                 },
+                {
+                    label: "View collection",
+                    click: () => {},
+                },
             ].concat(
                 keyword.image
                     ? [
@@ -120,7 +124,7 @@
                                   await API.deleteSampleImage({
                                       id: keyword.id,
                                   });
-                                  categoires = categoires.map((c) => {
+                                  categories = categories.map((c) => {
                                       if (c.id === categoryId) {
                                           c.keywords = c.keywords.map((k) => {
                                               if (k.id === keyword.id) {
@@ -163,7 +167,7 @@
                 keywordId: pendingUploadImageKeywordId,
                 imageId: imageData.id,
             });
-            categoires = categoires.map((c) => {
+            categories = categories.map((c) => {
                 c.keywords = c.keywords.map((k) => {
                     if (k.id === pendingUploadImageKeywordId) {
                         return {
@@ -171,6 +175,8 @@
                             image: {
                                 id: imageData.id,
                                 url: imageData.url,
+                                width: imageData.width,
+                                height: imageData.height,
                             },
                         };
                     }
@@ -196,14 +202,14 @@
 
         const { data } = await API.createCategory({ name });
 
-        categoires = [
+        categories = [
             {
                 id: data.createCategory.id,
                 name: data.createCategory.name,
                 order: data.createCategory.order,
                 keywords: [],
             },
-            ...categoires.map((c) => {
+            ...categories.map((c) => {
                 c.order += 1;
                 return c;
             }),
@@ -234,7 +240,7 @@
                 name: keyword,
             });
 
-            categoires = categoires.map((c) => {
+            categories = categories.map((c) => {
                 if (Number(c.id) === Number(categoryId)) {
                     c.keywords.push({
                         id: data.createKeyword.id,
@@ -260,7 +266,7 @@
             order,
         });
         const { data } = await API.getCategories();
-        categoires = data.allCategories;
+        categories = data.allCategories;
     };
 
     const handleDragEndKeyword = async (
@@ -274,7 +280,7 @@
             order: dropPoint,
         });
         const { data } = await API.getCategories();
-        categoires = data.allCategories;
+        categories = data.allCategories;
     };
 </script>
 
@@ -286,7 +292,7 @@
             <Plus />
         </button>
     </form>
-    {#each categoires as category}
+    {#each categories as category}
         <div class="category">
             <div class="order">
                 <button
@@ -297,7 +303,7 @@
                     <ArrowUp />
                 </button>
                 <button
-                    disabled={category.order === categoires.length}
+                    disabled={category.order === categories.length}
                     on:click={(e) =>
                         handleClickChangeOrder(e, category, category.order + 1)}
                 >

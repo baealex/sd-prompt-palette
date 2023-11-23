@@ -31,6 +31,7 @@
     "express-winston": "^4.2.0",
     "graphql-http": "^1.19.0",
     "prisma": "^4.15.0",
+    "sharp": "^0.32.6",
     "sqlite3": "^5.1.6",
     "ts-node": "^10.9.1",
     "winston": "^3.9.0"

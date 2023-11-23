@@ -1,6 +1,7 @@
 <script lang="ts">
     import CategoryHeader from "./CategoryHeader.svelte";
     import KeywordsList from "./KeywordsList.svelte";
+    import Image from "./Image.svelte";
 
     import { Delete } from "~/icons";
 
@@ -30,7 +31,7 @@
             Remove
         </button>
     </div>
-    <img class="image" loading="lazy" src={image} alt={title} />
+    <Image className="image" src={image} alt={title} />
     <div class="body">
         <CategoryHeader
             title="Prompt"
@@ -86,7 +87,7 @@
             }
         }
 
-        .image {
+        :global(.image) {
             padding: 1rem;
             border-radius: 1.5rem;
             grid-area: image;

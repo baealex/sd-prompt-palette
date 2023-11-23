@@ -16,6 +16,8 @@ export const keywordType = gql`
     type Image {
         id: ID!
         url: String!
+        width: Int!
+        height: Int!
     }
 
     type keywordToCategory {

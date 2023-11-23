@@ -3,7 +3,7 @@
     import { derived, get } from "svelte/store";
     import { Link } from "svelte-routing";
 
-    import { CollectionNav } from "~/components";
+    import { CollectionNav, Image } from "~/components";
 
     import { collectionState } from "~/models/collection";
     import type { CollectionState } from "~/models/collection";
@@ -46,8 +46,11 @@
     <div class="collection">
         {#each $resolveCollections as collection}
             <Link to={`/collection/${collection.id}`}>
-                <img
-                    class="image"
+                <Image
+                    className="image"
+                    timeout={1000}
+                    width={collection.image.width}
+                    height={collection.image.height}
                     src={collection.image.url}
                     alt={collection.title}
                 />
@@ -61,7 +64,7 @@
         column-width: 350px;
         column-gap: 16px;
 
-        .image {
+        :global(.image) {
             position: relative;
             display: inline-block;
             width: 100%;

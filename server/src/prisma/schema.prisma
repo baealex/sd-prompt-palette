@@ -2,76 +2,78 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+    provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+    provider = "sqlite"
+    url      = env("DATABASE_URL")
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String?
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  Profile   Profile?
+    id        Int      @id @default(autoincrement())
+    email     String   @unique
+    name      String?
+    password  String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    Profile   Profile?
 }
 
 model Profile {
-  id     Int     @id @default(autoincrement())
-  userId Int     @unique
-  bio    String?
-  avatar String?
-  User   User    @relation(fields: [userId], references: [id])
+    id     Int     @id @default(autoincrement())
+    userId Int     @unique
+    bio    String?
+    avatar String?
+    User   User    @relation(fields: [userId], references: [id])
 }
 
 model Category {
-  id        Int                 @id @default(autoincrement())
-  name      String              @unique
-  order     Int                 @default(0)
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
-  keywords  KeywordToCategory[]
+    id        Int                 @id @default(autoincrement())
+    name      String              @unique
+    order     Int                 @default(0)
+    createdAt DateTime            @default(now())
+    updatedAt DateTime            @updatedAt
+    keywords  KeywordToCategory[]
 }
 
 model Keyword {
-  id         Int                 @id @default(autoincrement())
-  name       String              @unique
-  createdAt  DateTime            @default(now())
-  imageId    Int?
-  image      Image?              @relation(fields: [imageId], references: [id])
-  updatedAt  DateTime            @updatedAt
-  categories KeywordToCategory[]
+    id         Int                 @id @default(autoincrement())
+    name       String              @unique
+    createdAt  DateTime            @default(now())
+    imageId    Int?
+    image      Image?              @relation(fields: [imageId], references: [id])
+    updatedAt  DateTime            @updatedAt
+    categories KeywordToCategory[]
 }
 
 model KeywordToCategory {
-  id         Int      @id @default(autoincrement())
-  order      Int
-  keyword    Keyword  @relation(fields: [keywordId], references: [id])
-  keywordId  Int
-  category   Category @relation(fields: [categoryId], references: [id])
-  categoryId Int
+    id         Int      @id @default(autoincrement())
+    order      Int
+    keyword    Keyword  @relation(fields: [keywordId], references: [id])
+    keywordId  Int
+    category   Category @relation(fields: [categoryId], references: [id])
+    categoryId Int
 }
 
 model Image {
-  id          Int          @id @default(autoincrement())
-  url         String       @unique
-  hash        String       @unique
-  createdAt   DateTime     @default(now())
-  keywords    Keyword[]
-  collections Collection[]
+    id          Int          @id @default(autoincrement())
+    url         String       @unique
+    hash        String       @unique
+    width       Int          @default(0)
+    height      Int          @default(0)
+    createdAt   DateTime     @default(now())
+    keywords    Keyword[]
+    collections Collection[]
 }
 
 model Collection {
-  id             Int      @id @default(autoincrement())
-  imageId        Int
-  image          Image    @relation(fields: [imageId], references: [id])
-  title          String?  @default("")
-  prompt         String?
-  negativePrompt String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+    id             Int      @id @default(autoincrement())
+    imageId        Int
+    image          Image    @relation(fields: [imageId], references: [id])
+    title          String?  @default("")
+    prompt         String?
+    negativePrompt String?
+    createdAt      DateTime @default(now())
+    updatedAt      DateTime @updatedAt
 }

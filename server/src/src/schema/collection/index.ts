@@ -17,6 +17,8 @@ export const CollectionType = gql`
     type Image {
         id: ID!
         url: String!
+        width: Int!
+        height: Int!
         createdAt: String!
     }
 `;
