@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onDestroy, onMount } from "svelte";
+    import { onDestroy, onMount, afterUpdate } from "svelte";
     import { derived, get } from "svelte/store";
     import { Link } from "svelte-routing";
 
@@ -18,14 +18,16 @@
     const limit = 9999;
     let [collections, memoCollections] = useMemoState<CollectionState[]>(
         ["collections", page],
-        []
+        [],
     );
+
+    let grid: HTMLDivElement;
 
     $: resolveCollections = derived(collections, () =>
         collections.map((collection) => ({
             ...collection,
             ...get(collection),
-        }))
+        })),
     );
 
     onMount(() => {
@@ -36,6 +38,18 @@
         });
     });
 
+    afterUpdate(() => {
+        if (grid && grid.children.length) {
+            // @ts-ignore
+            new Masonry(grid, {
+                itemSelector: ".grid-item",
+                columnWidth: 360,
+                gutter: 16,
+                fitWidth: true,
+            });
+        }
+    });
+
     onDestroy(() => {
         memoCollections(collections);
     });
@@ -43,35 +57,55 @@
 
 <div class="container">
     <CollectionNav />
-    <div class="collection">
+    <div bind:this={grid} class="grid">
         {#each $resolveCollections as collection}
-            <Link to={`/collection/${collection.id}`}>
-                <Image
-                    className="image"
-                    timeout={1000}
-                    width={collection.image.width}
-                    height={collection.image.height}
-                    src={collection.image.url}
-                    alt={collection.title}
-                />
-            </Link>
+            <div
+                class="grid-item"
+                style={`
+                    width: 360px;
+                    height: ${
+                        (collection.image.height / collection.image.width) * 360
+                    }px;
+                `}
+            >
+                <Link to={`/collection/${collection.id}`}>
+                    <Image
+                        className="image"
+                        timeout={250}
+                        width={collection.image.width}
+                        height={collection.image.height}
+                        src={collection.image.url}
+                        alt={collection.title}
+                    />
+                </Link>
+            </div>
         {/each}
     </div>
 </div>
 
 <style lang="scss">
-    .collection {
-        column-width: 350px;
-        column-gap: 16px;
+    :global(.grid) {
+        width: 100%;
+        margin: 0 auto;
+    }
 
-        :global(.image) {
-            position: relative;
-            display: inline-block;
-            width: 100%;
-            height: auto;
-            object-fit: contain;
-            margin-bottom: 16px;
-            border-radius: 8px;
-        }
+    :global(.gird:after) {
+        content: "";
+        display: block;
+        clear: both;
+    }
+
+    :global(.grid-item) {
+        float: left;
+        margin-bottom: 16px;
+    }
+
+    :global(.image) {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+        height: auto;
+        object-fit: contain;
+        border-radius: 8px;
     }
 </style>
