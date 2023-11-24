@@ -39,6 +39,7 @@
 
     const cleanPromptText = (text: string) => {
         return text
+            .replace(/[\b]/g, "")
             .split(",")
             .map((t) => t.trim())
             .filter((t) => t)
