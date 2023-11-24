@@ -68,6 +68,11 @@
                     }px;
                 `}
             >
+                <div class="title">
+                    <Link to={`/collection/${collection.id}`}>
+                        {collection.title}
+                    </Link>
+                </div>
                 <Link to={`/collection/${collection.id}`}>
                     <Image
                         className="image"
@@ -87,25 +92,49 @@
     :global(.grid) {
         width: 100%;
         margin: 0 auto;
-    }
 
-    :global(.gird:after) {
-        content: "";
-        display: block;
-        clear: both;
+        &:after {
+            content: "";
+            display: block;
+            clear: both;
+        }
     }
 
     :global(.grid-item) {
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
         float: left;
         margin-bottom: 16px;
-    }
 
-    :global(.image) {
-        position: relative;
-        display: inline-block;
-        width: 100%;
-        height: auto;
-        object-fit: contain;
-        border-radius: 8px;
+        .title {
+            position: absolute;
+            opacity: 0;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 24px;
+            color: rgba(255, 255, 255, 0.75);
+            font-weight: 600;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.5);
+            transform: translateY(-100%);
+            transition:
+                transform 0.25s ease-in-out,
+                opacity 0.25s ease-in-out;
+        }
+
+        &:hover {
+            .title {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        :global(.image) {
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+        }
     }
 </style>
