@@ -15,7 +15,8 @@
     import { getCollections } from "~/api";
 
     let page = 1;
-    const limit = 9999;
+    let lastPage = 1;
+    const limit = 20;
     let [collections, memoCollections] = useMemoState<CollectionState[]>(
         ["collections", page],
         [],
@@ -31,10 +32,30 @@
     );
 
     onMount(() => {
-        pathStore.set({ colllection: "/collection/gallery" });
+        pathStore.set({ collection: "/collection/gallery" });
 
         getCollections({ page, limit }).then(({ data }) => {
-            collections = data.allCollections.map(collectionState);
+            lastPage = Math.ceil(data.allCollections.pagination.total / limit);
+            collections = data.allCollections.collections.map(collectionState);
+
+            document.addEventListener("scroll", () => {
+                const hasNext = page < lastPage;
+                const isBottom =
+                    window.innerHeight + window.scrollY >=
+                    document.body.offsetHeight;
+                if (isBottom && hasNext) {
+                    page += 1;
+
+                    getCollections({ page, limit }).then(({ data }) => {
+                        collections = [
+                            ...collections,
+                            ...data.allCollections.collections.map(
+                                collectionState,
+                            ),
+                        ];
+                    });
+                }
+            });
         });
     });
 

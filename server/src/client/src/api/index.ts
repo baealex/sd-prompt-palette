@@ -8,13 +8,14 @@ interface GraphqlResponse<T extends string, K> {
 }
 
 export interface Order {
-    orderBy?: string;
     order?: 'asc' | 'desc';
+    orderBy?: string;
 }
 
 export interface Pagination {
+    offset?: number;
     limit?: number;
-    page?: number;
+    total?: number;
 }
 
 export async function graphQLRequest<T extends string, K>(query: string): Promise<GraphqlResponse<T, K>> {
@@ -139,7 +140,17 @@ export function getCollection(data: { id: number }) {
     `);
 }
 
-export function getCollections(data: Order & Pagination = {}) {
+interface GetCollectionsData extends Order, Pagination {
+    page?: number;
+    limit?: number;
+}
+
+interface GetCollectionsResponse {
+    collections: Pick<Collection, 'id' | 'image' | 'title' | 'prompt' | 'negativePrompt'>[];
+    pagination: Pagination;
+}
+
+export function getCollections(data: GetCollectionsData = {}) {
     const {
         page = 1,
         limit = 10,
@@ -148,7 +159,7 @@ export function getCollections(data: Order & Pagination = {}) {
     } = data;
     const offset = (page - 1) * limit;
 
-    return graphQLRequest<'allCollections', Pick<Collection, 'id' | 'image' | 'title' | 'prompt' | 'negativePrompt'>[]>(`
+    return graphQLRequest<'allCollections', GetCollectionsResponse>(`
         query {
             allCollections(
                 limit: ${limit},
@@ -156,15 +167,22 @@ export function getCollections(data: Order & Pagination = {}) {
                 orderBy: "${orderBy}",
                 order: "${order}"
             ) {
-                id
-                title
-                prompt
-                negativePrompt
-                image {
+                collections {
                     id
-                    url
-                    width
-                    height
+                    title
+                    prompt
+                    negativePrompt
+                    image {
+                        id
+                        url
+                        width
+                        height
+                    }
+                }
+                pagination {
+                    offset
+                    limit
+                    total
                 }
             }
         }

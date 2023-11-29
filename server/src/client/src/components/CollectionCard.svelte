@@ -6,7 +6,11 @@
     import { Delete } from "~/icons";
 
     export let title: string;
-    export let image: string;
+    export let image: {
+        url: string;
+        width: number;
+        height: number;
+    };
     export let prompt: string;
     export let negativePrompt: string;
     export let onClickCopy: (text: string) => void;
@@ -31,7 +35,13 @@
             Remove
         </button>
     </div>
-    <Image className="image" src={image} alt={title} />
+    <Image
+        className="image"
+        alt={title}
+        src={image.url}
+        width={image.width}
+        height={image.height}
+    />
     <div class="body">
         <CategoryHeader
             title="Prompt"

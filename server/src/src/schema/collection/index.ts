@@ -3,6 +3,11 @@ import { IResolvers } from '@graphql-tools/utils';
 import models, { Collection, Order, Pagination } from '~/models';
 import { gql } from '~/modules/graphql';
 
+interface AllCollections {
+    collections: Collection[];
+    pagination: Pagination;
+}
+
 export const CollectionType = gql`
     type Collection {
         id: ID!
@@ -21,11 +26,22 @@ export const CollectionType = gql`
         height: Int!
         createdAt: String!
     }
+
+    type Pagination {
+        limit: Int!
+        offset: Int!
+        total: Int!
+    }
+
+    type AllCollections {
+        collections: [Collection!]!
+        pagination: Pagination!
+    }
 `;
 
 export const CollectionQuery = gql`
     type Query {
-        allCollections(orderBy: String, order: String, limit: Int, offset: Int): [Collection!]!
+        allCollections(orderBy: String, order: String, limit: Int, offset: Int): AllCollections!
         collection(id: ID!): Collection!
     }
 `;
@@ -46,13 +62,24 @@ export const CollectionTypeDefs = `
 
 export const CollectionResolvers: IResolvers = {
     Query: {
-        allCollections: (_, { orderBy, order, limit, offset }: Order & Pagination) => models.collection.findMany({
-            orderBy: {
-                [orderBy || 'createdAt']: order || 'desc',
-            },
-            take: limit,
-            skip: offset,
-        }),
+        allCollections: (_, { orderBy, order, limit, offset }: Order & Pagination) => async () => {
+            const collections = await models.collection.findMany({
+                orderBy: {
+                    [orderBy || 'createdAt']: order || 'desc',
+                },
+                take: limit,
+                skip: offset,
+            });
+            const pagination = {
+                limit,
+                offset,
+                total: await models.collection.count(),
+            };
+            return {
+                collections,
+                pagination,
+            };
+        },
         collection: (_, { id }: Collection) => models.collection.findUnique({
             where: {
                 id: Number(id),
@@ -118,5 +145,15 @@ export const CollectionResolvers: IResolvers = {
                 id: collection.imageId,
             },
         }),
+    },
+    AllCollections: {
+        collections: async (allCollections: () => Promise<AllCollections>) => {
+            const { collections } = await allCollections();
+            return collections;
+        },
+        pagination: async (allCollections: () => Promise<AllCollections>) => {
+            const { pagination } = await allCollections();
+            return pagination;
+        }
     },
 };

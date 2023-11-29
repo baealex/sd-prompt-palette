@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount } from "svelte";
+    import { onDestroy, onMount } from "svelte";
 
     export let src: string;
     export let alt: string;
@@ -30,6 +30,10 @@
         } else {
             observer.observe(ref);
         }
+    });
+
+    onDestroy(() => {
+        observer.disconnect();
     });
 </script>
 

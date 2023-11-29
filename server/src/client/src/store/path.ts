@@ -1,7 +1,7 @@
 import { createStore } from 'badland';
 
-const pathSotre = createStore({
-    colllection: '/collection',
+const pathStore = createStore({
+    collection: '/collection',
 });
 
-export default pathSotre;
+export default pathStore;

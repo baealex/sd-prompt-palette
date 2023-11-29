@@ -15,7 +15,7 @@
 
     let [collection, memoCollection] = useMemoState<CollectionState>(
         ["collection", id],
-        null
+        null,
     );
 
     onMount(() => {
@@ -39,7 +39,7 @@
         collection.delete();
     };
 
-    const handleConextMenu = (e: MouseEvent) => {
+    const handleContextMenu = (e: MouseEvent) => {
         collection.contextMenu(e);
     };
 </script>
@@ -56,7 +56,7 @@
                 negativePrompt={$collection.negativePrompt}
                 onClickCopy={handleCopyText}
                 onClickDelete={handleDelete}
-                onContextMenu={handleConextMenu}
+                onContextMenu={handleContextMenu}
             />
         {/if}
     </div>
