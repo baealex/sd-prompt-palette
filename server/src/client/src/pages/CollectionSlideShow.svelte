@@ -17,7 +17,7 @@
     const limit = 9999;
     let [collections, memoCollections] = useMemoState<CollectionState[]>(
         ["collections", page],
-        []
+        [],
     );
 
     let slideShowRef: HTMLDivElement = null;
@@ -32,7 +32,7 @@
                 ...collection,
                 ...get(collection),
             }))
-            .sort(() => Math.random() - 0.5)
+            .sort(() => Math.random() - 0.5),
     );
 
     const setRandomCollections = () => {
@@ -53,13 +53,13 @@
         document.body.style.overflow = "hidden";
 
         getCollections({ page, limit }).then(({ data }) => {
-            collections = data.allCollections.map(collectionState);
+            collections = data.allCollections.collections.map(collectionState);
         });
 
         slideShowRef.addEventListener(
             "animationend",
             setRandomCollections,
-            false
+            false,
         );
     });
 
@@ -71,7 +71,7 @@
         slideShowRef.removeEventListener(
             "animationend",
             setRandomCollections,
-            false
+            false,
         );
     });
 </script>

@@ -127,7 +127,7 @@
                 grid-template-columns: 1fr;
             }
 
-            .image {
+            :global(.image) {
                 width: 100%;
             }
         }

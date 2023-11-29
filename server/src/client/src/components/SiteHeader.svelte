@@ -6,12 +6,12 @@
 
     import pathStore from "~/store/path";
 
-    let collectionPath = pathStore.state.colllection;
+    let collectionPath = pathStore.state.collection;
     let menuOpen = false;
 
     onMount(() => {
         pathStore.subscribe((state) => {
-            collectionPath = state.colllection;
+            collectionPath = state.collection;
         });
     });
 </script>

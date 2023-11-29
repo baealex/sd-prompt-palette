@@ -51,7 +51,7 @@
         {:else}
             <CollectionCard
                 title={$collection.title}
-                image={$collection.image.url}
+                image={$collection.image}
                 prompt={$collection.prompt}
                 negativePrompt={$collection.negativePrompt}
                 onClickCopy={handleCopyText}
