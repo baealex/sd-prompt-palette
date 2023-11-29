@@ -41,7 +41,6 @@
         src={image.url}
         width={image.width}
         height={image.height}
-        timeout={250}
     />
     <div class="body">
         <CategoryHeader

@@ -5,7 +5,6 @@
     export let alt: string;
     export let width: number = 0;
     export let height: number = 0;
-    export let timeout: number = 0;
     export let className: string;
 
     let ref = null;
@@ -17,20 +16,17 @@
                 if (entry.isIntersecting) {
                     const img = entry.target as HTMLImageElement;
                     img.src = img.dataset.src;
-                    img.classList.remove("lazy-loaded");
                     observer.unobserve(img);
                 }
             });
         });
+    });
 
-        if (timeout) {
-            setTimeout(() => {
-                observer.observe(ref);
-            }, timeout);
-        } else {
+    $: {
+        if (ref && src && observer) {
             observer.observe(ref);
         }
-    });
+    }
 
     onDestroy(() => {
         observer.disconnect();
