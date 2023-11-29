@@ -21,7 +21,7 @@
 
     let [categories, memoCategories] = useMemoState<Category[]>(
         "categories",
-        []
+        [],
     );
 
     onMount(() => {
@@ -46,15 +46,15 @@
 
     const handleContextMenuCategory = (e: MouseEvent, category: Category) => {
         contextMenu.create({
-            top: e.clientY,
-            left: e.clientX,
+            top: e.clientY + window.scrollY,
+            left: e.clientX + window.scrollX,
             menus: [
                 {
                     label: "Rename",
                     click: async () => {
                         const title = await prompt(
                             "Enter new category name",
-                            category.name
+                            category.name,
                         );
                         if (!title) {
                             return;
@@ -87,11 +87,11 @@
     const handleContextMenuKeyword = (
         e: MouseEvent,
         keyword: Keyword,
-        categoryId: number
+        categoryId: number,
     ) => {
         contextMenu.create({
-            top: e.clientY,
-            left: e.clientX,
+            top: e.clientY + window.scrollY,
+            left: e.clientX + window.scrollX,
             menus: [
                 {
                     label: "Delete",
@@ -103,7 +103,7 @@
                         categories = categories.map((c) => {
                             if (c.id === categoryId) {
                                 c.keywords = c.keywords.filter(
-                                    (k) => k.id !== keyword.id
+                                    (k) => k.id !== keyword.id,
                                 );
                             }
                             return c;
@@ -146,7 +146,7 @@
                                   inputRef.click();
                               },
                           },
-                      ]
+                      ],
             ),
         });
     };
@@ -258,7 +258,7 @@
     const handleClickChangeOrder = async (
         e: MouseEvent,
         category: Category,
-        order: number
+        order: number,
     ) => {
         e.stopPropagation();
         await API.updateCategoryOrder({
@@ -272,7 +272,7 @@
     const handleDragEndKeyword = async (
         category: Category,
         keyword: Keyword,
-        dropPoint: number
+        dropPoint: number,
     ) => {
         await API.updateKeywordOrder({
             categoryId: category.id,

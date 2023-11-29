@@ -48,8 +48,8 @@ export function collectionState(state: Collection) {
             e.preventDefault();
 
             contextMenu.create({
-                top: e.clientY,
-                left: e.clientX,
+                top: e.clientY + window.scrollY,
+                left: e.clientX + window.scrollX,
                 menus: [
                     {
                         label: 'Rename',
