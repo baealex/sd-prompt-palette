@@ -1,5 +1,7 @@
 <script lang="ts">
     import { onDestroy, onMount } from "svelte";
+    import { get } from "svelte/store";
+    import { navigate } from "svelte-routing";
     import { prompt, toast } from "@baejino/ui";
 
     import type { Category } from "~/models/types";
@@ -14,6 +16,8 @@
     import { imageToBase64 } from "~/modules/image";
 
     import * as API from "~/api";
+
+    import pathStore from "~/store/path";
 
     let inputRef: HTMLInputElement;
     let image: File;
@@ -113,7 +117,12 @@
                 },
                 {
                     label: "View collection",
-                    click: () => {},
+                    click: () => {
+                        navigate(
+                            pathStore.state.collection +
+                                `?query=${keyword.name}`,
+                        );
+                    },
                 },
             ].concat(
                 keyword.image

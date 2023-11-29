@@ -7,6 +7,10 @@ export interface Order {
     order: 'asc' | 'desc';
 }
 
+export interface Search {
+    query: string;
+}
+
 export interface Pagination {
     limit: number;
     offset: number;

@@ -1,6 +1,6 @@
 import { IResolvers } from '@graphql-tools/utils';
 
-import models, { Collection, Order, Pagination } from '~/models';
+import models, { Collection, Order, Pagination, Search } from '~/models';
 import { gql } from '~/modules/graphql';
 
 interface AllCollections {
@@ -41,7 +41,7 @@ export const CollectionType = gql`
 
 export const CollectionQuery = gql`
     type Query {
-        allCollections(orderBy: String, order: String, limit: Int, offset: Int): AllCollections!
+        allCollections(orderBy: String, order: String, query: String, limit: Int, offset: Int): AllCollections!
         collection(id: ID!): Collection!
     }
 `;
@@ -62,18 +62,39 @@ export const CollectionTypeDefs = `
 
 export const CollectionResolvers: IResolvers = {
     Query: {
-        allCollections: (_, { orderBy, order, limit, offset }: Order & Pagination) => async () => {
+        allCollections: (_, { orderBy, order, query, limit, offset }: Order & Pagination & Search) => async () => {
+            const where = query ? {
+                OR: [
+                    {
+                        title: {
+                            contains: query,
+                        },
+                    },
+                    {
+                        prompt: {
+                            contains: query,
+                        },
+                    },
+                    {
+                        negativePrompt: {
+                            contains: query,
+                        },
+                    },
+                ],
+            } : undefined;
+
             const collections = await models.collection.findMany({
                 orderBy: {
                     [orderBy || 'createdAt']: order || 'desc',
                 },
+                where,
                 take: limit,
                 skip: offset,
             });
             const pagination = {
                 limit,
                 offset,
-                total: await models.collection.count(),
+                total: await models.collection.count({ where }),
             };
             return {
                 collections,

@@ -18,7 +18,7 @@
     let lastPage = 1;
     const limit = 20;
     let [collections, memoCollections] = useMemoState<CollectionState[]>(
-        ["collections", page],
+        "collections",
         [],
     );
 
@@ -29,32 +29,39 @@
         })),
     );
 
+    const params = new URLSearchParams(location.search);
+
     onMount(() => {
         pathStore.set({ collection: "/collection" });
 
-        getCollections({ page, limit }).then(({ data }) => {
-            lastPage = Math.ceil(data.allCollections.pagination.total / limit);
-            collections = data.allCollections.collections.map(collectionState);
+        getCollections({ page, limit, query: params.get("query") || "" }).then(
+            ({ data }) => {
+                lastPage = Math.ceil(
+                    data.allCollections.pagination.total / limit,
+                );
+                collections =
+                    data.allCollections.collections.map(collectionState);
 
-            document.addEventListener("scroll", () => {
-                const hasNext = page < lastPage;
-                const isBottom =
-                    window.innerHeight + window.scrollY >=
-                    document.body.offsetHeight;
-                if (isBottom && hasNext) {
-                    page += 1;
+                document.addEventListener("scroll", () => {
+                    const hasNext = page < lastPage;
+                    const isBottom =
+                        window.innerHeight + window.scrollY >=
+                        document.body.offsetHeight;
+                    if (isBottom && hasNext) {
+                        page += 1;
 
-                    getCollections({ page, limit }).then(({ data }) => {
-                        collections = [
-                            ...collections,
-                            ...data.allCollections.collections.map(
-                                collectionState,
-                            ),
-                        ];
-                    });
-                }
-            });
-        });
+                        getCollections({ page, limit }).then(({ data }) => {
+                            collections = [
+                                ...collections,
+                                ...data.allCollections.collections.map(
+                                    collectionState,
+                                ),
+                            ];
+                        });
+                    }
+                });
+            },
+        );
     });
 
     onDestroy(() => {

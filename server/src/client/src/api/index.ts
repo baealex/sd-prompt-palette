@@ -12,6 +12,10 @@ export interface Order {
     orderBy?: string;
 }
 
+export interface Search {
+    query?: string;
+}
+
 export interface Pagination {
     offset?: number;
     limit?: number;
@@ -140,7 +144,7 @@ export function getCollection(data: { id: number }) {
     `);
 }
 
-interface GetCollectionsData extends Order, Pagination {
+interface GetCollectionsData extends Order, Pagination, Search {
     page?: number;
     limit?: number;
 }
@@ -154,6 +158,7 @@ export function getCollections(data: GetCollectionsData = {}) {
     const {
         page = 1,
         limit = 10,
+        query = '',
         order = 'desc',
         orderBy = 'createdAt',
     } = data;
@@ -164,8 +169,9 @@ export function getCollections(data: GetCollectionsData = {}) {
             allCollections(
                 limit: ${limit},
                 offset: ${offset},
-                orderBy: "${orderBy}",
+                query: "${query}",
                 order: "${order}"
+                orderBy: "${orderBy}",
             ) {
                 collections {
                     id
