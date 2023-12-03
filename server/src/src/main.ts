@@ -33,7 +33,7 @@ async function main() {
 
         const fileDir = path.dirname(file);
         const filename = path.basename(file);
-        const [name, ext] = filename.split('.');
+        const [name] = filename.split('.');
 
         const previewFileName = `${name}.preview.jpg`;
 
