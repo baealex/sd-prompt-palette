@@ -20,7 +20,7 @@
         [],
     );
 
-    let slideShowRef: HTMLDivElement = null;
+    let slideShowRef: HTMLDivElement;
 
     let play = true;
     let index = 0;

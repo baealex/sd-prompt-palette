@@ -16,11 +16,11 @@
     let helpRef: HTMLDivElement;
 
     let [loader, memoLoader] = useMemoState<{
-        image: File;
+        image?: File;
         promptText: string;
         negativePromptText: string;
     }>("image-load", {
-        image: null,
+        image: undefined,
         promptText: "",
         negativePromptText: "",
     });
@@ -49,26 +49,29 @@
     const loadImage = async () => {
         helpRef.style.display = "none";
         imageRef.style.display = "block";
-        imageRef.src = URL.createObjectURL(loader.image);
-
-        const base64 = await imageToBase64(loader.image);
-        readPromptInfo(base64, {
-            onError: (err) => {
-                loader = {
-                    ...loader,
-                    promptText: "",
-                    negativePromptText: "",
-                };
-                toast(err);
-            },
-            onSuccess: (info) => {
-                loader = {
-                    ...loader,
-                    promptText: cleanPromptText(info.prompt),
-                    negativePromptText: cleanPromptText(info.negativePrompt),
-                };
-            },
-        });
+        if (loader.image) {
+            imageRef.src = URL.createObjectURL(loader.image);
+            const base64 = await imageToBase64(loader.image);
+            readPromptInfo(base64, {
+                onError: (err) => {
+                    loader = {
+                        ...loader,
+                        promptText: "",
+                        negativePromptText: "",
+                    };
+                    toast(err);
+                },
+                onSuccess: (info) => {
+                    loader = {
+                        ...loader,
+                        promptText: cleanPromptText(info.prompt),
+                        negativePromptText: cleanPromptText(
+                            info.negativePrompt,
+                        ),
+                    };
+                },
+            });
+        }
     };
 
     const handleClickLoader = () => {
@@ -81,13 +84,21 @@
 
     const handleDropImage = (e: DragEvent) => {
         e.preventDefault();
-        loader.image = e.dataTransfer.files[0];
-        loadImage();
+        if (e.dataTransfer) {
+            loader.image = e.dataTransfer.files[0];
+            loadImage();
+        }
     };
 
     const handleChangeImage = async (e: Event) => {
-        loader.image = (e.target as HTMLInputElement).files[0];
-        loadImage();
+        if (e.currentTarget) {
+            const target = e.currentTarget as HTMLInputElement;
+            const file = target.files?.[0];
+            if (file) {
+                loader.image = file;
+                loadImage();
+            }
+        }
     };
 
     const handleSave = async () => {
@@ -127,16 +138,20 @@
 <div class="container grid">
     <div
         class="image-loader"
+        role="button"
+        tabindex="0"
         on:click={handleClickLoader}
         on:keydown={handleClickLoader}
     >
         <div
             class="image-preview"
+            role="button"
+            tabindex="0"
             on:drag={handleDragOver}
             on:dragover={handleDragOver}
             on:drop={handleDropImage}
         >
-            <div bind:this={helpRef}>
+            <div bind:this={helpRef} role="presentation">
                 이미지를 끌어 놓으세요
                 <span>-또는-</span>
                 클릭해서 업로드하기

@@ -15,7 +15,7 @@
     export let negativePrompt: string;
     export let onClickCopy: (text: string) => void;
     export let onClickDelete: () => void;
-    export let onContextMenu: (e: MouseEvent) => void = null;
+    export let onContextMenu: ((e: MouseEvent) => void) | null = null;
 
     const createKeywords = (text: string) =>
         text

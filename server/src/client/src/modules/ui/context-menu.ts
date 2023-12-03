@@ -69,7 +69,7 @@ function createContextMenu() {
                             const subMenuItem = document.createElement('li');
                             subMenuItem.className = 'context-menu-item';
                             subMenuItem.innerText = subMenu.label;
-                            subMenuItem.addEventListener('click', subMenu.click?.bind(subMenuItem));
+                            subMenuItem.addEventListener('click', () => subMenu.click?.());
                             subContentBox.appendChild(subMenuItem);
                         });
                         menuItem.appendChild(subContentBox);
@@ -79,7 +79,7 @@ function createContextMenu() {
                     menuItem.addEventListener('mouseenter', () => {
                         document.querySelectorAll('.context-menu-sub').forEach(sub => sub.remove());
                     });
-                    menuItem.addEventListener('click', menu.click?.bind(menuItem));
+                    menuItem.addEventListener('click', () => menu.click?.());
                     contextBox.appendChild(menuItem);
                 }
             });

@@ -6,9 +6,13 @@
 
     export let keywords: Keyword[] = [];
     export let canDrag = false;
-    export let onDragEnd: (keyword: Keyword, dropPoint: number) => void = null;
-    export let onClick: (keyword: Keyword) => void;
-    export let onContextMenu: (e: MouseEvent, keyword: Keyword) => void = null;
+    export let onDragEnd:
+        | ((keyword: Keyword, dropPoint: number) => void)
+        | null = null;
+    export let onClick: ((keyword: Keyword) => void) | null = null;
+    export let onContextMenu:
+        | ((e: MouseEvent, keyword: Keyword) => void)
+        | null = null;
 
     const handleDragStart = () => {
         dropPoint = 0;
@@ -26,6 +30,7 @@
     {#each keywords as keyword, index}
         {#if canDrag && dragging}
             <span
+                role="presentation"
                 class={`dragPoint ${dropPoint === index + 1 ? "active" : ""}`}
                 on:dragenter={() => {
                     dropPoint = index + 1;
@@ -39,17 +44,18 @@
             />
         {/if}
         <li
+            role="presentation"
             class="keyword"
             on:keydown={(e) => {
                 if (e.key === "Enter") {
-                    onClick(keyword);
+                    onClick?.(keyword);
                 }
             }}
             draggable={canDrag}
             on:dragstart={handleDragStart}
             on:dragend={() => handleDragEnd(keyword, dropPoint)}
-            on:click={() => onClick(keyword)}
-            on:contextmenu={(e) => onContextMenu(e, keyword)}
+            on:click={() => onClick?.(keyword)}
+            on:contextmenu={(e) => onContextMenu?.(e, keyword)}
         >
             {keyword.name}
             {#if keyword.image}

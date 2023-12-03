@@ -21,7 +21,7 @@
 
     let inputRef: HTMLInputElement;
     let image: File;
-    let pendingUploadImageKeywordId: number;
+    let pendingUploadImageKeywordId: number | undefined;
 
     let [categories, memoCategories] = useMemoState<Category[]>(
         "categories",
@@ -137,7 +137,7 @@
                                       if (c.id === categoryId) {
                                           c.keywords = c.keywords.map((k) => {
                                               if (k.id === keyword.id) {
-                                                  k.image = null;
+                                                  k.image = undefined;
                                               }
                                               return k;
                                           });
@@ -161,7 +161,14 @@
     };
 
     const handleChangeImage = async (e: Event) => {
-        image = (e.target as HTMLInputElement).files[0];
+        const target = e.currentTarget as HTMLInputElement;
+        const file = target.files?.[0];
+
+        if (!file) {
+            return;
+        }
+
+        image = file;
 
         if (!image) {
             pendingUploadImageKeywordId = undefined;

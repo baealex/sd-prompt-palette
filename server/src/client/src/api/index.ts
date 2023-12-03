@@ -7,19 +7,25 @@ interface GraphqlResponse<T extends string, K> {
     };
 }
 
-export interface Order {
+export interface OrderRequest {
     order?: 'asc' | 'desc';
     orderBy?: string;
 }
 
-export interface Search {
+export interface SearchRequest {
     query?: string;
 }
 
-export interface Pagination {
+export interface PaginationRequest {
     offset?: number;
     limit?: number;
     total?: number;
+}
+
+export interface Pagination {
+    offset: number;
+    limit: number;
+    total: number;
 }
 
 export async function graphQLRequest<T extends string, K>(query: string): Promise<GraphqlResponse<T, K>> {
@@ -144,7 +150,7 @@ export function getCollection(data: { id: number }) {
     `);
 }
 
-interface GetCollectionsData extends Order, Pagination, Search {
+interface GetCollectionsRequestData extends OrderRequest, PaginationRequest, SearchRequest {
     page?: number;
     limit?: number;
 }
@@ -154,7 +160,7 @@ interface GetCollectionsResponse {
     pagination: Pagination;
 }
 
-export function getCollections(data: GetCollectionsData = {}) {
+export function getCollections(data: GetCollectionsRequestData = {}) {
     const {
         page = 1,
         limit = 10,

@@ -7,7 +7,7 @@
     export let height: number = 0;
     export let className: string;
 
-    let ref = null;
+    let ref: HTMLImageElement;
     let observer: IntersectionObserver;
 
     onMount(() => {
@@ -15,7 +15,7 @@
             entries.forEach((entry) => {
                 if (entry.isIntersecting) {
                     const img = entry.target as HTMLImageElement;
-                    img.src = img.dataset.src;
+                    img.src = img.dataset.src!;
                     observer.unobserve(img);
                 }
             });
@@ -36,7 +36,7 @@
 <img
     bind:this={ref}
     class={className}
-    src={src.replace(src.split(".").pop(), "preview.jpg")}
+    src={src.replace(String(src.split(".").pop()), "preview.jpg")}
     data-src={src}
     width={width ? width : "auto"}
     height={height ? height : "auto"}

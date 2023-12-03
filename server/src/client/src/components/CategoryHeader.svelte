@@ -3,7 +3,7 @@
 
     export let title: string;
     export let onClickCopy: () => void;
-    export let onContextMenu: (e: MouseEvent) => void = null;
+    export let onContextMenu: ((e: MouseEvent) => void) | null = null;
 </script>
 
 <div class="category-header">

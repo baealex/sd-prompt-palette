@@ -11,9 +11,9 @@
 
     import * as API from "~/api";
 
-    export let id;
+    export let id: number;
 
-    let [collection, memoCollection] = useMemoState<CollectionState>(
+    let [collection, memoCollection] = useMemoState<CollectionState | null>(
         ["collection", id],
         null,
     );
@@ -36,17 +36,17 @@
     };
 
     const handleDelete = () => {
-        collection.delete();
+        collection?.delete();
     };
 
     const handleContextMenu = (e: MouseEvent) => {
-        collection.contextMenu(e);
+        collection?.contextMenu(e);
     };
 </script>
 
 <div class="container">
     <div class="collection">
-        {#if collection == null}
+        {#if !$collection}
             <p>Loading...</p>
         {:else}
             <CollectionCard
