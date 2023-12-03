@@ -1,31 +1,32 @@
 {
-  "name": "client2",
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "check": "svelte-check --tsconfig ./tsconfig.json",
-    "preview": "vite preview",
-    "lint": "echo \"No lint specified\" && exit 0",
-    "test": "echo \"No test specified\" && exit 0"
-  },
-  "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^3.0.1",
-    "@tsconfig/svelte": "^5.0.2",
-    "@types/masonry-layout": "^4.2.7",
-    "svelte": "^4.2.8",
-    "svelte-check": "^3.6.2",
-    "svelte-routing": "^2.9.0",
-    "tslib": "^2.6.2",
-    "typescript": "^5.3.2",
-    "vite": "^5.0.4"
-  },
-  "dependencies": {
-    "@baejino/style": "^0.0.4",
-    "@baejino/ui": "^0.0.9",
-    "axios": "^1.6.2",
-    "badland": "^0.2.4",
-    "masonry-layout": "^4.2.2"
-  }
+    "name": "client2",
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "check": "svelte-check --tsconfig ./tsconfig.json",
+        "preview": "vite preview",
+        "lint": "echo \"No lint specified\" && exit 0",
+        "test": "echo \"No test specified\" && exit 0"
+    },
+    "devDependencies": {
+        "@sveltejs/vite-plugin-svelte": "^3.0.1",
+        "@tsconfig/svelte": "^5.0.2",
+        "@types/masonry-layout": "^4.2.7",
+        "sass": "^1.69.5",
+        "svelte": "^4.2.8",
+        "svelte-check": "^3.6.2",
+        "svelte-routing": "^2.9.0",
+        "tslib": "^2.6.2",
+        "typescript": "^5.3.2",
+        "vite": "^5.0.4"
+    },
+    "dependencies": {
+        "@baejino/style": "^0.0.4",
+        "@baejino/ui": "^0.0.9",
+        "axios": "^1.6.2",
+        "badland": "^0.2.4",
+        "masonry-layout": "^4.2.2"
+    }
 }

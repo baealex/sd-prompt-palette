@@ -137,7 +137,7 @@
                         {collection.title}
                     </Link>
                 </div>
-                <a target="blank" href={`/collection/${collection.id}`}>
+                <a target="_blank" href={`/collection/${collection.id}`}>
                     <Image
                         className="image"
                         width={collection.image.width}
