@@ -2,6 +2,7 @@
     import { onDestroy, onMount, afterUpdate } from "svelte";
     import { derived, get } from "svelte/store";
     import { Link, navigate, useLocation } from "svelte-routing";
+    import Masonry from "masonry-layout";
 
     import { CollectionNav, Image } from "~/components";
 
@@ -88,7 +89,6 @@
 
     afterUpdate(() => {
         if (grid && grid.children.length) {
-            // @ts-ignore
             new Masonry(grid, {
                 itemSelector: ".grid-item",
                 columnWidth: 360,
