@@ -228,6 +228,8 @@
         flex-direction: column;
         text-align: center;
         align-items: center;
+        justify-content: center;
+        flex: 1;
 
         img {
             max-width: 100%;
