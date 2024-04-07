@@ -23,17 +23,17 @@
   },
   "homepage": "https://github.com/baealex/my-express-template#readme",
   "dependencies": {
-    "@prisma/client": "^5.11.0",
+    "@prisma/client": "^5.12.1",
     "@this/client": "file:client",
     "bcrypt": "^5.1.1",
-    "express": "^4.18.3",
+    "express": "^4.19.2",
     "express-winston": "^4.2.0",
     "graphql-http": "^1.22.0",
-    "prisma": "^5.11.0",
-    "sharp": "^0.33.2",
+    "prisma": "^5.12.1",
+    "sharp": "^0.33.3",
     "sqlite3": "^5.1.7",
     "ts-node": "^10.9.2",
-    "winston": "^3.12.0"
+    "winston": "^3.13.0"
   },
   "devDependencies": {
     "@graphql-tools/schema": "^10.0.3",
@@ -50,6 +50,6 @@
     "supertest": "^6.3.4",
     "ts-jest": "^29.1.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.4.2"
+    "typescript": "^5.4.4"
   }
 }
