@@ -34,7 +34,7 @@
 
 ```
 git clone https://github.com/baealex/sd-prompt-palette
-cd sd-prompt-palette/server/src && npm i && npm run build:client && npm run start
+cd sd-prompt-palette && ./start.sh
 ```
 
 `http://localhost:3332`로 접속할 수 있습니다.
