@@ -3,14 +3,14 @@
     "version": "1.0.0",
     "description": "",
     "scripts": {
-        "dev": "ts-node script/_dev.ts",
-        "start": "ts-node script/_start.ts",
-        "dev:client": "npm run dev --prefix client -- --port 3333",
+        "dev": "PORT=3332  ts-node script/_dev.ts",
+        "dev:client": "npm run dev --prefix client",
         "dev:with": "concurrently \"npm run dev\" \"npm run dev:client\"",
         "build": "tsc",
+        "build:client": "npm run build --prefix client",
+        "start": "PORT=3332 ts-node script/_start.ts",
         "lint": "eslint src",
-        "test": "DATABASE_URL=file:./test.sqlite3 ts-node script/_test.ts",
-        "build:client": "npm run build --prefix client"
+        "test": "DATABASE_URL=file:./test.sqlite3 ts-node script/_test.ts"
     },
     "repository": {
         "type": "git",
