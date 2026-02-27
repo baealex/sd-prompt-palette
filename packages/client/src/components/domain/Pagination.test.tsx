@@ -26,6 +26,40 @@ describe('Pagination', () => {
         expect(onPageChange).toHaveBeenCalledWith(4);
     });
 
+    it('supports first and last page jumps', () => {
+        const onPageChange = vi.fn();
+
+        render(
+            <Pagination
+                currentPage={4}
+                totalPages={10}
+                visiblePages={5}
+                onPageChange={onPageChange}
+            />,
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'First' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Last' }));
+
+        expect(onPageChange).toHaveBeenCalledWith(1);
+        expect(onPageChange).toHaveBeenCalledWith(10);
+    });
+
+    it('renders ellipsis when there is a gap in page ranges', () => {
+        const onPageChange = vi.fn();
+
+        render(
+            <Pagination
+                currentPage={5}
+                totalPages={20}
+                visiblePages={5}
+                onPageChange={onPageChange}
+            />,
+        );
+
+        expect(screen.getAllByText('…')).toHaveLength(2);
+    });
+
     it('keeps buttons keyboard focusable', () => {
         const onPageChange = vi.fn();
 
@@ -41,5 +75,19 @@ describe('Pagination', () => {
         nextButton.focus();
 
         expect(nextButton).toHaveFocus();
+    });
+
+    it('does not render controls when only one page exists', () => {
+        const onPageChange = vi.fn();
+
+        const { container } = render(
+            <Pagination
+                currentPage={1}
+                totalPages={1}
+                onPageChange={onPageChange}
+            />,
+        );
+
+        expect(container).toBeEmptyDOMElement();
     });
 });

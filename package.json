@@ -4,7 +4,7 @@
     "private": true,
     "scripts": {
         "dev": "pnpm --parallel --stream --filter @sdpp/server --filter @sdpp/client run dev",
-        "start": "pnpm --parallel --stream --filter @sdpp/server --filter @sdpp/client run start",
+        "start": "pnpm build:client && pnpm start:server",
         "dev:server": "pnpm --filter @sdpp/server run dev",
         "dev:client": "pnpm --filter @sdpp/client run dev",
         "build:server": "pnpm --filter @sdpp/server run build",

@@ -1,0 +1,15 @@
+node_modules
+.pnpm-store
+.npm-cache
+.git
+.github
+.conor
+.agents
+.tmp-design-refs
+docs
+**/*.log
+**/.DS_Store
+**/Thumbs.db
+packages/client/node_modules
+packages/server/node_modules
+packages/client/dist

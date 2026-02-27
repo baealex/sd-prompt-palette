@@ -3,6 +3,34 @@ import models, { Image, ImageMeta } from '~/models';
 import { hasErrorCode } from './live-images.errors';
 import { StoredImageMetaInput } from './live-images.types';
 
+const IMAGE_META_UPSERT_RETRY_DELAYS_MS = [120, 240, 480] as const;
+
+const RETRYABLE_SQLITE_ERROR_PATTERNS = [
+    /operations timed out/i,
+    /failed to respond to a query within the configured timeout/i,
+    /database is locked/i,
+    /database table is locked/i,
+    /sqlite_busy/i,
+] as const;
+
+const sleep = async (ms: number): Promise<void> => {
+    await new Promise((resolve) => {
+        setTimeout(resolve, ms);
+    });
+};
+
+const isRetryableSqliteWriteError = (error: unknown): boolean => {
+    if (hasErrorCode(error, 'P1008') || hasErrorCode(error, 'P2034')) {
+        return true;
+    }
+
+    if (!(error instanceof Error)) {
+        return false;
+    }
+
+    return RETRYABLE_SQLITE_ERROR_PATTERNS.some((pattern) => pattern.test(error.message));
+};
+
 export class LiveImagesImageRepository {
     async countImages(): Promise<number> {
         return models.image.count();
@@ -167,15 +195,27 @@ export class LiveImagesImageRepository {
     }
 
     async upsertImageMeta(imageId: number, data: StoredImageMetaInput): Promise<void> {
-        await models.imageMeta.upsert({
-            where: {
-                imageId,
-            },
-            update: data,
-            create: {
-                imageId,
-                ...data,
-            },
-        });
+        for (let attempt = 0; attempt <= IMAGE_META_UPSERT_RETRY_DELAYS_MS.length; attempt += 1) {
+            try {
+                await models.imageMeta.upsert({
+                    where: {
+                        imageId,
+                    },
+                    update: data,
+                    create: {
+                        imageId,
+                        ...data,
+                    },
+                });
+                return;
+            } catch (error: unknown) {
+                const hasRetryRemaining = attempt < IMAGE_META_UPSERT_RETRY_DELAYS_MS.length;
+                if (!hasRetryRemaining || !isRetryableSqliteWriteError(error)) {
+                    throw error;
+                }
+                const delayMs = IMAGE_META_UPSERT_RETRY_DELAYS_MS[attempt];
+                await sleep(delayMs);
+            }
+        }
     }
 }

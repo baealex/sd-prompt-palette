@@ -49,6 +49,8 @@ class LiveImagesService {
     private promptCache = new Map<number, PromptCacheItem>();
     private emitTimer: NodeJS.Timeout | null = null;
     private pendingEmitReason = 'init';
+    private imageMutationQueue: Promise<void> = Promise.resolve();
+    private startupSyncPromise: Promise<void> | null = null;
 
     private readonly defaultWatchDir = path.resolve('watch');
     private readonly configRepository = new LiveImagesConfigRepository();
@@ -78,10 +80,10 @@ class LiveImagesService {
         this.watchDirPath = this.config.watchDir;
         this.ingestMode = this.config.ingestMode;
 
-        await this.syncLibraryDirectory('startup-sync');
         await this.applyWatcherConfig('startup-config');
         this.registerSocketHandlers();
         this.initialized = true;
+        this.startStartupSyncInBackground();
 
         logger.info(
             `[live-images] ready watchDir="${this.watchDirPath}" libraryDir="${this.imageBaseDirPath}" mode="${this.ingestMode}" enabled="${this.config.enabled}"`
@@ -94,6 +96,10 @@ class LiveImagesService {
         if (this.emitTimer) {
             clearTimeout(this.emitTimer);
             this.emitTimer = null;
+        }
+
+        if (this.startupSyncPromise) {
+            await this.startupSyncPromise;
         }
 
         await this.stopWatchers();
@@ -171,25 +177,32 @@ class LiveImagesService {
     }
 
     async deleteImage(imageId: number): Promise<Image | null> {
-        const image = await this.imageRepository.findImageById(imageId);
-        if (!image) {
-            return null;
+        const deleted = await this.enqueueImageMutation(async () => {
+            const image = await this.imageRepository.findImageById(imageId);
+            if (!image) {
+                return null;
+            }
+
+            const linkedSourcePath = await this.imageRepository.readSourceLink(imageId);
+            await this.deleteImageRecord(imageId);
+
+            const absolutePath = this.absolutePathFromImageUrl(image.url);
+            if (absolutePath) {
+                await this.unlinkIfExists(absolutePath);
+            }
+
+            if (this.config.deleteSourceOnDelete && linkedSourcePath && this.ingestMode === 'copy') {
+                await this.unlinkIfExists(linkedSourcePath);
+            }
+
+            return image;
+        });
+
+        if (deleted) {
+            this.queueEmit('api:delete');
         }
 
-        const linkedSourcePath = await this.imageRepository.readSourceLink(imageId);
-        await this.deleteImageRecord(imageId);
-
-        const absolutePath = this.absolutePathFromImageUrl(image.url);
-        if (absolutePath) {
-            await this.unlinkIfExists(absolutePath);
-        }
-
-        if (this.config.deleteSourceOnDelete && linkedSourcePath && this.ingestMode === 'copy') {
-            await this.unlinkIfExists(linkedSourcePath);
-        }
-
-        this.queueEmit('api:delete');
-        return image;
+        return deleted;
     }
 
     notifyCollectionsChanged(reason = 'collection:sync'): void {
@@ -284,6 +297,27 @@ class LiveImagesService {
         await fs.promises.mkdir(this.imageBaseDirPath, { recursive: true });
         this.startWatchers();
         this.queueEmit(reason);
+    }
+
+    private startStartupSyncInBackground(): void {
+        if (this.startupSyncPromise) {
+            return;
+        }
+
+        this.startupSyncPromise = (async () => {
+            const startedAt = Date.now();
+            logger.info('[live-images] startup sync started');
+            try {
+                const scanned = await this.syncLibraryDirectory('startup-sync');
+                logger.info(
+                    `[live-images] startup sync completed scanned=${scanned} elapsedMs=${Date.now() - startedAt}`
+                );
+            } catch (error: unknown) {
+                logger.error(`[live-images] startup sync failed: ${errorMessage(error)}`);
+            } finally {
+                this.startupSyncPromise = null;
+            }
+        })();
     }
 
     private async stopWatchers(): Promise<void> {
@@ -381,42 +415,48 @@ class LiveImagesService {
 
         this.sourceProcessing.add(sourcePath);
         try {
-            const stat = await this.readStatIfExists(sourcePath);
-            if (!stat || !stat.isFile() || !isImageFileName(sourcePath)) {
-                return;
-            }
+            const changed = await this.enqueueImageMutation(async () => {
+                const stat = await this.readStatIfExists(sourcePath);
+                if (!stat || !stat.isFile() || !isImageFileName(sourcePath)) {
+                    return false;
+                }
 
-            const fingerprint = `${stat.size}:${stat.mtimeMs}`;
-            if (this.sourceFingerprint.get(sourcePath) === fingerprint) {
-                return;
-            }
+                const fingerprint = `${stat.size}:${stat.mtimeMs}`;
+                if (this.sourceFingerprint.get(sourcePath) === fingerprint) {
+                    return false;
+                }
 
-            const hash = await hashFile(sourcePath);
-            const exists = await this.imageRepository.findImageByHash(hash);
-            if (exists) {
+                const hash = await hashFile(sourcePath);
+                const exists = await this.imageRepository.findImageByHash(hash);
+                if (exists) {
+                    this.sourceFingerprint.set(sourcePath, fingerprint);
+                    return false;
+                }
+
+                const createdAt = await deriveCreatedAt(sourcePath, stat);
+                const extension = path.extname(sourcePath).toLowerCase();
+                const destinationPath = await createDestinationPath(this.imageBaseDirPath, createdAt, extension);
+
+                if (this.ingestMode === 'move') {
+                    await moveFile(sourcePath, destinationPath);
+                } else {
+                    await fs.promises.copyFile(sourcePath, destinationPath);
+                }
+
+                await this.registerLibraryFile(destinationPath, {
+                    knownHash: hash,
+                    preferredDate: createdAt,
+                    sourcePath: this.ingestMode === 'copy' ? sourcePath : undefined,
+                    ensureCollectionForExisting: true,
+                });
+
                 this.sourceFingerprint.set(sourcePath, fingerprint);
-                return;
-            }
-
-            const createdAt = await deriveCreatedAt(sourcePath, stat);
-            const extension = path.extname(sourcePath).toLowerCase();
-            const destinationPath = await createDestinationPath(this.imageBaseDirPath, createdAt, extension);
-
-            if (this.ingestMode === 'move') {
-                await moveFile(sourcePath, destinationPath);
-            } else {
-                await fs.promises.copyFile(sourcePath, destinationPath);
-            }
-
-            await this.registerLibraryFile(destinationPath, {
-                knownHash: hash,
-                preferredDate: createdAt,
-                sourcePath: this.ingestMode === 'copy' ? sourcePath : undefined,
-                ensureCollectionForExisting: true,
+                return true;
             });
 
-            this.sourceFingerprint.set(sourcePath, fingerprint);
-            this.queueEmit(reason);
+            if (changed) {
+                this.queueEmit(reason);
+            }
         } catch (error: unknown) {
             if (hasErrorCode(error, 'ENOENT')) {
                 return;
@@ -428,22 +468,28 @@ class LiveImagesService {
     }
 
     private async removeByLibraryPath(targetPath: string, reason: string): Promise<void> {
-        if (this.isIgnoredLibraryPath(targetPath)) {
-            return;
-        }
+        const removed = await this.enqueueImageMutation(async () => {
+            if (this.isIgnoredLibraryPath(targetPath)) {
+                return false;
+            }
 
-        const url = this.imageUrlFromAbsolutePath(targetPath);
-        if (!url) {
-            return;
-        }
+            const url = this.imageUrlFromAbsolutePath(targetPath);
+            if (!url) {
+                return false;
+            }
 
-        const image = await this.imageRepository.findImageByUrl(url);
-        if (!image) {
-            return;
-        }
+            const image = await this.imageRepository.findImageByUrl(url);
+            if (!image) {
+                return false;
+            }
 
-        await this.deleteImageRecord(image.id);
-        this.queueEmit(reason);
+            await this.deleteImageRecord(image.id);
+            return true;
+        });
+
+        if (removed) {
+            this.queueEmit(reason);
+        }
     }
 
     private isIgnoredSourcePath(targetPath: string): boolean {
@@ -506,36 +552,47 @@ class LiveImagesService {
     }
 
     private async syncLibraryDirectory(reason: string): Promise<number> {
-        const entries = await this.walkLibraryImageFiles();
-        let scanned = 0;
+        return this.enqueueImageMutation(async () => {
+            const entries = await this.walkLibraryImageFiles();
+            let scanned = 0;
 
-        for (const absolutePath of entries) {
-            try {
-                await this.registerLibraryFile(absolutePath);
-                scanned += 1;
-            } catch (error: unknown) {
-                if (hasErrorCode(error, 'ENOENT')) {
+            for (const absolutePath of entries) {
+                try {
+                    await this.registerLibraryFile(absolutePath);
+                    scanned += 1;
+                } catch (error: unknown) {
+                    if (hasErrorCode(error, 'ENOENT')) {
+                        continue;
+                    }
+                    logger.error(`[live-images] sync register failed "${absolutePath}": ${errorMessage(error)}`);
+                }
+            }
+
+            const images = await this.imageRepository.findAllImageRefs();
+            for (const image of images) {
+                const absolutePath = this.absolutePathFromImageUrl(image.url);
+                if (!absolutePath) {
                     continue;
                 }
-                logger.error(`[live-images] sync register failed "${absolutePath}": ${errorMessage(error)}`);
-            }
-        }
 
-        const images = await this.imageRepository.findAllImageRefs();
-        for (const image of images) {
-            const absolutePath = this.absolutePathFromImageUrl(image.url);
-            if (!absolutePath) {
-                continue;
+                const stat = await this.readStatIfExists(absolutePath);
+                if (!stat) {
+                    await this.deleteImageRecord(image.id);
+                }
             }
 
-            const stat = await this.readStatIfExists(absolutePath);
-            if (!stat) {
-                await this.deleteImageRecord(image.id);
-            }
-        }
+            this.queueEmit(reason);
+            return scanned;
+        });
+    }
 
-        this.queueEmit(reason);
-        return scanned;
+    private enqueueImageMutation<T>(task: () => Promise<T>): Promise<T> {
+        const run = this.imageMutationQueue.then(task, task);
+        this.imageMutationQueue = run.then(
+            () => undefined,
+            () => undefined
+        );
+        return run;
     }
 
     private async registerLibraryFile(
