@@ -242,6 +242,8 @@ export const CollectionGalleryPage = () => {
                 <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
+                    totalItems={totalItems}
+                    itemsPerPage={LIMIT}
                     onPageChange={handlePageChange}
                 />
             ) : null}

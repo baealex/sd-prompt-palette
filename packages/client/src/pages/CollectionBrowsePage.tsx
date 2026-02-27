@@ -424,6 +424,8 @@ export const CollectionBrowsePage = () => {
                         <Pagination
                             currentPage={currentPage}
                             totalPages={totalPages}
+                            totalItems={totalItems}
+                            itemsPerPage={LIMIT}
                             onPageChange={handlePageChange}
                         />
                     ) : null}

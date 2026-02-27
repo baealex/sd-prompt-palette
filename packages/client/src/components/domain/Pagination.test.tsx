@@ -57,7 +57,7 @@ describe('Pagination', () => {
             />,
         );
 
-        expect(screen.getAllByText('…')).toHaveLength(2);
+        expect(screen.getAllByText('...')).toHaveLength(2);
     });
 
     it('keeps buttons keyboard focusable', () => {
@@ -75,6 +75,23 @@ describe('Pagination', () => {
         nextButton.focus();
 
         expect(nextButton).toHaveFocus();
+    });
+
+    it('shows page status and item range copy', () => {
+        const onPageChange = vi.fn();
+
+        render(
+            <Pagination
+                currentPage={3}
+                totalPages={10}
+                totalItems={194}
+                itemsPerPage={20}
+                onPageChange={onPageChange}
+            />,
+        );
+
+        expect(screen.getByText('Page 3 of 10')).toBeInTheDocument();
+        expect(screen.getByText('41-60 of 194')).toBeInTheDocument();
     });
 
     it('does not render controls when only one page exists', () => {

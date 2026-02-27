@@ -296,6 +296,8 @@ export const CollectionListPage = () => {
                 <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
+                    totalItems={totalItems}
+                    itemsPerPage={LIMIT}
                     onPageChange={handlePageChange}
                 />
             ) : null}
