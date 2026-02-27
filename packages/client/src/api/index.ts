@@ -99,7 +99,7 @@ export function createCategory(data: { name: string }) {
 export function updateCategory(data: { id: number; name: string }) {
     return graphQLRequest<'updateCategory', Pick<Category, 'id' | 'name'>>(
         `
-        mutation($id: Int!, $name: String!) {
+        mutation($id: ID!, $name: String!) {
             updateCategory(id: $id, name: $name) {
                 id
                 name
@@ -113,7 +113,7 @@ export function updateCategory(data: { id: number; name: string }) {
 export function updateCategoryOrder(data: { id: number; order: number }) {
     return graphQLRequest<'updateCategoryOrder', boolean>(
         `
-        mutation($id: Int!, $order: Int!) {
+        mutation($id: ID!, $order: Int!) {
             updateCategoryOrder(id: $id, order: $order)
         }
         `,
@@ -124,7 +124,7 @@ export function updateCategoryOrder(data: { id: number; order: number }) {
 export function deleteCategory(data: { id: number }) {
     return graphQLRequest<'deleteCategory', boolean>(
         `
-        mutation($id: Int!) {
+        mutation($id: ID!) {
             deleteCategory(id: $id)
         }
         `,
@@ -135,7 +135,7 @@ export function deleteCategory(data: { id: number }) {
 export function createKeyword(data: { categoryId: number; name: string }) {
     return graphQLRequest<'createKeyword', Pick<Keyword, 'id' | 'name' | 'categories'>>(
         `
-        mutation($categoryId: Int!, $name: String!) {
+        mutation($categoryId: ID!, $name: String!) {
             createKeyword(categoryId: $categoryId, name: $name) {
                 id
                 name
@@ -153,7 +153,7 @@ export function createKeyword(data: { categoryId: number; name: string }) {
 export function updateKeywordOrder(data: { keywordId: number; categoryId: number; order: number }) {
     return graphQLRequest<'updateKeywordOrder', boolean>(
         `
-        mutation($keywordId: Int!, $categoryId: Int!, $order: Int!) {
+        mutation($keywordId: ID!, $categoryId: ID!, $order: Int!) {
             updateKeywordOrder(keywordId: $keywordId, categoryId: $categoryId, order: $order)
         }
         `,
@@ -168,7 +168,7 @@ export function updateKeywordOrder(data: { keywordId: number; categoryId: number
 export function deleteKeyword(data: { keywordId: number; categoryId: number }) {
     return graphQLRequest<'deleteKeyword', boolean>(
         `
-        mutation($keywordId: Int!, $categoryId: Int!) {
+        mutation($keywordId: ID!, $categoryId: ID!) {
             deleteKeyword(keywordId: $keywordId, categoryId: $categoryId)
         }
         `,
@@ -182,7 +182,7 @@ export function deleteKeyword(data: { keywordId: number; categoryId: number }) {
 export function getCollection(data: { id: number }) {
     return graphQLRequest<'collection', Pick<Collection, 'id' | 'title' | 'prompt' | 'negativePrompt' | 'image'>>(
         `
-        query($id: Int!) {
+        query($id: ID!) {
             collection(id: $id) {
                 id
                 title
@@ -191,6 +191,8 @@ export function getCollection(data: { id: number }) {
                 image {
                     id
                     url
+                    width
+                    height
                 }
             }
         }
@@ -262,7 +264,7 @@ export function getCollections(data: GetCollectionsRequestData = {}) {
 export function createCollection(data: { title: string; prompt: string; negativePrompt: string; imageId: number }) {
     return graphQLRequest<'createCollection', Pick<Collection, 'id' | 'prompt' | 'negativePrompt' | 'image'>>(
         `
-        mutation($title: String!, $prompt: String!, $negativePrompt: String!, $imageId: Int!) {
+        mutation($title: String!, $prompt: String!, $negativePrompt: String!, $imageId: ID!) {
             createCollection(title: $title, prompt: $prompt, negativePrompt: $negativePrompt, imageId: $imageId) {
                 id
                 title
@@ -271,6 +273,8 @@ export function createCollection(data: { title: string; prompt: string; negative
                 image {
                     id
                     url
+                    width
+                    height
                 }
             }
         }
@@ -287,7 +291,7 @@ export function createCollection(data: { title: string; prompt: string; negative
 export function updateCollection(data: { id: number; title: string }) {
     return graphQLRequest<'updateCollection', Pick<Collection, 'title'>>(
         `
-        mutation($id: Int!, $title: String!) {
+        mutation($id: ID!, $title: String!) {
             updateCollection(id: $id, title: $title) {
                 title
             }
@@ -303,7 +307,7 @@ export function updateCollection(data: { id: number; title: string }) {
 export function deleteCollection(data: { id: number }) {
     return graphQLRequest<'deleteCollection', boolean>(
         `
-        mutation($id: Int!) {
+        mutation($id: ID!) {
             deleteCollection(id: $id)
         }
         `,
@@ -314,7 +318,7 @@ export function deleteCollection(data: { id: number }) {
 export function createSampleImage(data: { imageId: number; keywordId: number }) {
     return graphQLRequest<'createSampleImage', boolean>(
         `
-        mutation($imageId: Int!, $keywordId: Int!) {
+        mutation($imageId: ID!, $keywordId: ID!) {
             createSampleImage(imageId: $imageId, keywordId: $keywordId) {
                 id
                 name
@@ -335,7 +339,7 @@ export function createSampleImage(data: { imageId: number; keywordId: number }) 
 export function deleteSampleImage(data: { id: number }) {
     return graphQLRequest<'deleteSampleImage', boolean>(
         `
-        mutation($id: Int!) {
+        mutation($id: ID!) {
             deleteSampleImage(id: $id)
         }
         `,
