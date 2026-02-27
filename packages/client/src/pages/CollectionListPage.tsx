@@ -9,6 +9,13 @@ import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 import { Notice } from '~/components/ui/Notice';
 import { PromptDialog } from '~/components/ui/PromptDialog';
 import { useClipboardToast } from '~/components/ui/use-clipboard-toast';
+import {
+    applyCollectionFilterSearch,
+    buildCollectionViewPath,
+    normalizeCollectionFilterText,
+    parseCollectionSort,
+    resolveCollectionSortOrder,
+} from '~/features/collection/view-filter';
 import type { Collection } from '~/models/types';
 import { usePathStore } from '~/state/path-store';
 
@@ -54,16 +61,13 @@ const parsePage = (input: unknown) => {
     return Math.max(1, Math.trunc(parsed));
 };
 
-const buildCollectionListPath = (next: { query: string; page: number }) => {
-    const params = new URLSearchParams();
-    if (next.query) {
-        params.set('query', next.query);
-    }
-    if (next.page > 1) {
-        params.set('page', String(next.page));
-    }
-    const queryString = params.toString();
-    return queryString ? `/collection?${queryString}` : '/collection';
+const buildCollectionListPath = (next: {
+    query: string;
+    model: string;
+    sort: ReturnType<typeof parseCollectionSort>;
+    page: number;
+}) => {
+    return buildCollectionViewPath('/collection', next);
 };
 
 export const CollectionListPage = () => {
@@ -74,15 +78,21 @@ export const CollectionListPage = () => {
         strict: false,
         select: (search) => {
             const queryValue = (search as Record<string, unknown>).query;
+            const modelValue = (search as Record<string, unknown>).model;
+            const sortValue = (search as Record<string, unknown>).sort;
             const pageValue = (search as Record<string, unknown>).page;
             return {
-                query: typeof queryValue === 'string' ? queryValue : '',
+                query: normalizeCollectionFilterText(queryValue),
+                model: normalizeCollectionFilterText(modelValue),
+                sort: parseCollectionSort(sortValue),
                 page: parsePage(pageValue),
             };
         },
     });
 
     const query = listSearch.query;
+    const model = listSearch.model;
+    const sort = listSearch.sort;
     const currentPage = listSearch.page;
     const [mutationError, setMutationError] = useState<string | null>(null);
     const [renamingId, setRenamingId] = useState<number | null>(null);
@@ -97,21 +107,23 @@ export const CollectionListPage = () => {
     useEffect(() => {
         setPath(
             'collection',
-            buildCollectionListPath({ query, page: currentPage }),
+            buildCollectionListPath({ query, model, sort, page: currentPage }),
         );
-    }, [currentPage, query, setPath]);
+    }, [currentPage, model, query, setPath, sort]);
 
     useEffect(() => {
         setMutationError(null);
-    }, [currentPage, query]);
+    }, [currentPage, model, query, sort]);
 
     const collectionsQuery = useQuery({
-        queryKey: ['collections', 'list', query, currentPage] as const,
+        queryKey: ['collections', 'list', query, model, sort, currentPage] as const,
         queryFn: async () => {
             const response = await getCollections({
                 page: currentPage,
                 limit: LIMIT,
                 query,
+                model,
+                ...resolveCollectionSortOrder(sort),
             });
 
             const responseItems = response.data.allCollections.collections.map(
@@ -163,11 +175,7 @@ export const CollectionListPage = () => {
                 const nextSearch = {
                     ...(previousSearch as Record<string, unknown>),
                 };
-                if (query) {
-                    nextSearch.query = query;
-                } else {
-                    delete nextSearch.query;
-                }
+                applyCollectionFilterSearch(nextSearch, { query, model, sort });
 
                 if (safePage > 1) {
                     nextSearch.page = safePage;
@@ -177,7 +185,7 @@ export const CollectionListPage = () => {
                 return nextSearch;
             },
         });
-    }, [collectionsQuery.data, currentPage, navigate, query]);
+    }, [collectionsQuery.data, currentPage, model, navigate, query, sort]);
 
     const handlePageChange = useCallback(
         (nextPage: number) => {
@@ -188,11 +196,7 @@ export const CollectionListPage = () => {
                     const nextSearch = {
                         ...(previousSearch as Record<string, unknown>),
                     };
-                    if (query) {
-                        nextSearch.query = query;
-                    } else {
-                        delete nextSearch.query;
-                    }
+                    applyCollectionFilterSearch(nextSearch, { query, model, sort });
 
                     if (nextPage > 1) {
                         nextSearch.page = nextPage;
@@ -203,7 +207,7 @@ export const CollectionListPage = () => {
                 },
             });
         },
-        [navigate, query],
+        [model, navigate, query, sort],
     );
 
     const handleOpenDetail = useCallback(

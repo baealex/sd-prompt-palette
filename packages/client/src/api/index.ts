@@ -20,6 +20,7 @@ export interface OrderRequest {
 
 export interface SearchRequest {
     query?: string;
+    model?: string;
 }
 
 export interface PaginationRequest {
@@ -237,6 +238,14 @@ export function getCollection(data: { id: number }) {
     );
 }
 
+export function getCollectionModelOptions() {
+    return graphQLRequest<'collectionModelOptions', string[]>(`
+        query {
+            collectionModelOptions
+        }
+    `);
+}
+
 interface GetCollectionsRequestData extends OrderRequest, PaginationRequest, SearchRequest {
     page?: number;
     limit?: number;
@@ -252,6 +261,7 @@ export function getCollections(data: GetCollectionsRequestData = {}) {
         page = 1,
         limit = 10,
         query = '',
+        model = '',
         order = 'desc',
         orderBy = 'createdAt',
     } = data;
@@ -259,11 +269,12 @@ export function getCollections(data: GetCollectionsRequestData = {}) {
 
     return graphQLRequest<'allCollections', GetCollectionsResponse>(
         `
-        query($limit: Int!, $offset: Int!, $query: String!, $order: String!, $orderBy: String!) {
+        query($limit: Int!, $offset: Int!, $query: String!, $model: String, $order: String!, $orderBy: String!) {
             allCollections(
                 limit: $limit,
                 offset: $offset,
                 query: $query,
+                model: $model,
                 order: $order,
                 orderBy: $orderBy
             ) {
@@ -291,6 +302,7 @@ export function getCollections(data: GetCollectionsRequestData = {}) {
             limit,
             offset,
             query,
+            model,
             order,
             orderBy,
         },

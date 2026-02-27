@@ -9,6 +9,7 @@ export interface Order {
 
 export interface Search {
 	query: string;
+	model?: string;
 }
 
 export interface Pagination {

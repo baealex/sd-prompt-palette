@@ -7,6 +7,13 @@ import { MasonryColumns } from '~/components/domain/MasonryColumns';
 import { Pagination } from '~/components/domain/Pagination';
 import { Image } from '~/components/domain/Image';
 import { Notice } from '~/components/ui/Notice';
+import {
+    applyCollectionFilterSearch,
+    buildCollectionViewPath,
+    normalizeCollectionFilterText,
+    parseCollectionSort,
+    resolveCollectionSortOrder,
+} from '~/features/collection/view-filter';
 import type { Collection } from '~/models/types';
 import { usePathStore } from '~/state/path-store';
 
@@ -49,18 +56,13 @@ const parsePage = (input: unknown) => {
     return Math.max(1, Math.trunc(parsed));
 };
 
-const buildCollectionGalleryPath = (next: { query: string; page: number }) => {
-    const params = new URLSearchParams();
-    if (next.query) {
-        params.set('query', next.query);
-    }
-    if (next.page > 1) {
-        params.set('page', String(next.page));
-    }
-    const queryString = params.toString();
-    return queryString
-        ? `/collection/gallery?${queryString}`
-        : '/collection/gallery';
+const buildCollectionGalleryPath = (next: {
+    query: string;
+    model: string;
+    sort: ReturnType<typeof parseCollectionSort>;
+    page: number;
+}) => {
+    return buildCollectionViewPath('/collection/gallery', next);
 };
 
 export const CollectionGalleryPage = () => {
@@ -70,30 +72,38 @@ export const CollectionGalleryPage = () => {
         strict: false,
         select: (search) => {
             const queryValue = (search as Record<string, unknown>).query;
+            const modelValue = (search as Record<string, unknown>).model;
+            const sortValue = (search as Record<string, unknown>).sort;
             const pageValue = (search as Record<string, unknown>).page;
             return {
-                query: typeof queryValue === 'string' ? queryValue : '',
+                query: normalizeCollectionFilterText(queryValue),
+                model: normalizeCollectionFilterText(modelValue),
+                sort: parseCollectionSort(sortValue),
                 page: parsePage(pageValue),
             };
         },
     });
     const query = gallerySearch.query;
+    const model = gallerySearch.model;
+    const sort = gallerySearch.sort;
     const currentPage = gallerySearch.page;
 
     useEffect(() => {
         setPath(
             'collection',
-            buildCollectionGalleryPath({ query, page: currentPage }),
+            buildCollectionGalleryPath({ query, model, sort, page: currentPage }),
         );
-    }, [currentPage, query, setPath]);
+    }, [currentPage, model, query, setPath, sort]);
 
     const collectionsQuery = useQuery({
-        queryKey: ['collections', 'gallery', query, currentPage] as const,
+        queryKey: ['collections', 'gallery', query, model, sort, currentPage] as const,
         queryFn: async () => {
             const response = await getCollections({
                 page: currentPage,
                 limit: LIMIT,
                 query,
+                model,
+                ...resolveCollectionSortOrder(sort),
             });
 
             const responseCollections =
@@ -140,11 +150,7 @@ export const CollectionGalleryPage = () => {
                 const nextSearch = {
                     ...(previousSearch as Record<string, unknown>),
                 };
-                if (query) {
-                    nextSearch.query = query;
-                } else {
-                    delete nextSearch.query;
-                }
+                applyCollectionFilterSearch(nextSearch, { query, model, sort });
 
                 if (safePage > 1) {
                     nextSearch.page = safePage;
@@ -154,7 +160,7 @@ export const CollectionGalleryPage = () => {
                 return nextSearch;
             },
         });
-    }, [collectionsQuery.data, currentPage, navigate, query]);
+    }, [collectionsQuery.data, currentPage, model, navigate, query, sort]);
 
     const handlePageChange = useCallback(
         (nextPage: number) => {
@@ -165,11 +171,7 @@ export const CollectionGalleryPage = () => {
                     const nextSearch = {
                         ...(previousSearch as Record<string, unknown>),
                     };
-                    if (query) {
-                        nextSearch.query = query;
-                    } else {
-                        delete nextSearch.query;
-                    }
+                    applyCollectionFilterSearch(nextSearch, { query, model, sort });
 
                     if (nextPage > 1) {
                         nextSearch.page = nextPage;
@@ -180,7 +182,7 @@ export const CollectionGalleryPage = () => {
                 },
             });
         },
-        [navigate, query],
+        [model, navigate, query, sort],
     );
 
     const placeholderText = loading

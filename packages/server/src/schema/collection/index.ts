@@ -1,6 +1,6 @@
 import { IResolvers } from '@graphql-tools/utils';
 
-import { Collection, models, Order, Pagination, Search } from '~/models';
+import { Collection, Prisma, models, Order, Pagination, Search } from '~/models';
 import { gql } from '~/modules/graphql';
 import { liveImagesService } from '~/modules/live-images';
 
@@ -92,7 +92,8 @@ export const CollectionType = gql`
 
 export const CollectionQuery = gql`
     type Query {
-        allCollections(orderBy: String, order: String, query: String, limit: Int, offset: Int): AllCollections!
+        collectionModelOptions: [String!]!
+        allCollections(orderBy: String, order: String, query: String, model: String, limit: Int, offset: Int): AllCollections!
         collection(id: ID!): Collection!
     }
 `;
@@ -113,6 +114,26 @@ export const CollectionTypeDefs = `
 
 export const CollectionResolvers: IResolvers = {
     Query: {
+        collectionModelOptions: async () => {
+            const metas = await models.imageMeta.findMany({
+                where: {
+                    model: {
+                        not: null,
+                    },
+                },
+                select: {
+                    model: true,
+                },
+                distinct: ['model'],
+                orderBy: {
+                    model: 'asc',
+                },
+            });
+
+            return metas
+                .map((meta) => meta.model?.trim())
+                .filter((model): model is string => Boolean(model));
+        },
         allCollections:
             (
                 _,
@@ -120,32 +141,60 @@ export const CollectionResolvers: IResolvers = {
                     orderBy,
                     order,
                     query,
+                    model,
                     limit,
                     offset,
                 }: Order & Pagination & Search,
             ) =>
             async () => {
-                const where = query
-                    ? {
-                          OR: [
-                              {
-                                  title: {
-                                      contains: query,
-                                  },
-                              },
-                              {
-                                  prompt: {
-                                      contains: query,
-                                  },
-                              },
-                              {
-                                  negativePrompt: {
-                                      contains: query,
-                                  },
-                              },
-                          ],
-                      }
-                    : undefined;
+                const normalizedQuery = query?.trim() || '';
+                const normalizedModel = model?.trim() || '';
+                const filters: Prisma.CollectionWhereInput[] = [];
+
+                if (normalizedQuery) {
+                    filters.push({
+                        OR: [
+                            {
+                                title: {
+                                    contains: normalizedQuery,
+                                },
+                            },
+                            {
+                                prompt: {
+                                    contains: normalizedQuery,
+                                },
+                            },
+                            {
+                                negativePrompt: {
+                                    contains: normalizedQuery,
+                                },
+                            },
+                        ],
+                    });
+                }
+
+                if (normalizedModel) {
+                    filters.push({
+                        image: {
+                            meta: {
+                                is: {
+                                    model: {
+                                        contains: normalizedModel,
+                                    },
+                                },
+                            },
+                        },
+                    });
+                }
+
+                const where =
+                    filters.length === 0
+                        ? undefined
+                        : filters.length === 1
+                          ? filters[0]
+                          : {
+                                AND: filters,
+                            };
 
                 const collections = await models.collection.findMany({
                     orderBy: resolveCollectionOrderBy(orderBy, order || 'desc'),

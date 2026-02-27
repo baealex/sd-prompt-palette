@@ -14,6 +14,13 @@ import { IconButton } from '~/components/ui/IconButton';
 import { Notice } from '~/components/ui/Notice';
 import { PromptDialog } from '~/components/ui/PromptDialog';
 import { useToast } from '~/components/ui/ToastProvider';
+import {
+    applyCollectionFilterSearch,
+    buildCollectionViewPath,
+    normalizeCollectionFilterText,
+    parseCollectionSort,
+    resolveCollectionSortOrder,
+} from '~/features/collection/view-filter';
 import { MoreIcon } from '~/icons';
 import type { Collection } from '~/models/types';
 import { usePathStore } from '~/state/path-store';
@@ -86,16 +93,22 @@ export const CollectionBrowsePage = () => {
         strict: false,
         select: (search) => {
             const queryValue = (search as Record<string, unknown>).query;
+            const modelValue = (search as Record<string, unknown>).model;
+            const sortValue = (search as Record<string, unknown>).sort;
             const pageValue = (search as Record<string, unknown>).page;
             const selectedValue = (search as Record<string, unknown>).selected;
             return {
-                query: typeof queryValue === 'string' ? queryValue : '',
+                query: normalizeCollectionFilterText(queryValue),
+                model: normalizeCollectionFilterText(modelValue),
+                sort: parseCollectionSort(sortValue),
                 page: parsePage(pageValue),
                 selected: parseSelectedId(selectedValue),
             };
         },
     });
     const query = browseSearch.query;
+    const model = browseSearch.model;
+    const sort = browseSearch.sort;
     const currentPage = browseSearch.page;
     const selectedId = browseSearch.selected;
     const [actionMenuOpen, setActionMenuOpen] = useState(false);
@@ -109,21 +122,14 @@ export const CollectionBrowsePage = () => {
     const { pushToast } = useToast();
 
     const buildBrowsePath = useCallback(
-        (next: { query: string; page: number; selected: number | null }) => {
-            const params = new URLSearchParams();
-            if (next.query) {
-                params.set('query', next.query);
-            }
-            if (next.page > 1) {
-                params.set('page', String(next.page));
-            }
-            if (next.selected) {
-                params.set('selected', String(next.selected));
-            }
-            const queryString = params.toString();
-            return queryString
-                ? `/collection/browse?${queryString}`
-                : '/collection/browse';
+        (next: {
+            query: string;
+            model: string;
+            sort: ReturnType<typeof parseCollectionSort>;
+            page: number;
+            selected: number | null;
+        }) => {
+            return buildCollectionViewPath('/collection/browse', next);
         },
         [],
     );
@@ -131,17 +137,25 @@ export const CollectionBrowsePage = () => {
     useEffect(() => {
         setPath(
             'collection',
-            buildBrowsePath({ query, page: currentPage, selected: null }),
+            buildBrowsePath({
+                query,
+                model,
+                sort,
+                page: currentPage,
+                selected: null,
+            }),
         );
-    }, [buildBrowsePath, currentPage, query, setPath]);
+    }, [buildBrowsePath, currentPage, model, query, setPath, sort]);
 
     const collectionsQuery = useQuery({
-        queryKey: ['collections', 'browse', query, currentPage] as const,
+        queryKey: ['collections', 'browse', query, model, sort, currentPage] as const,
         queryFn: async () => {
             const response = await getCollections({
                 page: currentPage,
                 limit: LIMIT,
                 query,
+                model,
+                ...resolveCollectionSortOrder(sort),
             });
 
             const responseItems = response.data.allCollections.collections
@@ -221,7 +235,7 @@ export const CollectionBrowsePage = () => {
 
     useEffect(() => {
         galleryScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' });
-    }, [currentPage, query]);
+    }, [currentPage, model, query, sort]);
 
     useEffect(() => {
         if (items.length === 0) {
@@ -234,11 +248,11 @@ export const CollectionBrowsePage = () => {
                         const nextSearch = {
                             ...(previousSearch as Record<string, unknown>),
                         };
-                        if (query) {
-                            nextSearch.query = query;
-                        } else {
-                            delete nextSearch.query;
-                        }
+                        applyCollectionFilterSearch(nextSearch, {
+                            query,
+                            model,
+                            sort,
+                        });
                         if (currentPage > 1) {
                             nextSearch.page = currentPage;
                         } else {
@@ -265,11 +279,11 @@ export const CollectionBrowsePage = () => {
                 const nextSearch = {
                     ...(previousSearch as Record<string, unknown>),
                 };
-                if (query) {
-                    nextSearch.query = query;
-                } else {
-                    delete nextSearch.query;
-                }
+                applyCollectionFilterSearch(nextSearch, {
+                    query,
+                    model,
+                    sort,
+                });
                 if (currentPage > 1) {
                     nextSearch.page = currentPage;
                 } else {
@@ -279,7 +293,7 @@ export const CollectionBrowsePage = () => {
                 return nextSearch;
             },
         });
-    }, [currentPage, items, navigate, query, selectedId]);
+    }, [currentPage, items, model, navigate, query, selectedId, sort]);
 
     const selectedItem = useMemo(() => {
         if (!selectedId) {
@@ -298,11 +312,7 @@ export const CollectionBrowsePage = () => {
                     const nextSearch = {
                         ...(previousSearch as Record<string, unknown>),
                     };
-                    if (query) {
-                        nextSearch.query = query;
-                    } else {
-                        delete nextSearch.query;
-                    }
+                    applyCollectionFilterSearch(nextSearch, { query, model, sort });
 
                     if (nextPage > 1) {
                         nextSearch.page = nextPage;
@@ -315,7 +325,7 @@ export const CollectionBrowsePage = () => {
                 },
             });
         },
-        [navigate, query],
+        [model, navigate, query, sort],
     );
 
     const openDetail = (collectionId: number) => {
@@ -441,11 +451,11 @@ export const CollectionBrowsePage = () => {
                                                             unknown
                                                         >),
                                                     };
-                                                    if (query) {
-                                                        nextSearch.query = query;
-                                                    } else {
-                                                        delete nextSearch.query;
-                                                    }
+                                                    applyCollectionFilterSearch(nextSearch, {
+                                                        query,
+                                                        model,
+                                                        sort,
+                                                    });
                                                     if (currentPage > 1) {
                                                         nextSearch.page =
                                                             currentPage;
