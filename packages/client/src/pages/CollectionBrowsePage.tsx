@@ -16,6 +16,7 @@ import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 import { IconButton } from '~/components/ui/IconButton';
 import { Notice } from '~/components/ui/Notice';
 import { PromptDialog } from '~/components/ui/PromptDialog';
+import { useToast } from '~/components/ui/ToastProvider';
 import { MoreIcon } from '~/icons';
 import type { Collection } from '~/models/types';
 import { usePathStore } from '~/state/path-store';
@@ -97,8 +98,9 @@ export const CollectionBrowsePage = () => {
     const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
     const [renaming, setRenaming] = useState(false);
     const [removing, setRemoving] = useState(false);
-    const [actionError, setActionError] = useState<string | null>(null);
     const actionMenuRef = useRef<HTMLDivElement | null>(null);
+    const queryErrorToastRef = useRef<string | null>(null);
+    const { pushToast } = useToast();
 
     const buildBrowsePath = useCallback((next: { query: string; page: number; selected: number | null }) => {
         const params = new URLSearchParams();
@@ -161,6 +163,21 @@ export const CollectionBrowsePage = () => {
     const queryErrorMessage = collectionsQuery.error instanceof Error ? collectionsQuery.error.message : null;
 
     useEffect(() => {
+        if (!queryErrorMessage) {
+            queryErrorToastRef.current = null;
+            return;
+        }
+        if (queryErrorToastRef.current === queryErrorMessage) {
+            return;
+        }
+        queryErrorToastRef.current = queryErrorMessage;
+        pushToast({
+            variant: 'error',
+            message: queryErrorMessage,
+        });
+    }, [pushToast, queryErrorMessage]);
+
+    useEffect(() => {
         if (!actionMenuOpen) {
             return;
         }
@@ -192,6 +209,7 @@ export const CollectionBrowsePage = () => {
                 void navigate({
                     to: '/collection/browse',
                     replace: true,
+                    resetScroll: false,
                     search: (previousSearch) => {
                         const nextSearch = { ...(previousSearch as Record<string, unknown>) };
                         if (query) {
@@ -220,6 +238,7 @@ export const CollectionBrowsePage = () => {
         void navigate({
             to: '/collection/browse',
             replace: true,
+            resetScroll: false,
             search: (previousSearch) => {
                 const nextSearch = { ...(previousSearch as Record<string, unknown>) };
                 if (query) {
@@ -250,6 +269,7 @@ export const CollectionBrowsePage = () => {
         void navigate({
             to: '/collection/browse',
             replace: true,
+            resetScroll: false,
             search: (previousSearch) => {
                 const nextSearch = { ...(previousSearch as Record<string, unknown>) };
                 if (nextQuery) {
@@ -269,6 +289,7 @@ export const CollectionBrowsePage = () => {
             void navigate({
                 to: '/collection/browse',
                 replace: true,
+                resetScroll: false,
                 search: (previousSearch) => {
                     const nextSearch = { ...(previousSearch as Record<string, unknown>) };
                     if (query) {
@@ -311,11 +332,17 @@ export const CollectionBrowsePage = () => {
         setRenaming(true);
         try {
             await updateCollection({ id: selectedItem.id, title: normalizedTitle });
-            setActionError(null);
             setRenameDialogOpen(false);
+            pushToast({
+                variant: 'success',
+                message: 'Collection renamed.',
+            });
             await collectionsQuery.refetch();
         } catch (nextError) {
-            setActionError(nextError instanceof Error ? nextError.message : 'Failed to rename collection');
+            pushToast({
+                variant: 'error',
+                message: nextError instanceof Error ? nextError.message : 'Failed to rename collection',
+            });
         } finally {
             setRenaming(false);
         }
@@ -329,11 +356,17 @@ export const CollectionBrowsePage = () => {
         setRemoving(true);
         try {
             await deleteCollection({ id: selectedItem.id });
-            setActionError(null);
             setRemoveDialogOpen(false);
+            pushToast({
+                variant: 'success',
+                message: 'Collection deleted.',
+            });
             await collectionsQuery.refetch();
         } catch (nextError) {
-            setActionError(nextError instanceof Error ? nextError.message : 'Failed to delete collection');
+            pushToast({
+                variant: 'error',
+                message: nextError instanceof Error ? nextError.message : 'Failed to delete collection',
+            });
         } finally {
             setRemoving(false);
         }
@@ -380,6 +413,7 @@ export const CollectionBrowsePage = () => {
                                         void navigate({
                                             to: '/collection/browse',
                                             replace: true,
+                                            resetScroll: false,
                                             search: (previousSearch) => {
                                                 const nextSearch = { ...(previousSearch as Record<string, unknown>) };
                                                 if (query) {
@@ -510,15 +544,8 @@ export const CollectionBrowsePage = () => {
                         <Notice variant="neutral">Select a collection from the gallery to preview it.</Notice>
                     )}
 
-                    {actionError ? (
-                        <Notice variant="error" className="mt-4">{actionError}</Notice>
-                    ) : null}
                 </Card>
             </div>
-
-            {queryErrorMessage ? (
-                <Notice variant="error" className="mt-4">{queryErrorMessage}</Notice>
-            ) : null}
 
             <PromptDialog
                 open={renameDialogOpen}

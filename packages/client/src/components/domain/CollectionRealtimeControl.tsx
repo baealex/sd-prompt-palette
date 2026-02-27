@@ -1,14 +1,19 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { useEffect } from 'react';
 
 import { Button } from '~/components/ui/Button';
+import { FieldChoice } from '~/components/ui/FieldChoice';
 import { Input } from '~/components/ui/Input';
-import { Notice } from '~/components/ui/Notice';
+import { Switch } from '~/components/ui/Switch';
+import { useToast } from '~/components/ui/ToastProvider';
 import { normalizeWatchDir } from '~/features/collection/live-config-utils';
 import { useAutoCollectControl } from '~/features/collection/use-auto-collect-control';
 
 import { AutoCollectDirectoryBrowserPanel } from './AutoCollectDirectoryBrowserPanel';
 
 export const CollectionRealtimeControl = () => {
+    const { pushToast } = useToast();
+
     const {
         feedback,
         loadingConfig,
@@ -45,44 +50,38 @@ export const CollectionRealtimeControl = () => {
         handleSaveSettings,
     } = useAutoCollectControl();
 
+    useEffect(() => {
+        if (!feedback) {
+            return;
+        }
+        pushToast({
+            variant: feedback.variant,
+            message: feedback.message,
+        });
+    }, [feedback, pushToast]);
+
     return (
         <>
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-token-md border border-line bg-surface-muted px-3 py-2">
-                <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-ink-muted">
-                    <span className="max-w-[420px] truncate">Watching: {watchDirLabel}</span>
-                    <span className="text-ink-subtle">|</span>
-                    <span>Mode: {modeLabel}</span>
-                </div>
-                <div className="flex flex-wrap items-center justify-end gap-2">
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-ink">Auto Collect</span>
-                        <button
-                            type="button"
-                            role="switch"
-                            aria-checked={statusEnabled}
-                            aria-label="Auto Collect"
-                            onClick={() => {
+            <div className="flex flex-wrap items-center justify-between gap-1.5 rounded-token-md border border-line bg-surface-muted px-2.5 py-1.5">
+                <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                    <div className="flex items-center gap-1 rounded-token-md border border-line bg-surface-base pl-3 pr-2">
+                        <span className="text-[11px] font-semibold text-ink">Auto Collect</span>
+                        <Switch
+                            checked={statusEnabled}
+                            label="Auto Collect"
+                            disabled={loadingConfig || togglingEnabled}
+                            onCheckedChange={() => {
                                 void handleToggleEnabled();
                             }}
-                            disabled={loadingConfig || togglingEnabled}
-                            className="ui-focus-ring inline-flex h-11 w-11 items-center justify-center rounded-token-md border border-line bg-surface-base disabled:cursor-not-allowed disabled:opacity-55"
-                        >
-                            <span
-                                className={`relative inline-flex h-5 w-9 items-center rounded-full border transition-colors ${
-                                    statusEnabled
-                                        ? 'border-success-800 bg-success-700'
-                                        : 'border-line-strong bg-surface-muted'
-                                }`}
-                                aria-hidden="true"
-                            >
-                                <span
-                                    className={`h-3.5 w-3.5 rounded-full bg-white shadow-surface transition-transform ${
-                                        statusEnabled ? 'translate-x-[18px]' : 'translate-x-[2px]'
-                                    }`}
-                                />
-                            </span>
-                        </button>
+                        />
                     </div>
+                    <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-ink-muted">
+                        <span className="max-w-[420px] truncate">Watching: {watchDirLabel}</span>
+                        <span className="text-ink-subtle">|</span>
+                        <span>Mode: {modeLabel}</span>
+                    </div>
+                </div>
+                <div className="flex flex-wrap items-center justify-end gap-1.5">
                     <Button
                         variant="ghost"
                         size="sm"
@@ -98,10 +97,6 @@ export const CollectionRealtimeControl = () => {
                     </Button>
                 </div>
             </div>
-
-            {feedback ? (
-                <Notice variant={feedback.variant} className="mt-3">{feedback.message}</Notice>
-            ) : null}
 
             <DialogPrimitive.Root
                 open={settingsOpen}
@@ -162,51 +157,47 @@ export const CollectionRealtimeControl = () => {
                                     />
                                 ) : null}
 
-                                <label className="inline-flex items-center gap-2 text-sm text-ink-muted">
-                                    <input
-                                        type="checkbox"
-                                        checked={draftEnabled}
-                                        onChange={(event) => setDraftEnabled(event.target.checked)}
-                                        className="ui-focus-ring h-4 w-4"
-                                    />
-                                    Enable Auto Collect
-                                </label>
+                                <FieldChoice
+                                    type="checkbox"
+                                    checked={draftEnabled}
+                                    onChange={setDraftEnabled}
+                                    label="Enable Auto Collect"
+                                />
                             </section>
 
                             <section className="grid gap-2 rounded-token-md border border-line bg-surface-muted p-3">
                                 <h3 className="text-sm font-semibold text-ink">Transfer Mode</h3>
-                                <label className="inline-flex items-center gap-2 text-sm text-ink-muted">
-                                    <input
-                                        type="radio"
-                                        name="collect-mode"
-                                        value="copy"
-                                        checked={draftIngestMode === 'copy'}
-                                        onChange={() => setDraftIngestMode('copy')}
-                                        className="ui-focus-ring h-4 w-4"
-                                    />
-                                    Copy files to library (safe default)
-                                </label>
-                                <label className="inline-flex items-center gap-2 text-sm text-ink-muted">
-                                    <input
-                                        type="radio"
-                                        name="collect-mode"
-                                        value="move"
-                                        checked={draftIngestMode === 'move'}
-                                        onChange={() => setDraftIngestMode('move')}
-                                        className="ui-focus-ring h-4 w-4"
-                                    />
-                                    Move files to library
-                                </label>
-                                <label className="inline-flex items-center gap-2 text-sm text-ink-muted">
-                                    <input
-                                        type="checkbox"
-                                        checked={draftDeleteSourceOnDelete}
-                                        onChange={(event) => setDraftDeleteSourceOnDelete(event.target.checked)}
-                                        disabled={draftIngestMode !== 'copy'}
-                                        className="ui-focus-ring h-4 w-4"
-                                    />
-                                    Also delete source file when deleting from collection
-                                </label>
+                                <FieldChoice
+                                    type="radio"
+                                    name="collect-mode"
+                                    value="copy"
+                                    checked={draftIngestMode === 'copy'}
+                                    onChange={(nextChecked) => {
+                                        if (nextChecked) {
+                                            setDraftIngestMode('copy');
+                                        }
+                                    }}
+                                    label="Copy files to library (safe default)"
+                                />
+                                <FieldChoice
+                                    type="radio"
+                                    name="collect-mode"
+                                    value="move"
+                                    checked={draftIngestMode === 'move'}
+                                    onChange={(nextChecked) => {
+                                        if (nextChecked) {
+                                            setDraftIngestMode('move');
+                                        }
+                                    }}
+                                    label="Move files to library"
+                                />
+                                <FieldChoice
+                                    type="checkbox"
+                                    checked={draftDeleteSourceOnDelete}
+                                    onChange={setDraftDeleteSourceOnDelete}
+                                    disabled={draftIngestMode !== 'copy'}
+                                    label="Also delete source file when deleting from collection"
+                                />
                             </section>
 
                             <section className="grid gap-1 rounded-token-md border border-line bg-surface-muted p-3">

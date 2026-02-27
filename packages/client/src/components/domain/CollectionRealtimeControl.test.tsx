@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getLiveConfig, syncLiveImages, updateLiveConfig } from '~/api';
+import { ToastProvider } from '~/components/ui/ToastProvider';
 
 import { CollectionRealtimeControl } from './CollectionRealtimeControl';
 
@@ -63,7 +64,9 @@ const renderControl = () => {
 
     return render(
         <QueryClientProvider client={queryClient}>
-            <CollectionRealtimeControl />
+            <ToastProvider>
+                <CollectionRealtimeControl />
+            </ToastProvider>
         </QueryClientProvider>,
     );
 };
