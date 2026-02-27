@@ -50,7 +50,6 @@ class LiveImagesService {
     private emitTimer: NodeJS.Timeout | null = null;
     private pendingEmitReason = 'init';
     private imageMutationQueue: Promise<void> = Promise.resolve();
-    private startupSyncPromise: Promise<void> | null = null;
 
     private readonly defaultWatchDir = path.resolve('watch');
     private readonly configRepository = new LiveImagesConfigRepository();
@@ -83,7 +82,6 @@ class LiveImagesService {
         await this.applyWatcherConfig('startup-config');
         this.registerSocketHandlers();
         this.initialized = true;
-        this.startStartupSyncInBackground();
 
         logger.info(
             `[live-images] ready watchDir="${this.watchDirPath}" libraryDir="${this.imageBaseDirPath}" mode="${this.ingestMode}" enabled="${this.config.enabled}"`
@@ -96,10 +94,6 @@ class LiveImagesService {
         if (this.emitTimer) {
             clearTimeout(this.emitTimer);
             this.emitTimer = null;
-        }
-
-        if (this.startupSyncPromise) {
-            await this.startupSyncPromise;
         }
 
         await this.stopWatchers();
@@ -261,7 +255,7 @@ class LiveImagesService {
     }
 
     async syncNow(reason = 'api:sync'): Promise<{ scanned: number }> {
-        const scanned = await this.syncLibraryDirectory(reason);
+        const scanned = await this.syncWatchDirectory(reason);
         this.queueEmit(reason);
         return { scanned };
     }
@@ -297,27 +291,6 @@ class LiveImagesService {
         await fs.promises.mkdir(this.imageBaseDirPath, { recursive: true });
         this.startWatchers();
         this.queueEmit(reason);
-    }
-
-    private startStartupSyncInBackground(): void {
-        if (this.startupSyncPromise) {
-            return;
-        }
-
-        this.startupSyncPromise = (async () => {
-            const startedAt = Date.now();
-            logger.info('[live-images] startup sync started');
-            try {
-                const scanned = await this.syncLibraryDirectory('startup-sync');
-                logger.info(
-                    `[live-images] startup sync completed scanned=${scanned} elapsedMs=${Date.now() - startedAt}`
-                );
-            } catch (error: unknown) {
-                logger.error(`[live-images] startup sync failed: ${errorMessage(error)}`);
-            } finally {
-                this.startupSyncPromise = null;
-            }
-        })();
     }
 
     private async stopWatchers(): Promise<void> {
@@ -518,8 +491,8 @@ class LiveImagesService {
         return fileName.endsWith('.preview.jpg');
     }
 
-    private async walkLibraryImageFiles(): Promise<string[]> {
-        const stack = [this.imageBaseDirPath];
+    private async walkWatchImageFiles(): Promise<string[]> {
+        const stack = [this.watchDirPath];
         const result: string[] = [];
 
         while (stack.length > 0) {
@@ -532,6 +505,9 @@ class LiveImagesService {
             for (const entry of entries) {
                 const absolutePath = path.resolve(currentPath, entry.name);
                 if (entry.isDirectory()) {
+                    if (this.isIgnoredSourcePath(absolutePath)) {
+                        continue;
+                    }
                     stack.push(absolutePath);
                     continue;
                 }
@@ -540,7 +516,7 @@ class LiveImagesService {
                     continue;
                 }
 
-                if (!isImageFileName(entry.name) || this.isIgnoredLibraryPath(absolutePath)) {
+                if (!isImageFileName(entry.name) || this.isIgnoredSourcePath(absolutePath)) {
                     continue;
                 }
 
@@ -551,33 +527,23 @@ class LiveImagesService {
         return result;
     }
 
-    private async syncLibraryDirectory(reason: string): Promise<number> {
+    private async syncWatchDirectory(reason: string): Promise<number> {
         return this.enqueueImageMutation(async () => {
-            const entries = await this.walkLibraryImageFiles();
+            await fs.promises.mkdir(this.watchDirPath, { recursive: true });
+            await fs.promises.mkdir(this.imageBaseDirPath, { recursive: true });
+
+            const entries = await this.walkWatchImageFiles();
             let scanned = 0;
 
-            for (const absolutePath of entries) {
+            for (const sourcePath of entries) {
                 try {
-                    await this.registerLibraryFile(absolutePath);
+                    await this.ingestSourceFile(sourcePath, reason);
                     scanned += 1;
                 } catch (error: unknown) {
                     if (hasErrorCode(error, 'ENOENT')) {
                         continue;
                     }
-                    logger.error(`[live-images] sync register failed "${absolutePath}": ${errorMessage(error)}`);
-                }
-            }
-
-            const images = await this.imageRepository.findAllImageRefs();
-            for (const image of images) {
-                const absolutePath = this.absolutePathFromImageUrl(image.url);
-                if (!absolutePath) {
-                    continue;
-                }
-
-                const stat = await this.readStatIfExists(absolutePath);
-                if (!stat) {
-                    await this.deleteImageRecord(image.id);
+                    logger.error(`[live-images] sync ingest failed "${sourcePath}": ${errorMessage(error)}`);
                 }
             }
 
