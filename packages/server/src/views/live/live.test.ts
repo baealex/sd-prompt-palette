@@ -237,7 +237,6 @@ describe('live controllers business logic', () => {
                 clipSkip: undefined,
                 vae: undefined,
                 denoiseStrength: undefined,
-                createdAtFromMeta: undefined,
             },
         });
     });

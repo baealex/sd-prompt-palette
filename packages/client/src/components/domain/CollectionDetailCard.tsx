@@ -41,36 +41,67 @@ export const CollectionDetailCard = ({
     removing = false,
 }: CollectionDetailCardProps) => {
     const generatedMetadata = collection.generatedMetadata || null;
+    const generatedAt = formatDateTime(collection.generatedAt || undefined);
     const metadataRows = generatedMetadata
         ? [
-            { label: 'Source Type', value: generatedMetadata.sourceType },
-            { label: 'Model', value: generatedMetadata.model },
-            { label: 'Model Hash', value: generatedMetadata.modelHash },
-            { label: 'Base Sampler', value: generatedMetadata.baseSampler },
-            { label: 'Base Scheduler', value: generatedMetadata.baseScheduler },
-            { label: 'Base Steps', value: generatedMetadata.baseSteps?.toString() },
-            { label: 'Base CFG', value: generatedMetadata.baseCfgScale?.toString() },
-            { label: 'Base Seed', value: generatedMetadata.baseSeed },
-            { label: 'Upscale Sampler', value: generatedMetadata.upscaleSampler },
-            { label: 'Upscale Scheduler', value: generatedMetadata.upscaleScheduler },
-            { label: 'Upscale Steps', value: generatedMetadata.upscaleSteps?.toString() },
-            { label: 'Upscale CFG', value: generatedMetadata.upscaleCfgScale?.toString() },
-            { label: 'Upscale Seed', value: generatedMetadata.upscaleSeed },
-            { label: 'Upscale Factor', value: generatedMetadata.upscaleFactor?.toString() },
-            { label: 'Upscaler', value: generatedMetadata.upscaler },
-            {
-                label: 'Size',
-                value:
-                    generatedMetadata.sizeWidth && generatedMetadata.sizeHeight
-                        ? `${generatedMetadata.sizeWidth} x ${generatedMetadata.sizeHeight}`
-                        : undefined,
-            },
-            { label: 'Clip Skip', value: generatedMetadata.clipSkip?.toString() },
-            { label: 'VAE', value: generatedMetadata.vae },
-            { label: 'Denoise Strength', value: generatedMetadata.denoiseStrength?.toString() },
-            { label: 'Generated At', value: formatDateTime(generatedMetadata.createdAtFromMeta || collection.fileCreatedAt || undefined) },
-            { label: 'Parse Version', value: generatedMetadata.parseVersion },
-        ].filter((item) => Boolean(item.value))
+              { label: 'Source Type', value: generatedMetadata.sourceType },
+              { label: 'Model', value: generatedMetadata.model },
+              { label: 'Model Hash', value: generatedMetadata.modelHash },
+              { label: 'Base Sampler', value: generatedMetadata.baseSampler },
+              {
+                  label: 'Base Scheduler',
+                  value: generatedMetadata.baseScheduler,
+              },
+              {
+                  label: 'Base Steps',
+                  value: generatedMetadata.baseSteps?.toString(),
+              },
+              {
+                  label: 'Base CFG',
+                  value: generatedMetadata.baseCfgScale?.toString(),
+              },
+              { label: 'Base Seed', value: generatedMetadata.baseSeed },
+              {
+                  label: 'Upscale Sampler',
+                  value: generatedMetadata.upscaleSampler,
+              },
+              {
+                  label: 'Upscale Scheduler',
+                  value: generatedMetadata.upscaleScheduler,
+              },
+              {
+                  label: 'Upscale Steps',
+                  value: generatedMetadata.upscaleSteps?.toString(),
+              },
+              {
+                  label: 'Upscale CFG',
+                  value: generatedMetadata.upscaleCfgScale?.toString(),
+              },
+              { label: 'Upscale Seed', value: generatedMetadata.upscaleSeed },
+              {
+                  label: 'Upscale Factor',
+                  value: generatedMetadata.upscaleFactor?.toString(),
+              },
+              { label: 'Upscaler', value: generatedMetadata.upscaler },
+              {
+                  label: 'Size',
+                  value:
+                      generatedMetadata.sizeWidth &&
+                      generatedMetadata.sizeHeight
+                          ? `${generatedMetadata.sizeWidth} x ${generatedMetadata.sizeHeight}`
+                          : undefined,
+              },
+              {
+                  label: 'Clip Skip',
+                  value: generatedMetadata.clipSkip?.toString(),
+              },
+              { label: 'VAE', value: generatedMetadata.vae },
+              {
+                  label: 'Denoise Strength',
+                  value: generatedMetadata.denoiseStrength?.toString(),
+              },
+              { label: 'Parse Version', value: generatedMetadata.parseVersion },
+          ].filter((item) => Boolean(item.value))
         : [];
 
     return (
@@ -84,10 +115,7 @@ export const CollectionDetailCard = ({
                         {collection.image.width} x {collection.image.height}
                     </p>
                     <p className="mt-1 text-xs text-ink-subtle">
-                        File Created (FS): {formatDateTime(collection.fileCreatedAt || undefined) || '-'}
-                    </p>
-                    <p className="mt-1 text-xs text-ink-subtle">
-                        File Modified (FS): {formatDateTime(collection.fileModifiedAt || undefined) || '-'}
+                        Generated At: {generatedAt || '-'}
                     </p>
                 </div>
 
@@ -130,11 +158,18 @@ export const CollectionDetailCard = ({
             <section className="space-y-4">
                 <div>
                     <div className="mb-2 flex items-center justify-between gap-2">
-                        <h3 className="text-sm font-semibold text-ink">Collection Prompt</h3>
+                        <h3 className="text-sm font-semibold text-ink">
+                            Collection Prompt
+                        </h3>
                         <Button
                             variant="secondary"
                             size="sm"
-                            onClick={() => onClickCopy(collection.prompt, 'Collection prompt')}
+                            onClick={() =>
+                                onClickCopy(
+                                    collection.prompt,
+                                    'Collection prompt',
+                                )
+                            }
                         >
                             Copy
                         </Button>
@@ -146,11 +181,18 @@ export const CollectionDetailCard = ({
 
                 <div>
                     <div className="mb-2 flex items-center justify-between gap-2">
-                        <h3 className="text-sm font-semibold text-ink">Collection Negative Prompt</h3>
+                        <h3 className="text-sm font-semibold text-ink">
+                            Collection Negative Prompt
+                        </h3>
                         <Button
                             variant="secondary"
                             size="sm"
-                            onClick={() => onClickCopy(collection.negativePrompt, 'Collection negative prompt')}
+                            onClick={() =>
+                                onClickCopy(
+                                    collection.negativePrompt,
+                                    'Collection negative prompt',
+                                )
+                            }
                         >
                             Copy
                         </Button>
@@ -162,11 +204,22 @@ export const CollectionDetailCard = ({
 
                 <div>
                     <div className="mb-2 flex items-center justify-between gap-2">
-                        <h3 className="text-sm font-semibold text-ink">Generated Metadata</h3>
+                        <h3 className="text-sm font-semibold text-ink">
+                            Generated Metadata
+                        </h3>
                         <Button
                             variant="secondary"
                             size="sm"
-                            onClick={() => onClickCopy(JSON.stringify(generatedMetadata || {}, null, 2), 'Metadata JSON')}
+                            onClick={() =>
+                                onClickCopy(
+                                    JSON.stringify(
+                                        generatedMetadata || {},
+                                        null,
+                                        2,
+                                    ),
+                                    'Metadata JSON',
+                                )
+                            }
                         >
                             Copy JSON
                         </Button>
@@ -175,9 +228,16 @@ export const CollectionDetailCard = ({
                     {metadataRows.length > 0 ? (
                         <div className="space-y-2 rounded-token-md border border-line bg-surface-muted px-3 py-2">
                             {metadataRows.map((item) => (
-                                <div key={item.label} className="flex items-start justify-between gap-3 text-xs">
-                                    <p className="font-semibold text-ink">{item.label}</p>
-                                    <p className="max-w-[70%] text-right text-ink-muted break-words">{item.value}</p>
+                                <div
+                                    key={item.label}
+                                    className="flex items-start justify-between gap-3 text-xs"
+                                >
+                                    <p className="font-semibold text-ink">
+                                        {item.label}
+                                    </p>
+                                    <p className="max-w-[70%] text-right text-ink-muted break-words">
+                                        {item.value}
+                                    </p>
                                 </div>
                             ))}
                         </div>
@@ -188,9 +248,12 @@ export const CollectionDetailCard = ({
                     )}
                 </div>
 
-                {generatedMetadata && generatedMetadata.parseWarnings.length > 0 ? (
+                {generatedMetadata &&
+                generatedMetadata.parseWarnings.length > 0 ? (
                     <div className="rounded-token-md border border-warning-200 bg-warning-50 px-3 py-2">
-                        <p className="text-xs font-semibold text-warning-700">Parse Warnings</p>
+                        <p className="text-xs font-semibold text-warning-700">
+                            Parse Warnings
+                        </p>
                         <ul className="mt-1 space-y-1 text-xs text-warning-700">
                             {generatedMetadata.parseWarnings.map((warning) => (
                                 <li key={warning}>- {warning}</li>

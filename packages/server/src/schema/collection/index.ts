@@ -14,17 +14,14 @@ function resolveCollectionOrderBy(
     order: 'asc' | 'desc' = 'desc',
 ) {
     const normalizedOrder = order === 'asc' ? 'asc' : 'desc';
-    if (orderBy === 'fileCreatedAt') {
+    if (
+        orderBy === 'generatedAt' ||
+        orderBy === 'fileCreatedAt' ||
+        orderBy === 'fileModifiedAt'
+    ) {
         return {
             image: {
-                fileCreatedAt: normalizedOrder,
-            },
-        } as const;
-    }
-    if (orderBy === 'fileModifiedAt') {
-        return {
-            image: {
-                fileModifiedAt: normalizedOrder,
+                generatedAt: normalizedOrder,
             },
         } as const;
     }
@@ -40,8 +37,7 @@ export const CollectionType = gql`
         title: String!
         prompt: String!
         negativePrompt: String!
-        fileCreatedAt: String
-        fileModifiedAt: String
+        generatedAt: String
         generatedMetadata: GeneratedMetadata
         createdAt: String!
         updatedAt: String!
@@ -70,7 +66,6 @@ export const CollectionType = gql`
         clipSkip: Int
         vae: String
         denoiseStrength: Float
-        createdAtFromMeta: String
         parseWarnings: [String!]!
         parseVersion: String!
     }
@@ -273,19 +268,12 @@ export const CollectionResolvers: IResolvers = {
                     id: collection.imageId,
                 },
             }),
-        fileCreatedAt: async (collection: Collection) => {
+        generatedAt: async (collection: Collection) => {
             const image = await models.image.findUnique({
                 where: { id: collection.imageId },
-                select: { fileCreatedAt: true },
+                select: { generatedAt: true },
             });
-            return image?.fileCreatedAt?.toISOString?.() || null;
-        },
-        fileModifiedAt: async (collection: Collection) => {
-            const image = await models.image.findUnique({
-                where: { id: collection.imageId },
-                select: { fileModifiedAt: true },
-            });
-            return image?.fileModifiedAt?.toISOString?.() || null;
+            return image?.generatedAt?.toISOString?.() || null;
         },
         generatedMetadata: async (collection: Collection) => {
             const metadata = await models.imageMeta.findUnique({
@@ -333,8 +321,6 @@ export const CollectionResolvers: IResolvers = {
                 clipSkip: metadata.clipSkip,
                 vae: metadata.vae,
                 denoiseStrength: metadata.denoiseStrength,
-                createdAtFromMeta:
-                    metadata.createdAtFromMeta?.toISOString() || null,
                 parseWarnings,
                 parseVersion: metadata.parseVersion || '',
             };

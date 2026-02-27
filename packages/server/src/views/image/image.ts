@@ -85,8 +85,7 @@ export const uploadImage: Controller = async (req, res) => {
                 url: exists.url,
                 width: exists.width,
                 height: exists.height,
-                fileCreatedAt: exists.fileCreatedAt,
-                fileModifiedAt: exists.fileModifiedAt,
+                generatedAt: exists.generatedAt,
             })
             .end();
         return;
@@ -138,21 +137,24 @@ export const uploadImage: Controller = async (req, res) => {
                 fileName,
             );
             const stats = await fs.promises.stat(absoluteFilePath);
-            const fileCreatedAt =
+            const modifiedAt = new Date(stats.mtime.getTime());
+            const createdAtCandidate =
                 Number.isFinite(stats.birthtime.getTime()) &&
                 stats.birthtime.getTime() > 0
                     ? new Date(stats.birthtime.getTime())
-                    : new Date(stats.mtime.getTime());
-            const fileModifiedAt = new Date(stats.mtime.getTime());
+                    : modifiedAt;
+            const generatedAt =
+                createdAtCandidate.getTime() > modifiedAt.getTime()
+                    ? modifiedAt
+                    : createdAtCandidate;
             const image = await models.image.create({
                 data: {
                     hash,
                     url,
                     width: metadata.width || 0,
                     height: metadata.height || 0,
-                    createdAt: fileCreatedAt,
-                    fileCreatedAt,
-                    fileModifiedAt,
+                    createdAt: generatedAt,
+                    generatedAt,
                 },
             });
 
@@ -162,8 +164,7 @@ export const uploadImage: Controller = async (req, res) => {
                     url: image.url,
                     width: image.width,
                     height: image.height,
-                    fileCreatedAt: image.fileCreatedAt,
-                    fileModifiedAt: image.fileModifiedAt,
+                    generatedAt: image.generatedAt,
                 })
                 .end();
         },

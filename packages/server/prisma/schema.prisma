@@ -63,8 +63,7 @@ model Image {
     width       Int          @default(0)
     height      Int          @default(0)
     createdAt   DateTime     @default(now())
-    fileCreatedAt DateTime?
-    fileModifiedAt DateTime?
+    generatedAt DateTime
     keywords    Keyword[]
     collections Collection[]
     sourceLink  LiveSyncSourceLink?
@@ -123,7 +122,6 @@ model ImageMeta {
     clipSkip           Int?
     vae                String?
     denoiseStrength    Float?
-    createdAtFromMeta  DateTime?
     parseWarningsJson  String   @default("[]")
     parseVersion       String   @default("")
     rawJson            String?

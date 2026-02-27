@@ -39,8 +39,7 @@ export interface ImageUploadResponse {
     url: string;
     width: number;
     height: number;
-    fileCreatedAt?: string | null;
-    fileModifiedAt?: string | null;
+    generatedAt?: string | null;
 }
 
 const escapeGraphQLString = (value: string) => value
@@ -189,7 +188,7 @@ export function deleteKeyword(data: { keywordId: number; categoryId: number }) {
 }
 
 export function getCollection(data: { id: number }) {
-    return graphQLRequest<'collection', Pick<Collection, 'id' | 'title' | 'prompt' | 'negativePrompt' | 'image' | 'generatedMetadata' | 'fileCreatedAt' | 'fileModifiedAt'>>(
+    return graphQLRequest<'collection', Pick<Collection, 'id' | 'title' | 'prompt' | 'negativePrompt' | 'image' | 'generatedMetadata' | 'generatedAt'>>(
         `
         query($id: ID!) {
             collection(id: $id) {
@@ -197,8 +196,7 @@ export function getCollection(data: { id: number }) {
                 title
                 prompt
                 negativePrompt
-                fileCreatedAt
-                fileModifiedAt
+                generatedAt
                 image {
                     id
                     url
@@ -229,7 +227,6 @@ export function getCollection(data: { id: number }) {
                     clipSkip
                     vae
                     denoiseStrength
-                    createdAtFromMeta
                     parseWarnings
                     parseVersion
                 }
@@ -419,7 +416,6 @@ export interface ParsedImageMetadataResponse {
         clipSkip?: number;
         vae?: string;
         denoiseStrength?: number;
-        createdAtFromMeta?: string;
         parseWarnings: string[];
         parseVersion: string;
     };
@@ -574,7 +570,6 @@ export interface LiveImageMetadataResponse {
         clipSkip?: number;
         vae?: string;
         denoiseStrength?: number;
-        createdAtFromMeta?: string;
     };
 }
 

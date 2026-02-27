@@ -48,7 +48,6 @@ export interface GeneratedMetadata {
     clipSkip?: number;
     vae?: string;
     denoiseStrength?: number;
-    createdAtFromMeta?: string;
     parseWarnings: string[];
     parseVersion: string;
 }
@@ -59,7 +58,6 @@ export interface Collection {
     title: string;
     prompt: string;
     negativePrompt: string;
-    fileCreatedAt?: string | null;
-    fileModifiedAt?: string | null;
+    generatedAt?: string | null;
     generatedMetadata?: GeneratedMetadata | null;
 }

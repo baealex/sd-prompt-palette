@@ -345,7 +345,6 @@ export const getLiveImageMetadata: Controller = async (req, res) => {
                 clipSkip: metadata.clipSkip,
                 vae: metadata.vae,
                 denoiseStrength: metadata.denoiseStrength,
-                createdAtFromMeta: metadata.createdAtFromMeta,
             },
         })
         .end();

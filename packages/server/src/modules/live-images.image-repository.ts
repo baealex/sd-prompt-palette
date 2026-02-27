@@ -76,8 +76,7 @@ export class LiveImagesImageRepository {
         width: number;
         height: number;
         createdAt: Date;
-        fileCreatedAt?: Date;
-        fileModifiedAt?: Date;
+        generatedAt: Date;
     }): Promise<Image> {
         try {
             return await models.image.create({
@@ -109,8 +108,7 @@ export class LiveImagesImageRepository {
             width: number;
             height: number;
             createdAt: Date;
-            fileCreatedAt?: Date;
-            fileModifiedAt?: Date;
+            generatedAt: Date;
         },
     ): Promise<Image> {
         return models.image.update({

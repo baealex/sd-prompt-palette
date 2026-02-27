@@ -648,8 +648,7 @@ class LiveImagesService {
         const createdAt =
             options.preferredDate ||
             (await deriveCreatedAt(absolutePath, stats));
-        const fileCreatedAt = this.resolveFileCreatedAt(stats, createdAt);
-        const fileModifiedAt = new Date(stats.mtime.getTime());
+        const generatedAt = this.resolveGeneratedAt(stats);
         const ensureCollectionForExisting = Boolean(
             options.ensureCollectionForExisting,
         );
@@ -673,8 +672,7 @@ class LiveImagesService {
                     width,
                     height,
                     createdAt,
-                    fileCreatedAt,
-                    fileModifiedAt,
+                    generatedAt,
                 },
             );
             await this.upsertImageMetadataForPath(updated.id, promptSourcePath);
@@ -694,8 +692,7 @@ class LiveImagesService {
                     width,
                     height,
                     createdAt,
-                    fileCreatedAt,
-                    fileModifiedAt,
+                    generatedAt,
                 },
             );
             await this.upsertImageMetadataForPath(updated.id, absolutePath);
@@ -712,8 +709,7 @@ class LiveImagesService {
             width,
             height,
             createdAt,
-            fileCreatedAt,
-            fileModifiedAt,
+            generatedAt,
         });
         await this.upsertImageMetadataForPath(created.id, absolutePath);
         await this.ensureCollectionForImage(created, absolutePath);
@@ -831,9 +827,6 @@ class LiveImagesService {
             clipSkip: metadata.clipSkip,
             vae: metadata.vae,
             denoiseStrength: metadata.denoiseStrength,
-            createdAtFromMeta: metadata.createdAtFromMeta
-                ? new Date(metadata.createdAtFromMeta)
-                : undefined,
             parseWarningsJson,
             parseVersion: metadata.parseVersion || '',
             rawJson:
@@ -866,7 +859,6 @@ class LiveImagesService {
         clipSkip: number | null;
         vae: string | null;
         denoiseStrength: number | null;
-        createdAtFromMeta: Date | null;
         parseWarningsJson: string;
         parseVersion: string;
     }): ParsedImageMeta {
@@ -907,9 +899,6 @@ class LiveImagesService {
             clipSkip: stored.clipSkip || undefined,
             vae: stored.vae || undefined,
             denoiseStrength: stored.denoiseStrength || undefined,
-            createdAtFromMeta: stored.createdAtFromMeta
-                ? stored.createdAtFromMeta.toISOString()
-                : undefined,
             parseWarnings,
             parseVersion: stored.parseVersion || '',
         };
@@ -945,12 +934,16 @@ class LiveImagesService {
         this.promptCache.delete(imageId);
     }
 
-    private resolveFileCreatedAt(stats: fs.Stats, fallback: Date): Date {
+    private resolveGeneratedAt(stats: fs.Stats): Date {
+        const modifiedAt = new Date(stats.mtime.getTime());
         const birthTimeMs = stats.birthtime?.getTime?.() || 0;
-        if (Number.isFinite(birthTimeMs) && birthTimeMs > 0) {
-            return new Date(birthTimeMs);
-        }
-        return fallback;
+        const createdAtCandidate =
+            Number.isFinite(birthTimeMs) && birthTimeMs > 0
+                ? new Date(birthTimeMs)
+                : modifiedAt;
+        return createdAtCandidate.getTime() > modifiedAt.getTime()
+            ? modifiedAt
+            : createdAtCandidate;
     }
 
     private async readStatIfExists(

@@ -34,7 +34,6 @@ export interface StoredImageMetaInput {
     clipSkip?: number;
     vae?: string;
     denoiseStrength?: number;
-    createdAtFromMeta?: Date;
     parseWarningsJson: string;
     parseVersion: string;
     rawJson?: string;

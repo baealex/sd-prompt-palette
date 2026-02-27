@@ -35,7 +35,6 @@ export interface ParsedImageMeta {
     clipSkip?: number;
     vae?: string;
     denoiseStrength?: number;
-    createdAtFromMeta?: string;
     parseWarnings: string[];
     parseVersion: string;
 }
@@ -343,19 +342,6 @@ function toSeedString(input: unknown): string | undefined {
     return undefined;
 }
 
-function toIsoDate(input: unknown): string | undefined {
-    if (input instanceof Date && Number.isFinite(input.getTime())) {
-        return input.toISOString();
-    }
-    if (typeof input === 'string' && input.trim()) {
-        const parsed = new Date(input.trim());
-        if (Number.isFinite(parsed.getTime())) {
-            return parsed.toISOString();
-        }
-    }
-    return undefined;
-}
-
 function readLabelValue(source: string, label: string): string | undefined {
     const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const matched = source.match(new RegExp(`(?:^|,|\\r|\\n)\\s*${escaped}\\s*:\\s*([^,\\r\\n]+)`, 'i'));
@@ -440,11 +426,6 @@ function parseA1111Metadata(rawParameters: string): Partial<ParsedImageMeta> {
         clipSkip: toPositiveInteger(readLabelValue(parameters, 'Clip skip')),
         vae: readLabelValue(parameters, 'VAE'),
         denoiseStrength: toFiniteNumber(readLabelValue(parameters, 'Denoising strength')),
-        createdAtFromMeta: toIsoDate(
-            readLabelValue(parameters, 'Created Date')
-            || readLabelValue(parameters, 'Date')
-            || readLabelValue(parameters, 'Timestamp')
-        ),
     };
 }
 
@@ -605,12 +586,6 @@ function parseFallbackMetadata(entries: Map<string, string>): Partial<ParsedImag
         prompt: normalizePromptText(promptParts.prompt) || '',
         negativePrompt: normalizePromptText(promptParts.negativePrompt) || '',
         sourceType: 'exif',
-        createdAtFromMeta: toIsoDate(
-            entries.get('datetimeoriginal')
-            || entries.get('createdate')
-            || entries.get('date')
-            || entries.get('modifydate')
-        ),
     };
 }
 
@@ -653,7 +628,6 @@ function mergeMetadata(result: ParsedImageMeta, candidate: Partial<ParsedImageMe
         'clipSkip',
         'vae',
         'denoiseStrength',
-        'createdAtFromMeta',
     ];
 
     for (const key of keys) {

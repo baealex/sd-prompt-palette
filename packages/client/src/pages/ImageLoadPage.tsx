@@ -72,10 +72,8 @@ export const ImageLoadPage = () => {
             { label: 'Clip Skip', value: parsedPrompt.clipSkip?.toString() },
             { label: 'VAE', value: parsedPrompt.vae },
             { label: 'Denoise Strength', value: parsedPrompt.denoiseStrength?.toString() },
-            { label: 'Generated At', value: formatDateTime(parsedPrompt.createdAtFromMeta || selectedFileModifiedAt || undefined) },
             { label: 'File Modified (Local)', value: formatDateTime(selectedFileModifiedAt || undefined) },
-            { label: 'File Created (FS)', value: formatDateTime(uploadedImage?.fileCreatedAt || undefined) },
-            { label: 'File Modified (FS)', value: formatDateTime(uploadedImage?.fileModifiedAt || undefined) },
+            { label: 'Generated At', value: formatDateTime(uploadedImage?.generatedAt || undefined) },
             { label: 'Parse Version', value: parsedPrompt.parseVersion },
         ].filter((item) => Boolean(item.value))
         : [];
@@ -172,7 +170,7 @@ export const ImageLoadPage = () => {
                                     </div>
                                     {!uploadedImage ? (
                                         <p className="mt-2 text-xs text-ink-subtle">
-                                            File system timestamps appear after saving to collection.
+                                            Generated timestamp appears after saving to collection.
                                         </p>
                                     ) : null}
                                 </>
