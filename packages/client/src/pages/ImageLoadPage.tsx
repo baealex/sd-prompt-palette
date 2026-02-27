@@ -1,7 +1,7 @@
 import { PageFrame } from '~/components/domain/PageFrame';
 import { useImageLoad } from '~/features/image-load/use-image-load';
 
-export default function ImageLoadPage() {
+export const ImageLoadPage = () => {
     const {
         loading,
         error,
@@ -58,4 +58,4 @@ export default function ImageLoadPage() {
             ) : null}
         </PageFrame>
     );
-}
+};

@@ -6,7 +6,7 @@ import { usePathStore } from '~/state/path-store';
 const NAV_IDLE = 'rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900';
 const NAV_ACTIVE = 'rounded-lg bg-brand-100 px-3 py-2 text-sm font-semibold text-brand-800';
 
-export function SiteLayout() {
+export const SiteLayout = () => {
     const { paths } = usePathStore();
     const navItems = useMemo(() => ([
         { to: '/', label: 'Home' },
@@ -39,4 +39,4 @@ export function SiteLayout() {
             </main>
         </div>
     );
-}
+};

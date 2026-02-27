@@ -1,6 +1,6 @@
 import { PageFrame } from '~/components/domain/PageFrame';
 
-export default function CollectionSlideShowPage() {
+export const CollectionSlideShowPage = () => {
     return (
         <div className="mx-auto max-w-6xl px-4 py-6">
             <PageFrame
@@ -9,4 +9,4 @@ export default function CollectionSlideShowPage() {
             />
         </div>
     );
-}
+};

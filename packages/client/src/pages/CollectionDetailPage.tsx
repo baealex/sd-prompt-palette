@@ -4,11 +4,11 @@ interface CollectionDetailPageProps {
     id: string;
 }
 
-export default function CollectionDetailPage({ id }: CollectionDetailPageProps) {
+export const CollectionDetailPage = ({ id }: CollectionDetailPageProps) => {
     return (
         <PageFrame
             title={`Collection Detail #${id}`}
             description="Detail page behavior (keywords, prompts, image cards) will be migrated in the page migration phase."
         />
     );
-}
+};

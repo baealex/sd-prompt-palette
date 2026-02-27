@@ -1,23 +1,23 @@
 import { TanStackRouterDevtools } from '@tanstack/router-devtools';
-import { Outlet, createRootRoute, createRoute, createRouter } from '@tanstack/react-router';
+import { Outlet, createRootRoute, createRoute, createRouter, useParams } from '@tanstack/react-router';
 
 import { SiteLayout } from '~/components/domain/SiteLayout';
-import CollectionDetailPage from '~/pages/CollectionDetailPage';
-import CollectionGalleryPage from '~/pages/CollectionGalleryPage';
-import CollectionListPage from '~/pages/CollectionListPage';
-import CollectionSlideShowPage from '~/pages/CollectionSlideShowPage';
-import HomePage from '~/pages/HomePage';
-import IdeaPage from '~/pages/IdeaPage';
-import ImageLoadPage from '~/pages/ImageLoadPage';
+import { CollectionDetailPage } from '~/pages/CollectionDetailPage';
+import { CollectionGalleryPage } from '~/pages/CollectionGalleryPage';
+import { CollectionListPage } from '~/pages/CollectionListPage';
+import { CollectionSlideShowPage } from '~/pages/CollectionSlideShowPage';
+import { HomePage } from '~/pages/HomePage';
+import { IdeaPage } from '~/pages/IdeaPage';
+import { ImageLoadPage } from '~/pages/ImageLoadPage';
 
-function RootRouteComponent() {
+const RootRouteComponent = () => {
     return (
         <>
             <Outlet />
             {import.meta.env.DEV ? <TanStackRouterDevtools position="bottom-right" /> : null}
         </>
     );
-}
+};
 
 const rootRoute = createRootRoute({
     component: RootRouteComponent,
@@ -59,6 +59,11 @@ const collectionGalleryRoute = createRoute({
     component: CollectionGalleryPage,
 });
 
+const CollectionDetailRouteComponent = () => {
+    const { id } = useParams({ from: '/app-layout/collection/$id' });
+    return <CollectionDetailPage id={id} />;
+};
+
 const collectionDetailRoute = createRoute({
     getParentRoute: () => appLayoutRoute,
     path: '/collection/$id',
@@ -70,11 +75,6 @@ const imageLoadRoute = createRoute({
     path: '/image-load',
     component: ImageLoadPage,
 });
-
-function CollectionDetailRouteComponent() {
-    const { id } = collectionDetailRoute.useParams();
-    return <CollectionDetailPage id={id} />;
-}
 
 export const routeTree = rootRoute.addChildren([
     slideShowRoute,

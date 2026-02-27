@@ -16,7 +16,7 @@ const DEFAULT_PATHS: PathStoreState = {
 
 const PathStoreContext = createContext<PathStoreValue | null>(null);
 
-export function PathStoreProvider({ children }: PropsWithChildren) {
+export const PathStoreProvider = ({ children }: PropsWithChildren) => {
     const [paths, setPaths] = useState<PathStoreState>(DEFAULT_PATHS);
 
     const value = useMemo<PathStoreValue>(() => ({
@@ -34,12 +34,12 @@ export function PathStoreProvider({ children }: PropsWithChildren) {
             {children}
         </PathStoreContext.Provider>
     );
-}
+};
 
-export function usePathStore() {
+export const usePathStore = () => {
     const context = useContext(PathStoreContext);
     if (!context) {
         throw new Error('usePathStore must be used within PathStoreProvider');
     }
     return context;
-}
+};

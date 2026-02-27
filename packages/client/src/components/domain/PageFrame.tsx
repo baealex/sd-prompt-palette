@@ -6,7 +6,7 @@ interface PageFrameProps {
     children?: ReactNode;
 }
 
-export function PageFrame({ title, description, children }: PageFrameProps) {
+export const PageFrame = ({ title, description, children }: PageFrameProps) => {
     return (
         <section className="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm">
             <header className="mb-4">
@@ -16,4 +16,4 @@ export function PageFrame({ title, description, children }: PageFrameProps) {
             {children}
         </section>
     );
-}
+};

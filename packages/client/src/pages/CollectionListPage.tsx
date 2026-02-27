@@ -5,7 +5,7 @@ import { PageFrame } from '~/components/domain/PageFrame';
 import { useContextMenu } from '~/modules/ui/context-menu';
 import type { Collection } from '~/models/types';
 
-export default function CollectionListPage() {
+export const CollectionListPage = () => {
     const [items, setItems] = useState<Array<Pick<Collection, 'id' | 'title'>>>([]);
     const [error, setError] = useState<string | null>(null);
     const contextMenu = useContextMenu();
@@ -79,4 +79,4 @@ export default function CollectionListPage() {
             ) : null}
         </PageFrame>
     );
-}
+};
