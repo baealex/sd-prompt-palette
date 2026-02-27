@@ -99,6 +99,13 @@ export const MoreIcon = (props: IconProps) => (
     </svg>
 );
 
+export const SearchIcon = (props: IconProps) => (
+    <svg viewBox="0 0 24 24" width={DEFAULT_SIZE} height={DEFAULT_SIZE} {...defaultProps} {...props}>
+        <circle cx={11} cy={11} r={7} />
+        <path d="m20 20-3.6-3.6" />
+    </svg>
+);
+
 export const DragHandleIcon = (props: IconProps) => (
     <svg viewBox="0 0 24 24" width={DEFAULT_SIZE} height={DEFAULT_SIZE} {...defaultProps} {...props}>
         <circle cx={9} cy={6} r={1} />

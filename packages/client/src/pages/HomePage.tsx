@@ -1,23 +1,41 @@
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, type DragEndEvent, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useNavigate } from '@tanstack/react-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 
 import { PageFrame } from '~/components/domain/PageFrame';
+import { Button } from '~/components/ui/Button';
+import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
+import { Input } from '~/components/ui/Input';
+import { Notice } from '~/components/ui/Notice';
+import { PromptDialog } from '~/components/ui/PromptDialog';
+import { useToast } from '~/components/ui/ToastProvider';
+import { useClipboardToast } from '~/components/ui/use-clipboard-toast';
 import { makeCategorySortableId, parseCategorySortableId, parseKeywordSortableId } from '~/features/home/dnd-ids';
 import { SortableCategoryCard } from '~/features/home/SortableCategoryCard';
-import { useHomeBoard } from '~/features/home/use-home-board';
 import type { HomeCategory } from '~/features/home/types';
+import { useHomeBoard } from '~/features/home/use-home-board';
 import { usePathStore } from '~/state/path-store';
+
+interface KeywordRemoveTarget {
+    categoryId: number;
+    keywordId: number;
+}
 
 export const HomePage = () => {
     const { paths } = usePathStore();
     const navigate = useNavigate();
+    const { pushToast } = useToast();
+    const { copyToClipboard } = useClipboardToast();
 
     const [categoryName, setCategoryName] = useState('');
     const [pendingKeywordIdForImage, setPendingKeywordIdForImage] = useState<number | null>(null);
+    const [renameCategoryTarget, setRenameCategoryTarget] = useState<HomeCategory | null>(null);
+    const [removeCategoryTargetId, setRemoveCategoryTargetId] = useState<number | null>(null);
+    const [removeKeywordTarget, setRemoveKeywordTarget] = useState<KeywordRemoveTarget | null>(null);
     const sampleImageInputRef = useRef<HTMLInputElement | null>(null);
+    const lastErrorRef = useRef<string | null>(null);
 
     const {
         categories,
@@ -34,6 +52,36 @@ export const HomePage = () => {
         addKeywordSampleImage,
         removeKeywordSampleImage,
     } = useHomeBoard();
+
+    useEffect(() => {
+        if (!error) {
+            lastErrorRef.current = null;
+            return;
+        }
+        if (lastErrorRef.current === error) {
+            return;
+        }
+        pushToast({
+            message: error,
+            variant: 'error',
+        });
+        lastErrorRef.current = error;
+    }, [error, pushToast]);
+
+    const removeCategoryTarget = useMemo(
+        () => categories.find((category) => category.id === removeCategoryTargetId) ?? null,
+        [categories, removeCategoryTargetId],
+    );
+
+    const removeKeywordName = useMemo(() => {
+        if (!removeKeywordTarget) {
+            return null;
+        }
+
+        const targetCategory = categories.find((category) => category.id === removeKeywordTarget.categoryId);
+        const targetKeyword = targetCategory?.keywords.find((keyword) => keyword.id === removeKeywordTarget.keywordId);
+        return targetKeyword?.name ?? null;
+    }, [categories, removeKeywordTarget]);
 
     const categorySensors = useSensors(
         useSensor(PointerSensor, {
@@ -78,48 +126,89 @@ export const HomePage = () => {
         void reorderKeyword(categoryId, activeKeyword.keywordId, overKeyword.keywordId);
     }, [reorderKeyword]);
 
-    const copyText = useCallback(async (text: string) => {
-        await navigator.clipboard.writeText(text);
-    }, []);
+    const copyText = useCallback(async (text: string, feedbackLabel = 'Keyword') => {
+        await copyToClipboard(text, { label: feedbackLabel });
+    }, [copyToClipboard]);
 
-    const handleCreateCategory = useCallback((event: FormEvent<HTMLFormElement>) => {
+    const handleCreateCategory = useCallback(async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         const trimmedName = categoryName.trim();
         if (!trimmedName) {
             return;
         }
 
-        void createCategoryByName(trimmedName);
-        setCategoryName('');
-    }, [categoryName, createCategoryByName]);
+        const created = await createCategoryByName(trimmedName);
+        if (created) {
+            setCategoryName('');
+            pushToast({
+                message: 'Category added',
+                variant: 'success',
+            });
+        }
+    }, [categoryName, createCategoryByName, pushToast]);
 
     const handleCopyAllKeywords = useCallback((category: HomeCategory) => {
         const keywordText = category.keywords.map((keyword) => keyword.name).join(', ');
         if (!keywordText) {
             return;
         }
-        void copyText(keywordText);
+        void copyText(keywordText, `${category.name} list`);
     }, [copyText]);
 
-    const handleRenameCategory = useCallback((category: HomeCategory) => {
-        const nextName = window.prompt('Enter new category name', category.name);
-        if (!nextName || !nextName.trim()) {
+    const handleRenameCategoryRequest = useCallback((category: HomeCategory) => {
+        setRenameCategoryTarget(category);
+    }, []);
+
+    const handleRenameCategoryConfirm = useCallback((nextName: string) => {
+        if (!renameCategoryTarget) {
             return;
         }
-        void renameCategory(category.id, nextName.trim());
-    }, [renameCategory]);
 
-    const handleRemoveCategory = useCallback((categoryId: number) => {
-        const confirmed = window.confirm('Delete this category?');
-        if (!confirmed) {
+        void (async () => {
+            const renamed = await renameCategory(renameCategoryTarget.id, nextName);
+            if (!renamed) {
+                return;
+            }
+            pushToast({
+                message: 'Category renamed',
+                variant: 'success',
+            });
+            setRenameCategoryTarget(null);
+        })();
+    }, [pushToast, renameCategory, renameCategoryTarget]);
+
+    const handleRemoveCategoryRequest = useCallback((categoryId: number) => {
+        setRemoveCategoryTargetId(categoryId);
+    }, []);
+
+    const handleRemoveCategoryConfirm = useCallback(() => {
+        if (!removeCategoryTargetId) {
             return;
         }
-        void removeCategory(categoryId);
-    }, [removeCategory]);
 
-    const handleAddKeywords = useCallback((categoryId: number, rawKeywords: string) => {
-        void addKeywords(categoryId, rawKeywords);
-    }, [addKeywords]);
+        void (async () => {
+            const removed = await removeCategory(removeCategoryTargetId);
+            if (!removed) {
+                return;
+            }
+            pushToast({
+                message: 'Category removed',
+                variant: 'success',
+            });
+            setRemoveCategoryTargetId(null);
+        })();
+    }, [pushToast, removeCategory, removeCategoryTargetId]);
+
+    const handleAddKeywords = useCallback(async (categoryId: number, rawKeywords: string) => {
+        const added = await addKeywords(categoryId, rawKeywords);
+        if (added) {
+            pushToast({
+                message: 'Keyword added',
+                variant: 'success',
+            });
+        }
+        return added;
+    }, [addKeywords, pushToast]);
 
     const handleCopyKeyword = useCallback((keywordName: string) => {
         void copyText(keywordName);
@@ -132,13 +221,27 @@ export const HomePage = () => {
         });
     }, [navigate, paths.collection]);
 
-    const handleRemoveKeyword = useCallback((categoryId: number, keywordId: number) => {
-        const confirmed = window.confirm('Remove this keyword?');
-        if (!confirmed) {
+    const handleRemoveKeywordRequest = useCallback((categoryId: number, keywordId: number) => {
+        setRemoveKeywordTarget({ categoryId, keywordId });
+    }, []);
+
+    const handleRemoveKeywordConfirm = useCallback(() => {
+        if (!removeKeywordTarget) {
             return;
         }
-        void removeKeyword(categoryId, keywordId);
-    }, [removeKeyword]);
+
+        void (async () => {
+            const removed = await removeKeyword(removeKeywordTarget.categoryId, removeKeywordTarget.keywordId);
+            if (!removed) {
+                return;
+            }
+            pushToast({
+                message: 'Keyword removed',
+                variant: 'success',
+            });
+            setRemoveKeywordTarget(null);
+        })();
+    }, [pushToast, removeKeyword, removeKeywordTarget]);
 
     const handleAddKeywordSampleImageRequest = useCallback((keywordId: number) => {
         setPendingKeywordIdForImage(keywordId);
@@ -149,43 +252,61 @@ export const HomePage = () => {
         const imageFile = event.target.files?.[0];
         if (!imageFile || !pendingKeywordIdForImage) {
             setPendingKeywordIdForImage(null);
+            event.target.value = '';
             return;
         }
 
-        void addKeywordSampleImage(pendingKeywordIdForImage, imageFile);
+        void (async () => {
+            const added = await addKeywordSampleImage(pendingKeywordIdForImage, imageFile);
+            if (added) {
+                pushToast({
+                    message: 'Sample image added',
+                    variant: 'success',
+                });
+            }
+        })();
         setPendingKeywordIdForImage(null);
         event.target.value = '';
-    }, [addKeywordSampleImage, pendingKeywordIdForImage]);
+    }, [addKeywordSampleImage, pendingKeywordIdForImage, pushToast]);
 
     const handleRemoveKeywordSampleImage = useCallback((keywordId: number) => {
-        void removeKeywordSampleImage(keywordId);
-    }, [removeKeywordSampleImage]);
+        void (async () => {
+            const removed = await removeKeywordSampleImage(keywordId);
+            if (removed) {
+                pushToast({
+                    message: 'Sample image removed',
+                    variant: 'success',
+                });
+            }
+        })();
+    }, [pushToast, removeKeywordSampleImage]);
 
     return (
         <PageFrame
             title="Home"
-            description="Manage categories/keywords with visible actions and dnd-kit ordering."
+            description="Manage categories and keywords with drag ordering and quick copy."
         >
             <form onSubmit={handleCreateCategory} className="mb-4 flex flex-wrap gap-2">
-                <input
-                    type="text"
+                <Input
                     value={categoryName}
                     onChange={(event) => setCategoryName(event.target.value)}
                     placeholder="Enter a category"
-                    className="min-w-[220px] flex-1 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-slate-500"
+                    className="min-w-[240px] flex-1"
                     disabled={saving}
                 />
-                <button
-                    type="submit"
-                    className="rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-brand-400"
-                    disabled={saving}
-                >
+                <Button type="submit" variant="primary" disabled={saving}>
                     Add Category
-                </button>
+                </Button>
             </form>
 
             {loading ? (
-                <p className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">Loading categories...</p>
+                <Notice variant="neutral">Loading categories...</Notice>
+            ) : null}
+
+            {!loading && categories.length === 0 ? (
+                <Notice variant="neutral" className="mb-4">
+                    No categories yet. Add your first category to start organizing prompts.
+                </Notice>
             ) : null}
 
             <DndContext
@@ -205,12 +326,12 @@ export const HomePage = () => {
                                 saving={saving}
                                 onKeywordDragEnd={handleKeywordDragEnd}
                                 onCopyAllKeywords={handleCopyAllKeywords}
-                                onRenameCategory={handleRenameCategory}
-                                onRemoveCategory={handleRemoveCategory}
+                                onRenameCategory={handleRenameCategoryRequest}
+                                onRemoveCategory={handleRemoveCategoryRequest}
                                 onAddKeywords={handleAddKeywords}
                                 onCopyKeyword={handleCopyKeyword}
                                 onViewCollection={handleViewCollection}
-                                onRemoveKeyword={handleRemoveKeyword}
+                                onRemoveKeyword={handleRemoveKeywordRequest}
                                 onAddKeywordSampleImage={handleAddKeywordSampleImageRequest}
                                 onRemoveKeywordSampleImage={handleRemoveKeywordSampleImage}
                             />
@@ -219,22 +340,54 @@ export const HomePage = () => {
                 </SortableContext>
             </DndContext>
 
-            {saving ? (
-                <p className="mt-4 rounded-md border border-brand-200 bg-brand-50 p-3 text-sm text-brand-800">
-                    Updating order...
-                </p>
-            ) : null}
-
-            {error ? (
-                <p className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>
-            ) : null}
-
             <input
                 ref={sampleImageInputRef}
                 type="file"
                 accept="image/*"
                 className="hidden"
                 onChange={handleSampleImageChange}
+            />
+
+            <PromptDialog
+                open={Boolean(renameCategoryTarget)}
+                title="Rename category"
+                description="Category names should be concise and searchable."
+                defaultValue={renameCategoryTarget?.name ?? ''}
+                placeholder="Enter category name"
+                onSubmit={handleRenameCategoryConfirm}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setRenameCategoryTarget(null);
+                    }
+                }}
+            />
+
+            <ConfirmDialog
+                open={removeCategoryTargetId !== null}
+                title="Delete category"
+                description={removeCategoryTarget ? `"${removeCategoryTarget.name}" will be permanently removed.` : 'This category will be removed.'}
+                confirmLabel="Delete"
+                danger
+                onConfirm={handleRemoveCategoryConfirm}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setRemoveCategoryTargetId(null);
+                    }
+                }}
+            />
+
+            <ConfirmDialog
+                open={removeKeywordTarget !== null}
+                title="Remove keyword"
+                description={removeKeywordName ? `"${removeKeywordName}" will be removed from this category.` : 'This keyword will be removed.'}
+                confirmLabel="Remove"
+                danger
+                onConfirm={handleRemoveKeywordConfirm}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setRemoveKeywordTarget(null);
+                    }
+                }}
             />
         </PageFrame>
     );

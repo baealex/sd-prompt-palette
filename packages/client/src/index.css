@@ -4,12 +4,57 @@
 
 :root {
     color-scheme: light;
+
+    --color-bg: 237 243 248;
+    --color-ink: 24 34 45;
+    --color-ink-muted: 59 74 91;
+    --color-ink-subtle: 108 121 136;
+    --color-ink-inverse: 247 249 252;
+    --color-surface-base: 248 252 255;
+    --color-surface-muted: 236 244 250;
+    --color-surface-raised: 255 255 255;
+    --color-line: 205 218 231;
+    --color-line-strong: 176 197 215;
+    --color-info-50: 239 246 255;
+    --color-info-200: 191 219 254;
+    --color-info-700: 29 78 216;
+    --color-success-50: 236 253 245;
+    --color-success-200: 167 243 208;
+    --color-success-700: 21 128 61;
+    --color-warning-50: 255 247 237;
+    --color-warning-200: 254 215 170;
+    --color-warning-700: 180 83 9;
+    --color-danger-50: 254 242 242;
+    --color-danger-200: 254 202 202;
+    --color-danger-700: 185 28 28;
+
+    --radius-sm: 6px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+
+    --shadow-surface: 0 1px 0 rgba(18, 30, 45, 0.04), 0 3px 12px rgba(18, 30, 45, 0.09);
+    --shadow-raised: 0 10px 30px rgba(18, 30, 45, 0.14), 0 5px 14px rgba(18, 30, 45, 0.09);
+    --shadow-overlay: 0 22px 46px rgba(7, 11, 17, 0.3);
 }
 
 body {
-    @apply min-h-screen bg-slate-100 text-slate-900 antialiased;
+    background-image:
+        radial-gradient(circle at 15% -8%, rgba(85, 190, 167, 0.26), transparent 42%),
+        radial-gradient(circle at 90% 8%, rgba(183, 231, 220, 0.22), transparent 38%),
+        linear-gradient(180deg, rgb(var(--color-bg)) 0%, rgb(var(--color-surface-muted)) 100%);
+    @apply min-h-screen bg-bg text-ink antialiased;
 }
 
 #root {
     @apply min-h-screen;
+}
+
+@layer utilities {
+    .ui-focus-ring {
+        @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-base;
+    }
+
+    .ui-touch {
+        @apply min-h-11 min-w-11;
+    }
 }

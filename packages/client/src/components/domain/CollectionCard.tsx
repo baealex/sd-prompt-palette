@@ -1,4 +1,6 @@
 import type { Collection } from '~/models/types';
+import { Button } from '~/components/ui/Button';
+import { Card } from '~/components/ui/Card';
 
 import { CategoryHeader } from './CategoryHeader';
 import { Image } from './Image';
@@ -21,52 +23,54 @@ export const CollectionCard = ({
     removing = false,
 }: CollectionCardProps) => {
     return (
-        <article className="mb-5 grid grid-cols-1 overflow-hidden rounded-xl border border-slate-300 bg-white lg:grid-cols-[360px_minmax(0,1fr)]">
-            <header className="col-span-full flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 p-4">
-                <h2 className="text-lg font-semibold text-slate-900">
+        <Card as="article" padding="none" className="mb-5 grid grid-cols-1 overflow-hidden lg:grid-cols-[360px_minmax(0,1fr)]">
+            <header className="col-span-full flex flex-wrap items-center justify-between gap-2 border-b border-line p-4">
+                <h2 className="text-lg font-semibold text-ink">
                     {collection.title || '(untitled)'}
                 </h2>
                 <div className="flex items-center gap-2">
                     {onClickRename ? (
-                        <button
-                            type="button"
+                        <Button
+                            variant="secondary"
+                            size="sm"
                             onClick={onClickRename}
                             disabled={renaming}
-                            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             {renaming ? 'Renaming...' : 'Rename'}
-                        </button>
+                        </Button>
                     ) : null}
-                    <button
-                        type="button"
+                    <Button
+                        variant="danger"
+                        size="sm"
                         onClick={onClickDelete}
                         disabled={removing}
-                        className="rounded-md bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-400"
                     >
                         {removing ? 'Removing...' : 'Remove'}
-                    </button>
+                    </Button>
                 </div>
             </header>
 
-            <Image
-                className="h-auto w-full bg-slate-50 p-4 object-contain lg:w-[360px]"
-                alt={collection.title}
-                src={collection.image.url}
-                width={collection.image.width}
-                height={collection.image.height}
-            />
+            <div className="flex h-full items-center justify-center bg-surface-muted p-4 lg:w-[360px]">
+                <Image
+                    className="h-auto w-full object-contain"
+                    alt={collection.title}
+                    src={collection.image.url}
+                    width={collection.image.width}
+                    height={collection.image.height}
+                />
+            </div>
 
             <div className="p-4">
                 <CategoryHeader title="Prompt" onClickCopy={() => onClickCopy(collection.prompt)} />
-                <p className="mb-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-relaxed text-slate-700 whitespace-pre-wrap">
+                <p className="mb-4 rounded-token-md border border-line bg-surface-muted px-3 py-2 text-sm leading-relaxed text-ink-muted whitespace-pre-wrap">
                     {collection.prompt || '-'}
                 </p>
 
                 <CategoryHeader title="Negative Prompt" onClickCopy={() => onClickCopy(collection.negativePrompt)} />
-                <p className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-relaxed text-slate-700 whitespace-pre-wrap">
+                <p className="rounded-token-md border border-line bg-surface-muted px-3 py-2 text-sm leading-relaxed text-ink-muted whitespace-pre-wrap">
                     {collection.negativePrompt || '-'}
                 </p>
             </div>
-        </article>
+        </Card>
     );
 };

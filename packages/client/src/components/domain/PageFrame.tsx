@@ -1,21 +1,41 @@
 import type { ReactNode } from 'react';
 
+import { Card } from '~/components/ui/Card';
+
+type PageFrameSurface = 'card' | 'plain';
+
 interface PageFrameProps {
     title: string;
     description?: string;
+    surface?: PageFrameSurface;
     children?: ReactNode;
 }
 
-export const PageFrame = ({ title, description, children }: PageFrameProps) => {
-    return (
-        <section className="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm">
+export const PageFrame = ({
+    title,
+    description,
+    surface = 'card',
+    children,
+}: PageFrameProps) => {
+    const content = (
+        <>
             <header className="mb-4">
-                <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{title}</h1>
+                <h1 className="text-2xl font-semibold tracking-tight text-ink">{title}</h1>
                 {description ? (
-                    <p className="mt-2 text-sm text-slate-600">{description}</p>
+                    <p className="mt-2 text-sm text-ink-muted">{description}</p>
                 ) : null}
             </header>
             {children}
-        </section>
+        </>
+    );
+
+    if (surface === 'plain') {
+        return <section>{content}</section>;
+    }
+
+    return (
+        <Card as="section" padding="lg" className="bg-surface-base/95">
+            {content}
+        </Card>
     );
 };

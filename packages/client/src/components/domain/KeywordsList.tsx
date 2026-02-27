@@ -25,7 +25,7 @@ export const KeywordsList = ({ keywords, onClick, onContextMenu }: KeywordsListP
                     onKeyDown={(event) => handleEnterKey(event, onClick ? () => onClick(keyword) : undefined)}
                     onClick={() => onClick?.(keyword)}
                     onContextMenu={(event) => onContextMenu?.(event, keyword)}
-                    className="group relative list-none rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+                    className="ui-focus-ring group relative list-none rounded-token-md border border-line bg-surface-base px-3 py-2 text-xs text-ink-muted shadow-surface transition-colors hover:bg-surface-muted"
                 >
                     {keyword.name}
                     {keyword.image ? (
@@ -33,7 +33,7 @@ export const KeywordsList = ({ keywords, onClick, onContextMenu }: KeywordsListP
                             loading="lazy"
                             src={keyword.image.url}
                             alt={keyword.name}
-                            className="pointer-events-none absolute -bottom-1 left-full z-20 hidden w-28 rounded-lg border border-slate-200 bg-white shadow-lg group-hover:block"
+                            className="pointer-events-none absolute -bottom-1 left-full z-20 hidden w-28 rounded-token-md border border-line bg-surface-base shadow-raised group-hover:block"
                         />
                     ) : null}
                 </li>

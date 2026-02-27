@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 
 import { getCategories } from '~/api';
@@ -6,14 +6,17 @@ import { CategoryHeader } from '~/components/domain/CategoryHeader';
 import { Checkbox } from '~/components/domain/Checkbox';
 import { KeywordsList } from '~/components/domain/KeywordsList';
 import { PageFrame } from '~/components/domain/PageFrame';
+import { Badge } from '~/components/ui/Badge';
+import { Button } from '~/components/ui/Button';
+import { Card } from '~/components/ui/Card';
+import { Input } from '~/components/ui/Input';
+import { Notice } from '~/components/ui/Notice';
+import { useClipboardToast } from '~/components/ui/use-clipboard-toast';
 import type { Category, Keyword } from '~/models/types';
 import { useMemoState } from '~/modules/memo';
 
-const copyText = async (text: string) => {
-    await navigator.clipboard.writeText(text);
-};
-
 export const IdeaPage = () => {
+    const { copyToClipboard } = useClipboardToast();
     const [categories, setMemoCategories] = useMemoState<Category[]>(['categories'], []);
     const [generatedKeywords, setMemoKeywords] = useMemoState<Keyword[]>(['generated', 'keywords'], []);
     const [selected, setMemoSelected] = useMemoState<string[]>(['selected'], categories.map((category) => category.name));
@@ -22,6 +25,8 @@ export const IdeaPage = () => {
     const [keywords, setKeywords] = useState<Keyword[]>(generatedKeywords);
     const [selectedNames, setSelectedNames] = useState<string[]>(selected);
     const [error, setError] = useState<string | null>(null);
+    const [isLoadingCategories, setIsLoadingCategories] = useState<boolean>(categoryList.length === 0);
+    const [categoryQuery, setCategoryQuery] = useState('');
 
     useEffect(() => {
         let cancelled = false;
@@ -35,12 +40,28 @@ export const IdeaPage = () => {
 
                 const nextCategories = response.data.allCategories;
                 setCategoryList(nextCategories);
-                setSelectedNames((prev) => (prev.length > 0 ? prev : nextCategories.map((category) => category.name)));
+                setSelectedNames((prev) => {
+                    if (prev.length === 0) {
+                        return nextCategories.map((category) => category.name);
+                    }
+
+                    const validSelection = prev.filter((name) => (
+                        nextCategories.some((category) => category.name === name)
+                    ));
+
+                    return validSelection.length > 0
+                        ? validSelection
+                        : nextCategories.map((category) => category.name);
+                });
             } catch (nextError) {
                 if (cancelled) {
                     return;
                 }
                 setError(nextError instanceof Error ? nextError.message : 'Failed to load categories');
+            } finally {
+                if (!cancelled) {
+                    setIsLoadingCategories(false);
+                }
             }
         };
 
@@ -57,6 +78,29 @@ export const IdeaPage = () => {
         setMemoCategories(categoryList);
     }, [categoryList, keywords, selectedNames, setMemoCategories, setMemoKeywords, setMemoSelected]);
 
+    const selectedNameSet = useMemo(() => new Set(selectedNames), [selectedNames]);
+
+    const normalizedCategoryQuery = categoryQuery.trim().toLowerCase();
+
+    const visibleCategories = useMemo(() => {
+        if (normalizedCategoryQuery.length === 0) {
+            return categoryList;
+        }
+
+        return categoryList.filter((category) => (
+            category.name.toLowerCase().includes(normalizedCategoryQuery)
+        ));
+    }, [categoryList, normalizedCategoryQuery]);
+
+    const selectedCount = useMemo(() => {
+        return categoryList.reduce((count, category) => (
+            selectedNameSet.has(category.name) ? count + 1 : count
+        ), 0);
+    }, [categoryList, selectedNameSet]);
+
+    const isAllSelected = categoryList.length > 0 && selectedCount === categoryList.length;
+    const canGenerate = selectedCount > 0 && categoryList.length > 0 && !isLoadingCategories;
+
     const handleCheckboxChange = (nextChecked: boolean, name: string) => {
         setSelectedNames((prev) => {
             if (nextChecked) {
@@ -70,10 +114,23 @@ export const IdeaPage = () => {
         });
     };
 
+    const handleSelectAll = () => {
+        setSelectedNames(categoryList.map((category) => category.name));
+    };
+
+    const handleClearSelection = () => {
+        setSelectedNames([]);
+    };
+
     const handleGenerate = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+
+        if (!canGenerate) {
+            return;
+        }
+
         const nextKeywords = categoryList
-            .filter((category) => selectedNames.includes(category.name))
+            .filter((category) => selectedNameSet.has(category.name))
             .map((category) => {
                 if (category.keywords.length === 0) {
                     return null;
@@ -90,56 +147,111 @@ export const IdeaPage = () => {
     return (
         <PageFrame
             title="Idea"
-            description="Generate one random keyword from each selected category."
+            description="Choose categories and generate one random keyword from each selection."
         >
             <div className="grid grid-cols-1 gap-4 md:grid-cols-[280px_minmax(0,1fr)]">
-                <form
-                    onSubmit={handleGenerate}
-                    className="rounded-xl border border-slate-200 bg-white p-4"
-                >
-                    <div className="flex flex-col gap-2">
-                        {categoryList.map((category) => (
-                            <Checkbox
-                                key={category.id}
-                                name={category.name}
-                                label={category.name}
-                                checked={selectedNames.includes(category.name)}
-                                onChange={handleCheckboxChange}
-                            />
-                        ))}
-                    </div>
-                    <button
-                        type="submit"
-                        className="mt-4 rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700"
-                    >
-                        Generate
-                    </button>
-                </form>
+                <Card className="h-full">
+                    <form onSubmit={handleGenerate} className="flex h-full flex-col gap-4">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div>
+                                <h2 className="text-base font-semibold text-ink">Category Selection</h2>
+                                <p className="mt-1 text-xs text-ink-muted">
+                                    Pick the categories you want in your idea mix.
+                                </p>
+                            </div>
+                            <Badge variant={selectedCount > 0 ? 'info' : 'neutral'}>
+                                {selectedCount}/{categoryList.length} selected
+                            </Badge>
+                        </div>
 
-                <div className="rounded-xl border border-slate-200 bg-white p-4">
+                        <Input
+                            value={categoryQuery}
+                            onChange={(event) => setCategoryQuery(event.target.value)}
+                            placeholder="Filter categories"
+                            aria-label="Filter categories"
+                        />
+
+                        <div className="flex flex-wrap gap-2">
+                            <Button
+                                type="button"
+                                variant="soft"
+                                size="sm"
+                                disabled={categoryList.length === 0 || isAllSelected}
+                                onClick={handleSelectAll}
+                            >
+                                Select all
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                disabled={selectedCount === 0}
+                                onClick={handleClearSelection}
+                            >
+                                Clear
+                            </Button>
+                        </div>
+
+                        {isLoadingCategories ? (
+                            <Notice variant="neutral">Loading categories...</Notice>
+                        ) : null}
+
+                        {!isLoadingCategories && categoryList.length === 0 ? (
+                            <Notice variant="warning">No categories are available yet.</Notice>
+                        ) : null}
+
+                        {!isLoadingCategories && categoryList.length > 0 && visibleCategories.length === 0 ? (
+                            <Notice variant="neutral">No categories match this filter.</Notice>
+                        ) : null}
+
+                        <div className="flex max-h-[420px] flex-col gap-2 overflow-auto pr-1">
+                            {visibleCategories.map((category) => (
+                                <Checkbox
+                                    key={category.id}
+                                    name={category.name}
+                                    label={category.name}
+                                    checked={selectedNameSet.has(category.name)}
+                                    meta={`${category.keywords.length} keywords`}
+                                    onChange={handleCheckboxChange}
+                                />
+                            ))}
+                        </div>
+
+                        <Button type="submit" variant="primary" className="mt-auto w-full" disabled={!canGenerate}>
+                            {canGenerate ? 'Generate ideas' : 'Select categories first'}
+                        </Button>
+                    </form>
+                </Card>
+
+                <Card className="h-full">
                     {keywords.length > 0 ? (
                         <>
                             <CategoryHeader
                                 title="Generated"
                                 onClickCopy={() => {
-                                    void copyText(keywords.map((keyword) => keyword.name).join(', '));
+                                    void copyToClipboard(
+                                        keywords.map((keyword) => keyword.name).join(', '),
+                                        { label: 'Generated list' },
+                                    );
                                 }}
                             />
                             <KeywordsList
                                 keywords={keywords}
                                 onClick={(keyword) => {
-                                    void copyText(keyword.name);
+                                    void copyToClipboard(keyword.name, { label: 'Keyword' });
                                 }}
                             />
                         </>
                     ) : (
-                        <p className="text-sm text-slate-600">Choose categories and generate ideas.</p>
+                        <Notice variant="neutral">
+                            Select categories and click <strong>Generate ideas</strong> to create a keyword set.
+                        </Notice>
                     )}
-                </div>
+                </Card>
             </div>
 
             {error ? (
-                <p className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>
+                <Notice variant="error" className="mt-4">{error}</Notice>
             ) : null}
         </PageFrame>
     );

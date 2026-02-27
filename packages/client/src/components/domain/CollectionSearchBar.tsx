@@ -1,0 +1,59 @@
+import { useMemo } from 'react';
+
+import { Button } from '~/components/ui/Button';
+import { Input } from '~/components/ui/Input';
+import { cn } from '~/components/ui/cn';
+import { CrossIcon, SearchIcon } from '~/icons';
+
+interface CollectionSearchBarProps {
+    value: string;
+    placeholder?: string;
+    className?: string;
+    onChange: (value: string) => void;
+    onSubmit: () => void;
+}
+
+export const CollectionSearchBar = ({
+    value,
+    placeholder = 'Search',
+    className,
+    onChange,
+    onSubmit,
+}: CollectionSearchBarProps) => {
+    const hasQuery = useMemo(() => value.trim().length > 0, [value]);
+
+    return (
+        <form
+            onSubmit={(event) => {
+                event.preventDefault();
+                onSubmit();
+            }}
+            className={cn('w-full', className)}
+        >
+            <div className="relative rounded-token-lg border-2 border-brand-200 bg-surface-base p-1.5 shadow-surface">
+                <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-500" />
+                <Input
+                    value={value}
+                    onChange={(event) => onChange(event.target.value)}
+                    placeholder={placeholder}
+                    className="h-9 border-0 bg-transparent pl-9 pr-28 text-sm shadow-none focus-visible:ring-0"
+                />
+                <div className="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-1">
+                    {hasQuery ? (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2"
+                            onClick={() => onChange('')}
+                        >
+                            <CrossIcon width={12} height={12} />
+                        </Button>
+                    ) : null}
+                    <Button type="submit" variant="primary" size="sm" className="h-8 px-3">
+                        Find
+                    </Button>
+                </div>
+            </div>
+        </form>
+    );
+};

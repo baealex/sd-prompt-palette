@@ -32,6 +32,13 @@ export const useImageLoad = () => {
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
+    const clearLoadedState = () => {
+        setBase64(null);
+        setParsedPrompt(null);
+        setUploadedImage(null);
+        setSavedCollectionId(null);
+    };
+
     const parsePrompt = (value: string) => {
         readPromptInfo(value, {
             onSuccess: (promptInfo) => {
@@ -50,39 +57,23 @@ export const useImageLoad = () => {
 
     const onFile = async (file: File | null) => {
         if (!file) {
+            clearLoadedState();
+            setError(null);
             return;
         }
 
         setLoading(true);
         setError(null);
+        setUploadedImage(null);
+        setSavedCollectionId(null);
 
         try {
             const data = await imageToBase64(file);
             setBase64(data);
-            setSavedCollectionId(null);
             parsePrompt(data);
         } catch (uploadError) {
+            clearLoadedState();
             setError(uploadError instanceof Error ? uploadError.message : 'Failed to read image');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const upload = async () => {
-        if (!base64) {
-            setError('No image selected');
-            return;
-        }
-
-        setLoading(true);
-        setError(null);
-
-        try {
-            const response = await imageUpload({ image: base64 });
-            setUploadedImage(response.data);
-            setError(null);
-        } catch (uploadError) {
-            setError(uploadError instanceof Error ? uploadError.message : 'Upload failed');
         } finally {
             setLoading(false);
         }
@@ -129,10 +120,8 @@ export const useImageLoad = () => {
         loading,
         error,
         parsedPrompt,
-        uploadedImage,
         savedCollectionId,
         onFile,
-        upload,
         saveToCollection,
     };
 };

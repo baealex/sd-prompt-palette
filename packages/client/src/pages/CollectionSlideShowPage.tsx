@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
+import { Link } from '@tanstack/react-router';
 
 import { getCollections } from '~/api';
+import { Button } from '~/components/ui/Button';
+import { Notice } from '~/components/ui/Notice';
 import { PauseIcon, PlayIcon } from '~/icons';
 import type { Collection } from '~/models/types';
 
@@ -71,9 +74,7 @@ export const CollectionSlideShowPage = () => {
     return (
         <div className="relative h-screen w-full overflow-hidden bg-black text-white">
             {error ? (
-                <div className="absolute left-1/2 top-8 z-30 -translate-x-1/2 rounded-md border border-red-300 bg-red-100 px-3 py-2 text-sm text-red-800">
-                    {error}
-                </div>
+                <Notice variant="error" className="absolute left-1/2 top-8 z-30 -translate-x-1/2">{error}</Notice>
             ) : null}
 
             {!activeSlide ? (
@@ -81,7 +82,7 @@ export const CollectionSlideShowPage = () => {
                     Generating a show for you...
                 </div>
             ) : (
-                <div className={`h-full ${play ? 'animate-pulse' : ''}`}>
+                <div className="h-full">
                     <section key={`${activeSlide.id}-${index}`} className="relative h-full w-full">
                         <div
                             className="absolute inset-[-12%] bg-cover bg-center blur-3xl"
@@ -93,22 +94,26 @@ export const CollectionSlideShowPage = () => {
                             className="absolute inset-0 h-full w-full object-contain"
                         />
                         <div className="absolute left-6 top-6 z-20 rounded bg-black/45 px-3 py-2 text-sm font-semibold tracking-wide">
-                            <a href={`/collection/${activeSlide.id}`} className="underline decoration-transparent hover:decoration-white">
+                            <Link
+                                to="/collection/$id"
+                                params={{ id: String(activeSlide.id) }}
+                                className="underline decoration-transparent hover:decoration-white"
+                            >
                                 {activeSlide.title || '(untitled)'}
-                            </a>
+                            </Link>
                         </div>
                     </section>
                 </div>
             )}
 
-            <button
-                type="button"
+            <Button
+                variant="soft"
                 onClick={() => setPlay((prev) => !prev)}
-                className="fixed bottom-8 right-8 z-30 inline-flex items-center gap-2 rounded-full border border-white/30 bg-black/45 px-4 py-2 text-sm font-semibold text-white hover:bg-black/65"
+                className="fixed bottom-8 right-8 z-30 rounded-full border border-brand-300 bg-brand-100/90 text-brand-900 backdrop-blur"
             >
                 {play ? <PauseIcon width={16} height={16} /> : <PlayIcon width={16} height={16} />}
                 {play ? 'Pause' : 'Play'}
-            </button>
+            </Button>
         </div>
     );
 };

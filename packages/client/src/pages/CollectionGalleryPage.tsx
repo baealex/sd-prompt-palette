@@ -1,12 +1,14 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
-import type { FormEvent } from 'react';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
+import { useCallback, useEffect, useState } from 'react';
 
 import { getCollections } from '~/api';
 import { CollectionNav } from '~/components/domain/CollectionNav';
+import { CollectionRealtimeControl } from '~/components/domain/CollectionRealtimeControl';
+import { CollectionSearchBar } from '~/components/domain/CollectionSearchBar';
 import { Image } from '~/components/domain/Image';
 import { PageFrame } from '~/components/domain/PageFrame';
-import { useLiveCollectionsRealtime } from '~/features/collection/use-live-collections-realtime';
+import { Notice } from '~/components/ui/Notice';
 import type { Collection } from '~/models/types';
 import { usePathStore } from '~/state/path-store';
 
@@ -19,26 +21,29 @@ interface CollectionGalleryChunk {
     lastPage: number;
 }
 
-const getInitialQuery = () => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('query') ?? '';
-};
-
 const getLastPage = (total: number, limit: number) => {
     return Math.max(1, Math.ceil(total / limit));
 };
 
 export const CollectionGalleryPage = () => {
+    const navigate = useNavigate();
     const { setPath } = usePathStore();
-
-    const [query, setQuery] = useState<string>(getInitialQuery);
-    const [draftQuery, setDraftQuery] = useState<string>(getInitialQuery);
+    const query = useSearch({
+        strict: false,
+        select: (search) => {
+            const queryValue = (search as Record<string, unknown>).query;
+            return typeof queryValue === 'string' ? queryValue : '';
+        },
+    });
+    const [draftQuery, setDraftQuery] = useState<string>(query);
 
     useEffect(() => {
         setPath('collection', '/collection/gallery');
     }, [setPath]);
 
-    useLiveCollectionsRealtime();
+    useEffect(() => {
+        setDraftQuery(query);
+    }, [query]);
 
     const collectionsQuery = useInfiniteQuery({
         queryKey: ['collections', 'gallery', query] as const,
@@ -90,19 +95,22 @@ export const CollectionGalleryPage = () => {
         };
     }, [fetchNextPage, hasNextPage, loading, loadingMore]);
 
-    const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
+    const applySearch = useCallback(() => {
         const nextQuery = draftQuery.trim();
-        setQuery(nextQuery);
-        const params = new URLSearchParams(window.location.search);
-        if (nextQuery) {
-            params.set('query', nextQuery);
-        } else {
-            params.delete('query');
-        }
-        const nextSearch = params.toString();
-        window.history.replaceState(null, '', nextSearch ? `/collection/gallery?${nextSearch}` : '/collection/gallery');
-    };
+        void navigate({
+            to: '/collection/gallery',
+            replace: true,
+            search: (previousSearch) => {
+                const nextSearch = { ...(previousSearch as Record<string, unknown>) };
+                if (nextQuery) {
+                    nextSearch.query = nextQuery;
+                } else {
+                    delete nextSearch.query;
+                }
+                return nextSearch;
+            },
+        });
+    }, [draftQuery, navigate]);
 
     const placeholderText = loading
         ? 'Loading collections...'
@@ -113,29 +121,29 @@ export const CollectionGalleryPage = () => {
     return (
         <PageFrame
             title="Collection Gallery"
-            description="Masonry-style browsing with query filter."
+            description="Visual browsing for saved prompts and images."
         >
-            <CollectionNav />
-
-            <form onSubmit={handleSearchSubmit} className="mx-auto mb-4 max-w-sm">
-                <input
-                    type="text"
+            <div className="mb-6 space-y-4">
+                <CollectionSearchBar
                     value={draftQuery}
-                    onChange={(event) => setDraftQuery(event.target.value)}
-                    placeholder="Search"
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-slate-500"
+                    onChange={setDraftQuery}
+                    onSubmit={applySearch}
+                    placeholder="Search in gallery by title"
                 />
-            </form>
+                <CollectionNav />
+                <CollectionRealtimeControl />
+            </div>
 
             {placeholderText ? (
-                <p className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">{placeholderText}</p>
+                <Notice variant="neutral">{placeholderText}</Notice>
             ) : (
                 <div className="columns-1 gap-4 md:columns-2 xl:columns-3">
                     {items.map((item) => (
-                        <a
+                        <Link
                             key={item.id}
-                            href={`/collection/${item.id}`}
-                            className="group relative mb-4 block break-inside-avoid overflow-hidden rounded-lg border border-slate-200 bg-white"
+                            to="/collection/$id"
+                            params={{ id: String(item.id) }}
+                            className="group relative mb-4 block break-inside-avoid overflow-hidden rounded-token-md border border-line bg-surface-base shadow-surface"
                         >
                             <div className="pointer-events-none absolute inset-x-0 top-0 z-10 -translate-y-full bg-black/60 p-4 text-center text-sm font-semibold text-slate-100 transition group-hover:translate-y-0">
                                 {item.title || '(untitled)'}
@@ -147,17 +155,17 @@ export const CollectionGalleryPage = () => {
                                 width={item.image.width}
                                 height={item.image.height}
                             />
-                        </a>
+                        </Link>
                     ))}
                 </div>
             )}
 
             {loadingMore ? (
-                <p className="mt-4 text-center text-sm text-slate-500">Loading more...</p>
+                <Notice variant="neutral" className="mt-4 text-center">Loading more...</Notice>
             ) : null}
 
             {error ? (
-                <p className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>
+                <Notice variant="error" className="mt-4">{error}</Notice>
             ) : null}
         </PageFrame>
     );

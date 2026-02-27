@@ -1,4 +1,5 @@
 import { getPageRange } from '~/modules/page';
+import { Button } from '~/components/ui/Button';
 
 interface PaginationProps {
     currentPage: number;
@@ -28,38 +29,34 @@ export const Pagination = ({
 
     return (
         <nav className="mt-4 flex flex-wrap items-center gap-2">
-            <button
-                type="button"
+            <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => moveToPage(currentPage - 1)}
                 disabled={currentPage <= 1}
-                className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
                 Prev
-            </button>
+            </Button>
 
             {pageRange.map((page) => (
-                <button
+                <Button
                     key={page}
-                    type="button"
+                    size="sm"
                     onClick={() => moveToPage(page)}
-                    className={`rounded-md border px-3 py-1.5 text-sm ${
-                        page === currentPage
-                            ? 'border-slate-900 bg-slate-900 text-white'
-                            : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
-                    }`}
+                    variant={page === currentPage ? 'primary' : 'secondary'}
                 >
                     {page}
-                </button>
+                </Button>
             ))}
 
-            <button
-                type="button"
+            <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => moveToPage(currentPage + 1)}
                 disabled={currentPage >= totalPages}
-                className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
                 Next
-            </button>
+            </Button>
         </nav>
     );
 };

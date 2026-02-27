@@ -1,5 +1,5 @@
 import { arrayMove } from '@dnd-kit/sortable';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
     createCategory,
@@ -37,24 +37,37 @@ const normalizeCategories = (categories: HomeCategory[]): HomeCategory[] => cate
 interface HomeBoardState {
     categories: HomeCategory[];
     loading: boolean;
-    saving: boolean;
+    mutating: boolean;
+    reordering: boolean;
     error: string | null;
 }
 
 const INITIAL_STATE: HomeBoardState = {
     categories: [],
     loading: true,
-    saving: false,
+    mutating: false,
+    reordering: false,
     error: null,
 };
 
 export const useHomeBoard = () => {
     const [state, setState] = useState<HomeBoardState>(INITIAL_STATE);
+    const mutatingRef = useRef(false);
+    const reorderingRef = useRef(false);
 
-    const setSaving = useCallback((nextSaving: boolean) => {
+    const setMutating = useCallback((nextMutating: boolean) => {
+        mutatingRef.current = nextMutating;
         setState((prev) => ({
             ...prev,
-            saving: nextSaving,
+            mutating: nextMutating,
+        }));
+    }, []);
+
+    const setReordering = useCallback((nextReordering: boolean) => {
+        reorderingRef.current = nextReordering;
+        setState((prev) => ({
+            ...prev,
+            reordering: nextReordering,
         }));
     }, []);
 
@@ -89,18 +102,20 @@ export const useHomeBoard = () => {
         }
     }, []);
 
-    const runMutation = useCallback(async (action: () => Promise<void>, fallbackMessage: string) => {
-        setSaving(true);
+    const runMutation = useCallback(async (action: () => Promise<void>, fallbackMessage: string): Promise<boolean> => {
+        setMutating(true);
         setError(null);
         try {
             await action();
             await refresh();
+            return true;
         } catch (error) {
             setError(error instanceof Error ? error.message : fallbackMessage);
+            return false;
         } finally {
-            setSaving(false);
+            setMutating(false);
         }
-    }, [refresh, setError, setSaving]);
+    }, [refresh, setError, setMutating]);
 
     useEffect(() => {
         void refresh(true);
@@ -108,6 +123,10 @@ export const useHomeBoard = () => {
 
     const reorderCategory = useCallback(async (activeCategoryId: number, overCategoryId: number) => {
         if (activeCategoryId === overCategoryId) {
+            return;
+        }
+
+        if (mutatingRef.current || reorderingRef.current) {
             return;
         }
 
@@ -130,6 +149,7 @@ export const useHomeBoard = () => {
             categories: optimistic,
             error: null,
         }));
+        setReordering(true);
 
         try {
             await updateCategoryOrder({
@@ -143,11 +163,17 @@ export const useHomeBoard = () => {
                 error: error instanceof Error ? error.message : 'Failed to reorder category',
             }));
             await refresh();
+        } finally {
+            setReordering(false);
         }
-    }, [refresh, state.categories]);
+    }, [refresh, setReordering, state.categories]);
 
     const reorderKeyword = useCallback(async (categoryId: number, activeKeywordId: number, overKeywordId: number) => {
         if (activeKeywordId === overKeywordId) {
+            return;
+        }
+
+        if (mutatingRef.current || reorderingRef.current) {
             return;
         }
 
@@ -178,6 +204,7 @@ export const useHomeBoard = () => {
                 };
             }),
         }));
+        setReordering(true);
 
         try {
             await updateKeywordOrder({
@@ -192,40 +219,42 @@ export const useHomeBoard = () => {
                 error: error instanceof Error ? error.message : 'Failed to reorder keyword',
             }));
             await refresh();
+        } finally {
+            setReordering(false);
         }
-    }, [refresh, state.categories]);
+    }, [refresh, setReordering, state.categories]);
 
-    const createCategoryByName = useCallback(async (name: string) => {
+    const createCategoryByName = useCallback(async (name: string): Promise<boolean> => {
         const trimmedName = name.trim();
         if (!trimmedName) {
             setError('Category name is required');
-            return;
+            return false;
         }
 
-        await runMutation(async () => {
+        return runMutation(async () => {
             await createCategory({ name: trimmedName });
         }, 'Failed to create category');
     }, [runMutation, setError]);
 
-    const renameCategory = useCallback(async (categoryId: number, name: string) => {
+    const renameCategory = useCallback(async (categoryId: number, name: string): Promise<boolean> => {
         const trimmedName = name.trim();
         if (!trimmedName) {
             setError('Category name is required');
-            return;
+            return false;
         }
 
-        await runMutation(async () => {
+        return runMutation(async () => {
             await updateCategory({ id: categoryId, name: trimmedName });
         }, 'Failed to rename category');
     }, [runMutation, setError]);
 
-    const removeCategory = useCallback(async (categoryId: number) => {
-        await runMutation(async () => {
+    const removeCategory = useCallback(async (categoryId: number): Promise<boolean> => {
+        return runMutation(async () => {
             await deleteCategory({ id: categoryId });
         }, 'Failed to delete category');
     }, [runMutation]);
 
-    const addKeywords = useCallback(async (categoryId: number, rawKeywords: string) => {
+    const addKeywords = useCallback(async (categoryId: number, rawKeywords: string): Promise<boolean> => {
         const names = rawKeywords
             .split(',')
             .map((name) => name.trim())
@@ -233,10 +262,10 @@ export const useHomeBoard = () => {
 
         if (names.length === 0) {
             setError('Keyword is required');
-            return;
+            return false;
         }
 
-        await runMutation(async () => {
+        return runMutation(async () => {
             for (const name of names) {
                 await createKeyword({
                     categoryId,
@@ -246,8 +275,8 @@ export const useHomeBoard = () => {
         }, 'Failed to add keywords');
     }, [runMutation, setError]);
 
-    const removeKeyword = useCallback(async (categoryId: number, keywordId: number) => {
-        await runMutation(async () => {
+    const removeKeyword = useCallback(async (categoryId: number, keywordId: number): Promise<boolean> => {
+        return runMutation(async () => {
             await deleteKeyword({
                 categoryId,
                 keywordId,
@@ -255,8 +284,8 @@ export const useHomeBoard = () => {
         }, 'Failed to remove keyword');
     }, [runMutation]);
 
-    const addKeywordSampleImage = useCallback(async (keywordId: number, imageFile: File) => {
-        await runMutation(async () => {
+    const addKeywordSampleImage = useCallback(async (keywordId: number, imageFile: File): Promise<boolean> => {
+        return runMutation(async () => {
             const imageBase64 = await imageToBase64(imageFile);
             const uploadedImage = await imageUpload({ image: imageBase64 });
             await createSampleImage({
@@ -266,16 +295,20 @@ export const useHomeBoard = () => {
         }, 'Failed to add sample image');
     }, [runMutation]);
 
-    const removeKeywordSampleImage = useCallback(async (keywordId: number) => {
-        await runMutation(async () => {
+    const removeKeywordSampleImage = useCallback(async (keywordId: number): Promise<boolean> => {
+        return runMutation(async () => {
             await deleteSampleImage({ id: keywordId });
         }, 'Failed to remove sample image');
     }, [runMutation]);
 
+    const saving = state.mutating || state.reordering;
+
     return useMemo(() => ({
         categories: state.categories,
         loading: state.loading,
-        saving: state.saving,
+        saving,
+        isMutating: state.mutating,
+        isReordering: state.reordering,
         error: state.error,
         refresh,
         reorderCategory,
@@ -298,9 +331,11 @@ export const useHomeBoard = () => {
         renameCategory,
         reorderCategory,
         reorderKeyword,
+        saving,
         state.categories,
         state.error,
         state.loading,
-        state.saving,
+        state.mutating,
+        state.reordering,
     ]);
 };

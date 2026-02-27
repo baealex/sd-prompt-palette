@@ -54,6 +54,10 @@
 - 같은 동작(삭제, 저장, 편집)을 페이지마다 다른 UX로 만들지 마세요.
 - 동일한 의미는 동일한 컴포넌트/패턴으로 통일하세요.
 
+9. 섹션 전역 기능의 페이지 종속 금지
+- 컬렉션 전역 설정(예: Realtime Settings)을 특정 뷰(List)에만 두지 마세요.
+- 같은 섹션의 핵심 뷰(List/Grid)에서 동일하게 접근 가능해야 합니다.
+
 ## 4) Allowed And Recommended (해도 되는 것)
 다음은 허용/권장 항목입니다.
 
@@ -80,6 +84,53 @@
 - 키보드 포커스 가시성 유지(`focus-visible`)
 - 의미 있는 ARIA/시맨틱 태그 사용
 - 대비와 클릭 영역을 항상 검증
+
+## 4.1) Tailwind Token Contract (필수)
+UI/FE 구현 시 아래 토큰 계층을 기준으로 작성합니다.
+
+1. semantic color
+- `bg`, `surface.*`, `ink.*`, `line.*`를 우선 사용
+- `brand.*`는 포인트 액션(Primary/Active/Focus)에만 사용
+- 상태 색상은 `info/success/warning/danger`만 사용
+
+2. radius and shadow
+- 반경은 `rounded-token-sm | rounded-token-md | rounded-token-lg`만 사용
+- 그림자는 `shadow-surface | shadow-raised | shadow-overlay`만 사용
+
+3. global utility
+- 포커스는 `ui-focus-ring` 사용
+- 아이콘/터치 타깃은 `ui-touch` 또는 동등 크기(최소 44x44) 유지
+
+## 4.2) Atomic Component Contract (필수)
+페이지/도메인 컴포넌트는 아래 원자 컴포넌트를 우선 사용합니다.
+
+1. input and actions
+- 버튼: `components/ui/Button`
+- 아이콘 버튼: `components/ui/IconButton`
+- 텍스트 입력: `components/ui/Input`
+
+2. structure and state
+- 카드/서피스: `components/ui/Card`
+- 배지: `components/ui/Badge`
+- 상태 메시지: `components/ui/Notice`
+
+3. blocking interactions
+- 확인 모달: `components/ui/ConfirmDialog`
+- 텍스트 입력 모달: `components/ui/PromptDialog`
+
+4. usage rule
+- 동일한 의미의 UI는 동일한 atomic 컴포넌트를 사용
+- 페이지에서 raw class로 버튼/인풋/알림을 새로 정의하지 않음
+- 예외가 필요하면 먼저 가이드에 예외 사유를 기록
+
+## 4.3) Collection UX Rule (필수)
+1. 검색
+- List/Grid 검색은 공통 컴포넌트(동일 입력 패턴, 동일 버튼, 동일 clear 동작)를 사용합니다.
+- 검색은 키보드 Enter와 버튼 클릭 모두 지원해야 합니다.
+
+2. realtime control
+- Realtime Settings와 Sync Now는 컬렉션 전역 컨트롤로 취급합니다.
+- 최소 List/Grid 양쪽에서 동일한 위치/패턴으로 노출합니다.
 
 ## 5) Execution Plan (Current)
 1. P0 - Flow Fix
@@ -111,3 +162,16 @@ UI/FE 결과 보고에는 아래 3줄을 반드시 포함하세요.
 - [ ] 주요 터치 타깃이 44x44 이상이다.
 - [ ] 색상 외 수단(텍스트/아이콘)으로 상태를 전달한다.
 - [ ] 결과 보고에 Output Contract 3줄이 포함되어 있다.
+
+## 8) Image Load UX Rule (Required)
+- Use `components/ui/FileInput` for image upload interactions in Image Load flows.
+- Use product naming that SD users can identify quickly (`Prompt Info`), not file-type-only naming (`PNG Info`).
+- Always show selected file name and local image preview before saving.
+- Render prompt/negative prompt as full raw text blocks; do not tokenize by comma for display.
+- Do not expose a separate manual upload action in this flow; primary action is save-to-collection.
+- The `Clear` action must reset preview and page state together (`base64`, parsed prompt, uploaded image, saved collection id, error).
+- Do not use raw `<input type="file">` directly in page-level components.
+
+## 9) Feedback Rule (Required)
+- Use toast notifications for transient feedback (`copy`, `save`, `remove`, and `error`), especially on long/scrollable pages.
+- Avoid inline status banners for short-lived feedback because they cause layout shift and are easy to miss.
