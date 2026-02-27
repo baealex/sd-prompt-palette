@@ -1,15 +1,18 @@
 import { IResolvers } from '@graphql-tools/utils';
 
-import models, { Collection, Order, Pagination, Search } from '~/models';
+import { Collection, models, Order, Pagination, Search } from '~/models';
 import { gql } from '~/modules/graphql';
-import liveImagesService from '~/modules/live-images';
+import { liveImagesService } from '~/modules/live-images';
 
 interface AllCollections {
     collections: Collection[];
     pagination: Pagination;
 }
 
-function resolveCollectionOrderBy(orderBy?: string, order: 'asc' | 'desc' = 'desc') {
+function resolveCollectionOrderBy(
+    orderBy?: string,
+    order: 'asc' | 'desc' = 'desc',
+) {
     const normalizedOrder = order === 'asc' ? 'asc' : 'desc';
     if (orderBy === 'fileCreatedAt') {
         return {
@@ -115,51 +118,68 @@ export const CollectionTypeDefs = `
 
 export const CollectionResolvers: IResolvers = {
     Query: {
-        allCollections: (_, { orderBy, order, query, limit, offset }: Order & Pagination & Search) => async () => {
-            const where = query ? {
-                OR: [
-                    {
-                        title: {
-                            contains: query,
-                        },
-                    },
-                    {
-                        prompt: {
-                            contains: query,
-                        },
-                    },
-                    {
-                        negativePrompt: {
-                            contains: query,
-                        },
-                    },
-                ],
-            } : undefined;
+        allCollections:
+            (
+                _,
+                {
+                    orderBy,
+                    order,
+                    query,
+                    limit,
+                    offset,
+                }: Order & Pagination & Search,
+            ) =>
+            async () => {
+                const where = query
+                    ? {
+                          OR: [
+                              {
+                                  title: {
+                                      contains: query,
+                                  },
+                              },
+                              {
+                                  prompt: {
+                                      contains: query,
+                                  },
+                              },
+                              {
+                                  negativePrompt: {
+                                      contains: query,
+                                  },
+                              },
+                          ],
+                      }
+                    : undefined;
 
-            const collections = await models.collection.findMany({
-                orderBy: resolveCollectionOrderBy(orderBy, order || 'desc'),
-                where,
-                take: limit,
-                skip: offset,
-            });
-            const pagination = {
-                limit,
-                offset,
-                total: await models.collection.count({ where }),
-            };
-            return {
-                collections,
-                pagination,
-            };
-        },
-        collection: (_, { id }: Collection) => models.collection.findUnique({
-            where: {
-                id: Number(id),
+                const collections = await models.collection.findMany({
+                    orderBy: resolveCollectionOrderBy(orderBy, order || 'desc'),
+                    where,
+                    take: limit,
+                    skip: offset,
+                });
+                const pagination = {
+                    limit,
+                    offset,
+                    total: await models.collection.count({ where }),
+                };
+                return {
+                    collections,
+                    pagination,
+                };
             },
-        }),
+        collection: (_, { id }: Collection) =>
+            models.collection.findUnique({
+                where: {
+                    id: Number(id),
+                },
+            }),
     },
     Mutation: {
-        createCollection: async (_, { imageId, title, prompt, negativePrompt }: Collection) => {
+        createCollection: async (
+            _,
+            { imageId, title, prompt, negativePrompt }: Collection,
+        ) => {
             imageId = Number(imageId);
 
             const collection = await models.collection.create({
@@ -178,7 +198,10 @@ export const CollectionResolvers: IResolvers = {
             liveImagesService.notifyCollectionsChanged('gql:createCollection');
             return collection;
         },
-        updateCollection: async (_, { id, imageId, title, prompt, negativePrompt }: Partial<Collection>) => {
+        updateCollection: async (
+            _,
+            { id, imageId, title, prompt, negativePrompt }: Partial<Collection>,
+        ) => {
             id = Number(id);
             imageId = Number(imageId);
 
@@ -187,11 +210,13 @@ export const CollectionResolvers: IResolvers = {
                     id,
                 },
                 data: {
-                    image: imageId ? {
-                        connect: {
-                            id: imageId,
-                        },
-                    } : undefined,
+                    image: imageId
+                        ? {
+                              connect: {
+                                  id: imageId,
+                              },
+                          }
+                        : undefined,
                     title,
                     prompt,
                     negativePrompt,
@@ -233,18 +258,21 @@ export const CollectionResolvers: IResolvers = {
             if (remains === 0) {
                 await liveImagesService.deleteImage(target.imageId);
             } else {
-                liveImagesService.notifyCollectionsChanged('gql:deleteCollection');
+                liveImagesService.notifyCollectionsChanged(
+                    'gql:deleteCollection',
+                );
             }
 
             return true;
         },
     },
     Collection: {
-        image: (collection: Collection) => models.image.findUnique({
-            where: {
-                id: collection.imageId,
-            },
-        }),
+        image: (collection: Collection) =>
+            models.image.findUnique({
+                where: {
+                    id: collection.imageId,
+                },
+            }),
         fileCreatedAt: async (collection: Collection) => {
             const image = await models.image.findUnique({
                 where: { id: collection.imageId },
@@ -274,7 +302,9 @@ export const CollectionResolvers: IResolvers = {
             try {
                 const parsed = JSON.parse(metadata.parseWarningsJson || '[]');
                 if (Array.isArray(parsed)) {
-                    parseWarnings = parsed.filter((item) => typeof item === 'string');
+                    parseWarnings = parsed.filter(
+                        (item) => typeof item === 'string',
+                    );
                 }
             } catch {
                 parseWarnings = [];
@@ -303,7 +333,8 @@ export const CollectionResolvers: IResolvers = {
                 clipSkip: metadata.clipSkip,
                 vae: metadata.vae,
                 denoiseStrength: metadata.denoiseStrength,
-                createdAtFromMeta: metadata.createdAtFromMeta?.toISOString() || null,
+                createdAtFromMeta:
+                    metadata.createdAtFromMeta?.toISOString() || null,
                 parseWarnings,
                 parseVersion: metadata.parseVersion || '',
             };
@@ -317,6 +348,6 @@ export const CollectionResolvers: IResolvers = {
         pagination: async (allCollections: () => Promise<AllCollections>) => {
             const { pagination } = await allCollections();
             return pagination;
-        }
+        },
     },
 };

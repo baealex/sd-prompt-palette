@@ -10,10 +10,18 @@
         "build:server": "pnpm --filter @sdpp/server run build",
         "build:client": "pnpm --filter @sdpp/client run build",
         "start:server": "pnpm --filter @sdpp/server run start",
+        "biome:format": "biome format --write",
         "lint:client": "pnpm --filter @sdpp/client run lint",
         "lint": "pnpm --filter @sdpp/server run lint && pnpm --filter @sdpp/client run lint",
+        "guard:agent-rules": "node scripts/guardrails/check-agent-rules.mjs",
+        "guard:ui-contract": "node scripts/guardrails/check-ui-contract.mjs",
+        "hooks:install": "lefthook install",
         "typecheck:client": "pnpm --filter @sdpp/client run typecheck",
         "test:client": "pnpm --filter @sdpp/client run test",
         "test": "pnpm --filter @sdpp/server run test && pnpm --filter @sdpp/client run test"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "^1.9.4",
+        "lefthook": "^1.11.2"
     }
 }

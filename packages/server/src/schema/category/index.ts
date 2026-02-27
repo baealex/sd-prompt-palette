@@ -1,6 +1,6 @@
 import { IResolvers } from '@graphql-tools/utils';
 
-import models, { Category } from '~/models';
+import { Category, models } from '~/models';
 import { gql } from '~/modules/graphql';
 import { keywordType } from '../keyword';
 
@@ -61,11 +61,12 @@ export const categoryResolvers: IResolvers = {
                 },
             });
         },
-        category: (_, { id }: Category) => models.category.findUnique({
-            where: {
-                id: Number(id),
-            },
-        }),
+        category: (_, { id }: Category) =>
+            models.category.findUnique({
+                where: {
+                    id: Number(id),
+                },
+            }),
     },
     Mutation: {
         createCategory: async (_, { name }: Category) => {
@@ -91,14 +92,15 @@ export const categoryResolvers: IResolvers = {
                 },
             });
         },
-        updateCategory: async (_, { id, name }: Category) => models.category.update({
-            where: {
-                id: Number(id),
-            },
-            data: {
-                name,
-            },
-        }),
+        updateCategory: async (_, { id, name }: Category) =>
+            models.category.update({
+                where: {
+                    id: Number(id),
+                },
+                data: {
+                    name,
+                },
+            }),
         updateCategoryOrder: async (_, { id, order }: Category) => {
             const categoryId = Number(id);
             const targetOrder = Number(order);
@@ -109,7 +111,9 @@ export const categoryResolvers: IResolvers = {
                 },
             });
 
-            const fromIndex = categories.findIndex((category) => category.id === categoryId);
+            const fromIndex = categories.findIndex(
+                (category) => category.id === categoryId,
+            );
             if (fromIndex < 0) {
                 throw new Error('Category does not exist');
             }
@@ -123,14 +127,18 @@ export const categoryResolvers: IResolvers = {
             const [moved] = reordered.splice(fromIndex, 1);
             reordered.splice(toIndex, 0, moved);
 
-            await models.$transaction(reordered.map((category, index) => models.category.update({
-                where: {
-                    id: category.id,
-                },
-                data: {
-                    order: index + 1,
-                },
-            })));
+            await models.$transaction(
+                reordered.map((category, index) =>
+                    models.category.update({
+                        where: {
+                            id: category.id,
+                        },
+                        data: {
+                            order: index + 1,
+                        },
+                    }),
+                ),
+            );
 
             return true;
         },
@@ -145,8 +153,8 @@ export const categoryResolvers: IResolvers = {
             await models.keyword.deleteMany({
                 where: {
                     categories: {
-                        none: {}
-                    }
+                        none: {},
+                    },
                 },
             });
             await models.category.delete({
@@ -157,17 +165,21 @@ export const categoryResolvers: IResolvers = {
             const categories = await models.category.findMany({
                 orderBy: { order: 'asc' },
             });
-            await models.$transaction(categories.map((category, index) => models.category.update({
-                where: {
-                    id: category.id,
-                },
-                data: {
-                    order: index + 1,
-                },
-            })));
+            await models.$transaction(
+                categories.map((category, index) =>
+                    models.category.update({
+                        where: {
+                            id: category.id,
+                        },
+                        data: {
+                            order: index + 1,
+                        },
+                    }),
+                ),
+            );
 
             return true;
-        }
+        },
     },
     Category: {
         keywords: async (category: Category) => {
@@ -182,7 +194,7 @@ export const categoryResolvers: IResolvers = {
                 },
                 include: {
                     keyword: true,
-                }
+                },
             });
             return keywords.map(({ keyword }) => keyword);
         },

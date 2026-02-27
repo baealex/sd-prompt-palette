@@ -1,6 +1,6 @@
 import { IResolvers } from '@graphql-tools/utils';
 
-import models, { User } from '~/models';
+import { models, User } from '~/models';
 import { gql } from '~/modules/graphql';
 import { createPasswordHash } from '~/modules/auth';
 
@@ -38,34 +38,42 @@ export const userTypeDefs = `
 export const userResolvers: IResolvers = {
     Query: {
         allUsers: models.user.findMany,
-        user: (_, { id }: User) => models.user.findUnique({
-            where: {
-                id: Number(id),
-            },
-        }),
+        user: (_, { id }: User) =>
+            models.user.findUnique({
+                where: {
+                    id: Number(id),
+                },
+            }),
     },
     Mutation: {
-        createUser: async (_, { name, email, password }: User) => models.user.create({
-            data: {
-                name,
-                email,
-                password: await createPasswordHash(password),
-            },
-        }),
-        updateUser: async (_, { id, name, email, password }: User) => models.user.update({
-            where: {
-                id: Number(id),
-            },
-            data: {
-                name,
-                email,
-                password: password ? await createPasswordHash(password) : undefined,
-            },
-        }),
-        deleteUser: (_, { id }: User) => models.user.delete({
-            where: {
-                id: Number(id),
-            },
-        }).then(() => true)
+        createUser: async (_, { name, email, password }: User) =>
+            models.user.create({
+                data: {
+                    name,
+                    email,
+                    password: await createPasswordHash(password),
+                },
+            }),
+        updateUser: async (_, { id, name, email, password }: User) =>
+            models.user.update({
+                where: {
+                    id: Number(id),
+                },
+                data: {
+                    name,
+                    email,
+                    password: password
+                        ? await createPasswordHash(password)
+                        : undefined,
+                },
+            }),
+        deleteUser: (_, { id }: User) =>
+            models.user
+                .delete({
+                    where: {
+                        id: Number(id),
+                    },
+                })
+                .then(() => true),
     },
 };

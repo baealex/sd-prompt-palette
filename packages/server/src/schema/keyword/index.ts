@@ -1,6 +1,6 @@
 import { IResolvers } from '@graphql-tools/utils';
 
-import models, { Keyword, KeywordToCategory } from '~/models';
+import { Keyword, KeywordToCategory, models } from '~/models';
 import { gql } from '~/modules/graphql';
 
 export const keywordType = gql`
@@ -67,14 +67,18 @@ const clampOrderToIndex = (order: number, length: number) => {
 export const keywordResolvers: IResolvers = {
     Query: {
         allKeywords: models.keyword.findMany,
-        keyword: (_, { id }: Keyword) => models.keyword.findUnique({
-            where: {
-                id: Number(id),
-            },
-        }),
+        keyword: (_, { id }: Keyword) =>
+            models.keyword.findUnique({
+                where: {
+                    id: Number(id),
+                },
+            }),
     },
     Mutation: {
-        createKeyword: async (_, { name, categoryId }: Keyword & KeywordToCategory) => {
+        createKeyword: async (
+            _,
+            { name, categoryId }: Keyword & KeywordToCategory,
+        ) => {
             categoryId = Number(categoryId);
 
             const keyword = await models.keyword.findFirst({
@@ -91,7 +95,11 @@ export const keywordResolvers: IResolvers = {
                 },
             });
 
-            if (keyword?.categories?.some((category) => category.categoryId === categoryId)) {
+            if (
+                keyword?.categories?.some(
+                    (category) => category.categoryId === categoryId,
+                )
+            ) {
                 throw new Error('Keyword already exists in category');
             }
 
@@ -116,10 +124,10 @@ export const keywordResolvers: IResolvers = {
                                 category: {
                                     connect: {
                                         id: categoryId,
-                                    }
+                                    },
                                 },
                             },
-                        }
+                        },
                     },
                 });
             }
@@ -136,11 +144,14 @@ export const keywordResolvers: IResolvers = {
                                 },
                             },
                         },
-                    }
+                    },
                 },
             });
         },
-        createSampleImage: async (_, { imageId, keywordId }: { imageId: number, keywordId: number }) => {
+        createSampleImage: async (
+            _,
+            { imageId, keywordId }: { imageId: number; keywordId: number },
+        ) => {
             keywordId = Number(keywordId);
             imageId = Number(imageId);
 
@@ -183,7 +194,10 @@ export const keywordResolvers: IResolvers = {
                 },
             });
         },
-        updateKeywordOrder: async (_, { categoryId, keywordId, order }: KeywordToCategory) => {
+        updateKeywordOrder: async (
+            _,
+            { categoryId, keywordId, order }: KeywordToCategory,
+        ) => {
             const parsedCategoryId = Number(categoryId);
             const parsedKeywordId = Number(keywordId);
             const targetOrder = Number(order);
@@ -194,10 +208,12 @@ export const keywordResolvers: IResolvers = {
                 },
                 orderBy: {
                     order: 'asc',
-                }
+                },
             });
 
-            const fromIndex = keywords.findIndex((keyword) => keyword.keywordId === parsedKeywordId);
+            const fromIndex = keywords.findIndex(
+                (keyword) => keyword.keywordId === parsedKeywordId,
+            );
             if (fromIndex < 0) {
                 throw new Error('Keyword does not exist in category');
             }
@@ -211,18 +227,25 @@ export const keywordResolvers: IResolvers = {
             const [moved] = reordered.splice(fromIndex, 1);
             reordered.splice(toIndex, 0, moved);
 
-            await models.$transaction(reordered.map((keyword, index) => models.keywordToCategory.update({
-                where: {
-                    id: keyword.id,
-                },
-                data: {
-                    order: index + 1,
-                },
-            })));
+            await models.$transaction(
+                reordered.map((keyword, index) =>
+                    models.keywordToCategory.update({
+                        where: {
+                            id: keyword.id,
+                        },
+                        data: {
+                            order: index + 1,
+                        },
+                    }),
+                ),
+            );
 
             return true;
         },
-        deleteKeyword: async (_, { categoryId, keywordId }: KeywordToCategory) => {
+        deleteKeyword: async (
+            _,
+            { categoryId, keywordId }: KeywordToCategory,
+        ) => {
             categoryId = Number(categoryId);
             keywordId = Number(keywordId);
 
@@ -232,7 +255,7 @@ export const keywordResolvers: IResolvers = {
                     categories: {
                         some: {
                             categoryId: categoryId,
-                        }
+                        },
                     },
                 },
                 select: {
@@ -243,10 +266,10 @@ export const keywordResolvers: IResolvers = {
                                 select: {
                                     id: true,
                                 },
-                            }
+                            },
                         },
                     },
-                }
+                },
             });
             if (!keywordExists) {
                 throw new Error('Keyword does not exist in category');
@@ -259,8 +282,9 @@ export const keywordResolvers: IResolvers = {
                 data: {
                     categories: {
                         delete: {
-                            id: keywordExists.categories
-                                .find(({ category }) => category.id === categoryId).id,
+                            id: keywordExists.categories.find(
+                                ({ category }) => category.id === categoryId,
+                            ).id,
                         },
                     },
                 },
@@ -325,19 +349,21 @@ export const keywordResolvers: IResolvers = {
         },
     },
     Keyword: {
-        categories: (keyword: Keyword) => models.keywordToCategory.findMany({
-            where: {
-                keywordId: keyword.id,
-            },
-        }),
-        image: (keyword: Keyword) => models.image.findFirst({
-            where: {
-                keywords: {
-                    some: {
-                        id: keyword.id,
+        categories: (keyword: Keyword) =>
+            models.keywordToCategory.findMany({
+                where: {
+                    keywordId: keyword.id,
+                },
+            }),
+        image: (keyword: Keyword) =>
+            models.image.findFirst({
+                where: {
+                    keywords: {
+                        some: {
+                            id: keyword.id,
+                        },
                     },
-                }
-            },
-        }),
+                },
+            }),
     },
 };

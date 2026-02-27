@@ -1,8 +1,8 @@
-import app from './app';
+import { app } from './app';
 import http from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 
-import liveImagesService from './modules/live-images';
+import { liveImagesService } from './modules/live-images';
 import { logger } from './modules/logger';
 
 const PORT = process.env.PORT || 3000;
@@ -38,6 +38,8 @@ process.on('SIGTERM', () => {
 });
 
 bootstrap().catch((error: Error) => {
-    logger.error(`server bootstrap failed: ${error?.stack || error?.message || String(error)}`);
+    logger.error(
+        `server bootstrap failed: ${error?.stack || error?.message || String(error)}`,
+    );
     process.exit(1);
 });

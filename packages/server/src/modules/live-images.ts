@@ -75,7 +75,9 @@ class LiveImagesService {
 
         await fs.promises.mkdir(this.imageBaseDirPath, { recursive: true });
         await this.configRepository.ensureLiveSyncTables(this.defaultWatchDir);
-        this.config = await this.configRepository.readConfig(this.defaultWatchDir);
+        this.config = await this.configRepository.readConfig(
+            this.defaultWatchDir,
+        );
         this.watchDirPath = this.config.watchDir;
         this.ingestMode = this.config.ingestMode;
 
@@ -84,7 +86,7 @@ class LiveImagesService {
         this.initialized = true;
 
         logger.info(
-            `[live-images] ready watchDir="${this.watchDirPath}" libraryDir="${this.imageBaseDirPath}" mode="${this.ingestMode}" enabled="${this.config.enabled}"`
+            `[live-images] ready watchDir="${this.watchDirPath}" libraryDir="${this.imageBaseDirPath}" mode="${this.ingestMode}" enabled="${this.config.enabled}"`,
         );
     }
 
@@ -113,30 +115,40 @@ class LiveImagesService {
     }
 
     async getConfig(): Promise<LiveSyncConfig> {
-        this.config = await this.configRepository.readConfig(this.defaultWatchDir);
+        this.config = await this.configRepository.readConfig(
+            this.defaultWatchDir,
+        );
         this.watchDirPath = this.config.watchDir;
         this.ingestMode = this.config.ingestMode;
         return this.config;
     }
 
-    async updateConfig(input: UpdateLiveSyncConfigInput): Promise<LiveSyncConfig> {
+    async updateConfig(
+        input: UpdateLiveSyncConfigInput,
+    ): Promise<LiveSyncConfig> {
         const nextConfig: LiveSyncConfig = {
             watchDir:
                 typeof input.watchDir === 'string' && input.watchDir.trim()
                     ? path.resolve(input.watchDir.trim())
                     : this.config.watchDir,
-            ingestMode: normalizeIngestMode(input.ingestMode || this.config.ingestMode),
+            ingestMode: normalizeIngestMode(
+                input.ingestMode || this.config.ingestMode,
+            ),
             deleteSourceOnDelete:
                 typeof input.deleteSourceOnDelete === 'boolean'
                     ? input.deleteSourceOnDelete
                     : this.config.deleteSourceOnDelete,
             enabled:
-                typeof input.enabled === 'boolean' ? input.enabled : this.config.enabled,
+                typeof input.enabled === 'boolean'
+                    ? input.enabled
+                    : this.config.enabled,
             updatedAt: Date.now(),
         };
 
         await this.configRepository.writeConfig(nextConfig);
-        this.config = await this.configRepository.readConfig(this.defaultWatchDir);
+        this.config = await this.configRepository.readConfig(
+            this.defaultWatchDir,
+        );
         this.watchDirPath = this.config.watchDir;
         this.ingestMode = this.config.ingestMode;
         await this.applyWatcherConfig('config:update');
@@ -144,7 +156,9 @@ class LiveImagesService {
         return this.config;
     }
 
-    async listImages(rawParams: Partial<ListParams> = {}): Promise<ListPayload> {
+    async listImages(
+        rawParams: Partial<ListParams> = {},
+    ): Promise<ListPayload> {
         const page = sanitizePage(rawParams.page, 1);
         const limit = sanitizeLimit(rawParams.limit, DEFAULT_LIMIT);
         const skip = (page - 1) * limit;
@@ -177,7 +191,8 @@ class LiveImagesService {
                 return null;
             }
 
-            const linkedSourcePath = await this.imageRepository.readSourceLink(imageId);
+            const linkedSourcePath =
+                await this.imageRepository.readSourceLink(imageId);
             await this.deleteImageRecord(imageId);
 
             const absolutePath = this.absolutePathFromImageUrl(image.url);
@@ -185,7 +200,11 @@ class LiveImagesService {
                 await this.unlinkIfExists(absolutePath);
             }
 
-            if (this.config.deleteSourceOnDelete && linkedSourcePath && this.ingestMode === 'copy') {
+            if (
+                this.config.deleteSourceOnDelete &&
+                linkedSourcePath &&
+                this.ingestMode === 'copy'
+            ) {
                 await this.unlinkIfExists(linkedSourcePath);
             }
 
@@ -203,7 +222,9 @@ class LiveImagesService {
         this.queueEmit(reason);
     }
 
-    async getPrompt(imageId: number): Promise<{ image: Image | null; prompt: string }> {
+    async getPrompt(
+        imageId: number,
+    ): Promise<{ image: Image | null; prompt: string }> {
         const { image, metadata } = await this.getMetadata(imageId);
         if (!image) {
             return { image: null, prompt: '' };
@@ -214,7 +235,9 @@ class LiveImagesService {
         };
     }
 
-    async getMetadata(imageId: number): Promise<{ image: Image | null; metadata: ParsedImageMeta }> {
+    async getMetadata(
+        imageId: number,
+    ): Promise<{ image: Image | null; metadata: ParsedImageMeta }> {
         const image = await this.imageRepository.findImageById(imageId);
         if (!image) {
             return { image: null, metadata: this.createEmptyMetadata() };
@@ -225,7 +248,9 @@ class LiveImagesService {
             const stored = await this.imageRepository.readImageMeta(image.id);
             return {
                 image,
-                metadata: stored ? this.toParsedMetadata(stored) : this.createEmptyMetadata(),
+                metadata: stored
+                    ? this.toParsedMetadata(stored)
+                    : this.createEmptyMetadata(),
             };
         }
 
@@ -234,7 +259,9 @@ class LiveImagesService {
             const stored = await this.imageRepository.readImageMeta(image.id);
             return {
                 image,
-                metadata: stored ? this.toParsedMetadata(stored) : this.createEmptyMetadata(),
+                metadata: stored
+                    ? this.toParsedMetadata(stored)
+                    : this.createEmptyMetadata(),
             };
         }
 
@@ -250,7 +277,10 @@ class LiveImagesService {
             metadata,
         });
 
-        await this.imageRepository.upsertImageMeta(image.id, this.toStoredImageMetaInput(metadata));
+        await this.imageRepository.upsertImageMeta(
+            image.id,
+            this.toStoredImageMetaInput(metadata),
+        );
         return { image, metadata };
     }
 
@@ -268,14 +298,19 @@ class LiveImagesService {
         this.io.on('connection', async (socket) => {
             socket.emit('live:status', this.getStatus());
             try {
-                const payload = await this.listImages({ page: 1, limit: DEFAULT_LIMIT });
+                const payload = await this.listImages({
+                    page: 1,
+                    limit: DEFAULT_LIMIT,
+                });
                 socket.emit('live:images', {
                     reason: 'socket:connected',
                     updatedAt: Date.now(),
                     ...payload,
                 });
             } catch (error: unknown) {
-                logger.error(`[live-images] failed to send initial payload: ${errorMessage(error)}`);
+                logger.error(
+                    `[live-images] failed to send initial payload: ${errorMessage(error)}`,
+                );
             }
         });
     }
@@ -320,11 +355,16 @@ class LiveImagesService {
         });
 
         this.sourceWatcher.on('change', (targetPath: string) => {
-            void this.ingestSourceFile(path.resolve(targetPath), 'watch:change');
+            void this.ingestSourceFile(
+                path.resolve(targetPath),
+                'watch:change',
+            );
         });
 
         this.sourceWatcher.on('error', (error: unknown) => {
-            logger.error(`[live-images] source watcher error: ${errorMessage(error)}`);
+            logger.error(
+                `[live-images] source watcher error: ${errorMessage(error)}`,
+            );
         });
 
         this.libraryWatcher = chokidar.watch(this.imageBaseDirPath, {
@@ -336,11 +376,16 @@ class LiveImagesService {
         });
 
         this.libraryWatcher.on('unlink', (targetPath: string) => {
-            void this.removeByLibraryPath(path.resolve(targetPath), 'library:unlink');
+            void this.removeByLibraryPath(
+                path.resolve(targetPath),
+                'library:unlink',
+            );
         });
 
         this.libraryWatcher.on('error', (error: unknown) => {
-            logger.error(`[live-images] library watcher error: ${errorMessage(error)}`);
+            logger.error(
+                `[live-images] library watcher error: ${errorMessage(error)}`,
+            );
         });
     }
 
@@ -366,18 +411,26 @@ class LiveImagesService {
         }
 
         try {
-            const payload = await this.listImages({ page: 1, limit: DEFAULT_LIMIT });
+            const payload = await this.listImages({
+                page: 1,
+                limit: DEFAULT_LIMIT,
+            });
             this.io.emit('live:images', {
                 reason,
                 updatedAt: Date.now(),
                 ...payload,
             });
         } catch (error: unknown) {
-            logger.error(`[live-images] emit update failed: ${errorMessage(error)}`);
+            logger.error(
+                `[live-images] emit update failed: ${errorMessage(error)}`,
+            );
         }
     }
 
-    private async ingestSourceFile(sourcePath: string, reason: string): Promise<void> {
+    private async ingestSourceFile(
+        sourcePath: string,
+        reason: string,
+    ): Promise<void> {
         if (this.isIgnoredSourcePath(sourcePath)) {
             return;
         }
@@ -408,7 +461,11 @@ class LiveImagesService {
 
                 const createdAt = await deriveCreatedAt(sourcePath, stat);
                 const extension = path.extname(sourcePath).toLowerCase();
-                const destinationPath = await createDestinationPath(this.imageBaseDirPath, createdAt, extension);
+                const destinationPath = await createDestinationPath(
+                    this.imageBaseDirPath,
+                    createdAt,
+                    extension,
+                );
 
                 if (this.ingestMode === 'move') {
                     await moveFile(sourcePath, destinationPath);
@@ -419,7 +476,8 @@ class LiveImagesService {
                 await this.registerLibraryFile(destinationPath, {
                     knownHash: hash,
                     preferredDate: createdAt,
-                    sourcePath: this.ingestMode === 'copy' ? sourcePath : undefined,
+                    sourcePath:
+                        this.ingestMode === 'copy' ? sourcePath : undefined,
                     ensureCollectionForExisting: true,
                 });
 
@@ -434,13 +492,18 @@ class LiveImagesService {
             if (hasErrorCode(error, 'ENOENT')) {
                 return;
             }
-            logger.error(`[live-images] failed to ingest source "${sourcePath}": ${errorMessage(error)}`);
+            logger.error(
+                `[live-images] failed to ingest source "${sourcePath}": ${errorMessage(error)}`,
+            );
         } finally {
             this.sourceProcessing.delete(sourcePath);
         }
     }
 
-    private async removeByLibraryPath(targetPath: string, reason: string): Promise<void> {
+    private async removeByLibraryPath(
+        targetPath: string,
+        reason: string,
+    ): Promise<void> {
         const removed = await this.enqueueImageMutation(async () => {
             if (this.isIgnoredLibraryPath(targetPath)) {
                 return false;
@@ -468,8 +531,8 @@ class LiveImagesService {
     private isIgnoredSourcePath(targetPath: string): boolean {
         const resolved = path.resolve(targetPath);
         if (
-            resolved === this.imageBaseDirPath
-            || resolved.startsWith(`${this.imageBaseDirPath}${path.sep}`)
+            resolved === this.imageBaseDirPath ||
+            resolved.startsWith(`${this.imageBaseDirPath}${path.sep}`)
         ) {
             return true;
         }
@@ -501,7 +564,9 @@ class LiveImagesService {
                 continue;
             }
 
-            const entries = await fs.promises.readdir(currentPath, { withFileTypes: true });
+            const entries = await fs.promises.readdir(currentPath, {
+                withFileTypes: true,
+            });
             for (const entry of entries) {
                 const absolutePath = path.resolve(currentPath, entry.name);
                 if (entry.isDirectory()) {
@@ -516,7 +581,10 @@ class LiveImagesService {
                     continue;
                 }
 
-                if (!isImageFileName(entry.name) || this.isIgnoredSourcePath(absolutePath)) {
+                if (
+                    !isImageFileName(entry.name) ||
+                    this.isIgnoredSourcePath(absolutePath)
+                ) {
                     continue;
                 }
 
@@ -543,7 +611,9 @@ class LiveImagesService {
                     if (hasErrorCode(error, 'ENOENT')) {
                         continue;
                     }
-                    logger.error(`[live-images] sync ingest failed "${sourcePath}": ${errorMessage(error)}`);
+                    logger.error(
+                        `[live-images] sync ingest failed "${sourcePath}": ${errorMessage(error)}`,
+                    );
                 }
             }
 
@@ -556,14 +626,14 @@ class LiveImagesService {
         const run = this.imageMutationQueue.then(task, task);
         this.imageMutationQueue = run.then(
             () => undefined,
-            () => undefined
+            () => undefined,
         );
         return run;
     }
 
     private async registerLibraryFile(
         absolutePath: string,
-        options: RegisterLibraryFileOptions = {}
+        options: RegisterLibraryFileOptions = {},
     ): Promise<Image> {
         const url = this.imageUrlFromAbsolutePath(absolutePath);
         if (!url) {
@@ -575,29 +645,38 @@ class LiveImagesService {
         const imageMeta = await sharp(absolutePath).metadata();
         const width = imageMeta.width || 0;
         const height = imageMeta.height || 0;
-        const createdAt = options.preferredDate || (await deriveCreatedAt(absolutePath, stats));
+        const createdAt =
+            options.preferredDate ||
+            (await deriveCreatedAt(absolutePath, stats));
         const fileCreatedAt = this.resolveFileCreatedAt(stats, createdAt);
         const fileModifiedAt = new Date(stats.mtime.getTime());
-        const ensureCollectionForExisting = Boolean(options.ensureCollectionForExisting);
+        const ensureCollectionForExisting = Boolean(
+            options.ensureCollectionForExisting,
+        );
 
         const existingByHash = await this.imageRepository.findImageByHash(hash);
         if (existingByHash) {
             let promptSourcePath = absolutePath;
             if (existingByHash.url !== url) {
                 await this.unlinkIfExists(absolutePath);
-                const existingPath = this.absolutePathFromImageUrl(existingByHash.url);
+                const existingPath = this.absolutePathFromImageUrl(
+                    existingByHash.url,
+                );
                 if (existingPath) {
                     promptSourcePath = existingPath;
                 }
             }
 
-            const updated = await this.imageRepository.updateImage(existingByHash.id, {
-                width,
-                height,
-                createdAt,
-                fileCreatedAt,
-                fileModifiedAt,
-            });
+            const updated = await this.imageRepository.updateImage(
+                existingByHash.id,
+                {
+                    width,
+                    height,
+                    createdAt,
+                    fileCreatedAt,
+                    fileModifiedAt,
+                },
+            );
             await this.upsertImageMetadataForPath(updated.id, promptSourcePath);
             if (ensureCollectionForExisting) {
                 await this.ensureCollectionForImage(updated, promptSourcePath);
@@ -608,14 +687,17 @@ class LiveImagesService {
 
         const existingByUrl = await this.imageRepository.findImageByUrl(url);
         if (existingByUrl) {
-            const updated = await this.imageRepository.updateImage(existingByUrl.id, {
-                hash,
-                width,
-                height,
-                createdAt,
-                fileCreatedAt,
-                fileModifiedAt,
-            });
+            const updated = await this.imageRepository.updateImage(
+                existingByUrl.id,
+                {
+                    hash,
+                    width,
+                    height,
+                    createdAt,
+                    fileCreatedAt,
+                    fileModifiedAt,
+                },
+            );
             await this.upsertImageMetadataForPath(updated.id, absolutePath);
             if (ensureCollectionForExisting) {
                 await this.ensureCollectionForImage(updated, absolutePath);
@@ -647,13 +729,19 @@ class LiveImagesService {
         return absolutePathFromImageUrl(this.imageBaseDirPath, url);
     }
 
-    private async upsertSourceLinkIfNeeded(imageId: number, sourcePath?: string): Promise<void> {
+    private async upsertSourceLinkIfNeeded(
+        imageId: number,
+        sourcePath?: string,
+    ): Promise<void> {
         if (sourcePath && this.ingestMode === 'copy') {
             await this.imageRepository.upsertSourceLink(imageId, sourcePath);
         }
     }
 
-    private async ensureCollectionForImage(image: Image, absolutePath: string): Promise<void> {
+    private async ensureCollectionForImage(
+        image: Image,
+        absolutePath: string,
+    ): Promise<void> {
         const exists = await this.imageRepository.collectionExists(image.id);
         if (exists) {
             return;
@@ -706,8 +794,12 @@ class LiveImagesService {
         return `${metadata.prompt}\nNegative prompt: ${metadata.negativePrompt}`;
     }
 
-    private toStoredImageMetaInput(metadata: ParsedImageMeta): StoredImageMetaInput {
-        const parseWarningsJson = JSON.stringify(Array.isArray(metadata.parseWarnings) ? metadata.parseWarnings : []);
+    private toStoredImageMetaInput(
+        metadata: ParsedImageMeta,
+    ): StoredImageMetaInput {
+        const parseWarningsJson = JSON.stringify(
+            Array.isArray(metadata.parseWarnings) ? metadata.parseWarnings : [],
+        );
         const rawJson = JSON.stringify({
             prompt: metadata.prompt,
             negativePrompt: metadata.negativePrompt,
@@ -739,10 +831,15 @@ class LiveImagesService {
             clipSkip: metadata.clipSkip,
             vae: metadata.vae,
             denoiseStrength: metadata.denoiseStrength,
-            createdAtFromMeta: metadata.createdAtFromMeta ? new Date(metadata.createdAtFromMeta) : undefined,
+            createdAtFromMeta: metadata.createdAtFromMeta
+                ? new Date(metadata.createdAtFromMeta)
+                : undefined,
             parseWarningsJson,
             parseVersion: metadata.parseVersion || '',
-            rawJson: rawJson.length <= IMAGE_META_RAW_JSON_LIMIT ? rawJson : undefined,
+            rawJson:
+                rawJson.length <= IMAGE_META_RAW_JSON_LIMIT
+                    ? rawJson
+                    : undefined,
         };
     }
 
@@ -777,7 +874,9 @@ class LiveImagesService {
         try {
             const parsed = JSON.parse(stored.parseWarningsJson || '[]');
             if (Array.isArray(parsed)) {
-                parseWarnings = parsed.filter((item) => typeof item === 'string');
+                parseWarnings = parsed.filter(
+                    (item) => typeof item === 'string',
+                );
             }
         } catch {
             parseWarnings = [];
@@ -786,7 +885,9 @@ class LiveImagesService {
         return {
             prompt: stored.prompt || '',
             negativePrompt: stored.negativePrompt || '',
-            sourceType: (stored.sourceType as ParsedImageMeta['sourceType']) || 'unknown',
+            sourceType:
+                (stored.sourceType as ParsedImageMeta['sourceType']) ||
+                'unknown',
             model: stored.model || undefined,
             modelHash: stored.modelHash || undefined,
             baseSampler: stored.baseSampler || undefined,
@@ -806,16 +907,24 @@ class LiveImagesService {
             clipSkip: stored.clipSkip || undefined,
             vae: stored.vae || undefined,
             denoiseStrength: stored.denoiseStrength || undefined,
-            createdAtFromMeta: stored.createdAtFromMeta ? stored.createdAtFromMeta.toISOString() : undefined,
+            createdAtFromMeta: stored.createdAtFromMeta
+                ? stored.createdAtFromMeta.toISOString()
+                : undefined,
             parseWarnings,
             parseVersion: stored.parseVersion || '',
         };
     }
 
-    private async upsertImageMetadataForPath(imageId: number, absolutePath: string): Promise<void> {
+    private async upsertImageMetadataForPath(
+        imageId: number,
+        absolutePath: string,
+    ): Promise<void> {
         try {
             const metadata = await readImageMetadata(absolutePath);
-            await this.imageRepository.upsertImageMeta(imageId, this.toStoredImageMetaInput(metadata));
+            await this.imageRepository.upsertImageMeta(
+                imageId,
+                this.toStoredImageMetaInput(metadata),
+            );
             const stats = await this.readStatIfExists(absolutePath);
             if (stats) {
                 this.promptCache.set(imageId, {
@@ -825,7 +934,9 @@ class LiveImagesService {
                 });
             }
         } catch (error: unknown) {
-            logger.warn(`[live-images] metadata upsert skipped imageId=${imageId}: ${errorMessage(error)}`);
+            logger.warn(
+                `[live-images] metadata upsert skipped imageId=${imageId}: ${errorMessage(error)}`,
+            );
         }
     }
 
@@ -842,7 +953,9 @@ class LiveImagesService {
         return fallback;
     }
 
-    private async readStatIfExists(targetPath: string): Promise<fs.Stats | null> {
+    private async readStatIfExists(
+        targetPath: string,
+    ): Promise<fs.Stats | null> {
         try {
             return await fs.promises.stat(targetPath);
         } catch (error: unknown) {
@@ -866,4 +979,4 @@ class LiveImagesService {
 
 const liveImagesService = new LiveImagesService();
 
-export default liveImagesService;
+export { liveImagesService };

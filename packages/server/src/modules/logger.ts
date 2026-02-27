@@ -2,26 +2,24 @@ import expressWinston, { LoggerOptions } from 'express-winston';
 import winston from 'winston';
 
 export const loggerOptions: LoggerOptions = {
-    transports: [
-        new winston.transports.Console(),
-    ],
+    transports: [new winston.transports.Console()],
     format: winston.format.combine(
         winston.format.timestamp({
-            format: 'YYYY-MM-DD HH:mm:ss'
+            format: 'YYYY-MM-DD HH:mm:ss',
         }),
-        winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`),
+        winston.format.printf(
+            (info) => `${info.timestamp} ${info.level}: ${info.message}`,
+        ),
     ),
     colorize: true,
     expressFormat: true,
 };
 
-const expressLogger = expressWinston.logger(loggerOptions);
+export const expressLogger = expressWinston.logger(loggerOptions);
 
 export const logger = winston.createLogger({
     transports: loggerOptions.transports,
     format: winston.format.combine(
-        winston.format.printf(info => `${info.level}: ${info.message}`),
+        winston.format.printf((info) => `${info.level}: ${info.message}`),
     ),
 });
-
-export default expressLogger;

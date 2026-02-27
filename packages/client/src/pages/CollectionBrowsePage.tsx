@@ -23,7 +23,10 @@ import { usePathStore } from '~/state/path-store';
 
 const LIMIT = 20;
 
-type CollectionBrowseItem = Pick<Collection, 'id' | 'title' | 'prompt' | 'negativePrompt' | 'image'>;
+type CollectionBrowseItem = Pick<
+    Collection,
+    'id' | 'title' | 'prompt' | 'negativePrompt' | 'image'
+>;
 interface CollectionBrowsePayload {
     items: CollectionBrowseItem[];
     page: number;
@@ -46,10 +49,11 @@ const normalizeNumericParam = (input: unknown): number | null => {
             return null;
         }
 
-        const unquoted = (trimmed.startsWith('"') && trimmed.endsWith('"'))
-            || (trimmed.startsWith('\'') && trimmed.endsWith('\''))
-            ? trimmed.slice(1, -1)
-            : trimmed;
+        const unquoted =
+            (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+            (trimmed.startsWith("'") && trimmed.endsWith("'"))
+                ? trimmed.slice(1, -1)
+                : trimmed;
         const parsed = Number(unquoted);
         return Number.isFinite(parsed) ? parsed : null;
     }
@@ -102,23 +106,31 @@ export const CollectionBrowsePage = () => {
     const queryErrorToastRef = useRef<string | null>(null);
     const { pushToast } = useToast();
 
-    const buildBrowsePath = useCallback((next: { query: string; page: number; selected: number | null }) => {
-        const params = new URLSearchParams();
-        if (next.query) {
-            params.set('query', next.query);
-        }
-        if (next.page > 1) {
-            params.set('page', String(next.page));
-        }
-        if (next.selected) {
-            params.set('selected', String(next.selected));
-        }
-        const queryString = params.toString();
-        return queryString ? `/collection/browse?${queryString}` : '/collection/browse';
-    }, []);
+    const buildBrowsePath = useCallback(
+        (next: { query: string; page: number; selected: number | null }) => {
+            const params = new URLSearchParams();
+            if (next.query) {
+                params.set('query', next.query);
+            }
+            if (next.page > 1) {
+                params.set('page', String(next.page));
+            }
+            if (next.selected) {
+                params.set('selected', String(next.selected));
+            }
+            const queryString = params.toString();
+            return queryString
+                ? `/collection/browse?${queryString}`
+                : '/collection/browse';
+        },
+        [],
+    );
 
     useEffect(() => {
-        setPath('collection', buildBrowsePath({ query, page: currentPage, selected: null }));
+        setPath(
+            'collection',
+            buildBrowsePath({ query, page: currentPage, selected: null }),
+        );
     }, [buildBrowsePath, currentPage, query, setPath]);
 
     useEffect(() => {
@@ -160,7 +172,10 @@ export const CollectionBrowsePage = () => {
     const loading = collectionsQuery.isPending;
     const totalPages = collectionsQuery.data?.lastPage ?? 1;
     const totalItems = collectionsQuery.data?.total ?? 0;
-    const queryErrorMessage = collectionsQuery.error instanceof Error ? collectionsQuery.error.message : null;
+    const queryErrorMessage =
+        collectionsQuery.error instanceof Error
+            ? collectionsQuery.error.message
+            : null;
 
     useEffect(() => {
         if (!queryErrorMessage) {
@@ -188,7 +203,10 @@ export const CollectionBrowsePage = () => {
                 return;
             }
 
-            if (actionMenuRef.current && !actionMenuRef.current.contains(target)) {
+            if (
+                actionMenuRef.current &&
+                !actionMenuRef.current.contains(target)
+            ) {
                 setActionMenuOpen(false);
             }
         };
@@ -211,7 +229,9 @@ export const CollectionBrowsePage = () => {
                     replace: true,
                     resetScroll: false,
                     search: (previousSearch) => {
-                        const nextSearch = { ...(previousSearch as Record<string, unknown>) };
+                        const nextSearch = {
+                            ...(previousSearch as Record<string, unknown>),
+                        };
                         if (query) {
                             nextSearch.query = query;
                         } else {
@@ -240,7 +260,9 @@ export const CollectionBrowsePage = () => {
             replace: true,
             resetScroll: false,
             search: (previousSearch) => {
-                const nextSearch = { ...(previousSearch as Record<string, unknown>) };
+                const nextSearch = {
+                    ...(previousSearch as Record<string, unknown>),
+                };
                 if (query) {
                     nextSearch.query = query;
                 } else {
@@ -271,7 +293,9 @@ export const CollectionBrowsePage = () => {
             replace: true,
             resetScroll: false,
             search: (previousSearch) => {
-                const nextSearch = { ...(previousSearch as Record<string, unknown>) };
+                const nextSearch = {
+                    ...(previousSearch as Record<string, unknown>),
+                };
                 if (nextQuery) {
                     nextSearch.query = nextQuery;
                 } else {
@@ -291,7 +315,9 @@ export const CollectionBrowsePage = () => {
                 replace: true,
                 resetScroll: false,
                 search: (previousSearch) => {
-                    const nextSearch = { ...(previousSearch as Record<string, unknown>) };
+                    const nextSearch = {
+                        ...(previousSearch as Record<string, unknown>),
+                    };
                     if (query) {
                         nextSearch.query = query;
                     } else {
@@ -331,7 +357,10 @@ export const CollectionBrowsePage = () => {
 
         setRenaming(true);
         try {
-            await updateCollection({ id: selectedItem.id, title: normalizedTitle });
+            await updateCollection({
+                id: selectedItem.id,
+                title: normalizedTitle,
+            });
             setRenameDialogOpen(false);
             pushToast({
                 variant: 'success',
@@ -341,7 +370,10 @@ export const CollectionBrowsePage = () => {
         } catch (nextError) {
             pushToast({
                 variant: 'error',
-                message: nextError instanceof Error ? nextError.message : 'Failed to rename collection',
+                message:
+                    nextError instanceof Error
+                        ? nextError.message
+                        : 'Failed to rename collection',
             });
         } finally {
             setRenaming(false);
@@ -365,7 +397,10 @@ export const CollectionBrowsePage = () => {
         } catch (nextError) {
             pushToast({
                 variant: 'error',
-                message: nextError instanceof Error ? nextError.message : 'Failed to delete collection',
+                message:
+                    nextError instanceof Error
+                        ? nextError.message
+                        : 'Failed to delete collection',
             });
         } finally {
             setRemoving(false);
@@ -391,12 +426,18 @@ export const CollectionBrowsePage = () => {
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
                 <Card className="h-fit">
                     <div className="mb-3 flex items-center justify-between gap-2">
-                        <h2 className="text-base font-semibold text-ink">Gallery</h2>
-                        <Badge variant="neutral">Page {currentPage}/{totalPages}</Badge>
+                        <h2 className="text-base font-semibold text-ink">
+                            Gallery
+                        </h2>
+                        <Badge variant="neutral">
+                            Page {currentPage}/{totalPages}
+                        </Badge>
                     </div>
 
                     {loading && items.length === 0 ? (
-                        <Notice variant="neutral">Loading collections...</Notice>
+                        <Notice variant="neutral">
+                            Loading collections...
+                        </Notice>
                     ) : null}
 
                     {!loading && items.length === 0 ? (
@@ -406,23 +447,31 @@ export const CollectionBrowsePage = () => {
                     {items.length > 0 ? (
                         <div className="grid grid-cols-2 gap-2">
                             {items.map((item) => (
-                                <button
+                                <Button
                                     key={item.id}
                                     type="button"
+                                    variant="ghost"
+                                    size="sm"
                                     onClick={() => {
                                         void navigate({
                                             to: '/collection/browse',
                                             replace: true,
                                             resetScroll: false,
                                             search: (previousSearch) => {
-                                                const nextSearch = { ...(previousSearch as Record<string, unknown>) };
+                                                const nextSearch = {
+                                                    ...(previousSearch as Record<
+                                                        string,
+                                                        unknown
+                                                    >),
+                                                };
                                                 if (query) {
                                                     nextSearch.query = query;
                                                 } else {
                                                     delete nextSearch.query;
                                                 }
                                                 if (currentPage > 1) {
-                                                    nextSearch.page = currentPage;
+                                                    nextSearch.page =
+                                                        currentPage;
                                                 } else {
                                                     delete nextSearch.page;
                                                 }
@@ -431,7 +480,7 @@ export const CollectionBrowsePage = () => {
                                             },
                                         });
                                     }}
-                                    className={`ui-focus-ring rounded-token-md border p-1 text-left transition-colors ${
+                                    className={`!h-auto !justify-start gap-0 border p-1 text-left transition-colors ${
                                         selectedId === item.id
                                             ? 'border-brand-400 bg-brand-50 shadow-surface'
                                             : 'border-line bg-surface-base hover:border-brand-200 hover:bg-surface-muted'
@@ -449,7 +498,7 @@ export const CollectionBrowsePage = () => {
                                     <p className="mt-1 truncate text-xs font-semibold text-ink">
                                         {item.title || '(untitled)'}
                                     </p>
-                                </button>
+                                </Button>
                             ))}
                         </div>
                     ) : null}
@@ -476,8 +525,12 @@ export const CollectionBrowsePage = () => {
                         <>
                             <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
                                 <div>
-                                    <h2 className="text-lg font-semibold text-ink">{selectedItem.title || '(untitled)'}</h2>
-                                    <p className="mt-1 text-xs text-ink-muted">Collection #{selectedItem.id}</p>
+                                    <h2 className="text-lg font-semibold text-ink">
+                                        {selectedItem.title || '(untitled)'}
+                                    </h2>
+                                    <p className="mt-1 text-xs text-ink-muted">
+                                        Collection #{selectedItem.id}
+                                    </p>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
                                     <Button
@@ -490,14 +543,24 @@ export const CollectionBrowsePage = () => {
                                         Open detail
                                     </Button>
 
-                                    <div ref={actionMenuRef} className="relative">
+                                    <div
+                                        ref={actionMenuRef}
+                                        className="relative"
+                                    >
                                         <IconButton
-                                            icon={<MoreIcon width={16} height={16} />}
+                                            icon={
+                                                <MoreIcon
+                                                    width={16}
+                                                    height={16}
+                                                />
+                                            }
                                             label="Browse actions"
                                             variant="secondary"
                                             size="md"
                                             onClick={() => {
-                                                setActionMenuOpen((prev) => !prev);
+                                                setActionMenuOpen(
+                                                    (prev) => !prev,
+                                                );
                                             }}
                                         />
                                         {actionMenuOpen ? (
@@ -507,8 +570,12 @@ export const CollectionBrowsePage = () => {
                                                     size="sm"
                                                     className="w-full !justify-start !text-left"
                                                     onClick={() => {
-                                                        setActionMenuOpen(false);
-                                                        setRenameDialogOpen(true);
+                                                        setActionMenuOpen(
+                                                            false,
+                                                        );
+                                                        setRenameDialogOpen(
+                                                            true,
+                                                        );
                                                     }}
                                                 >
                                                     Rename
@@ -518,8 +585,12 @@ export const CollectionBrowsePage = () => {
                                                     size="sm"
                                                     className="w-full !justify-start !text-left text-danger-700 hover:bg-danger-50"
                                                     onClick={() => {
-                                                        setActionMenuOpen(false);
-                                                        setRemoveDialogOpen(true);
+                                                        setActionMenuOpen(
+                                                            false,
+                                                        );
+                                                        setRemoveDialogOpen(
+                                                            true,
+                                                        );
                                                     }}
                                                 >
                                                     Delete
@@ -541,9 +612,10 @@ export const CollectionBrowsePage = () => {
                             </div>
                         </>
                     ) : (
-                        <Notice variant="neutral">Select a collection from the gallery to preview it.</Notice>
+                        <Notice variant="neutral">
+                            Select a collection from the gallery to preview it.
+                        </Notice>
                     )}
-
                 </Card>
             </div>
 
@@ -566,7 +638,11 @@ export const CollectionBrowsePage = () => {
             <ConfirmDialog
                 open={removeDialogOpen}
                 title="Delete collection"
-                description={selectedItem ? `"${selectedItem.title || '(untitled)'}" will be permanently removed.` : 'This collection will be removed.'}
+                description={
+                    selectedItem
+                        ? `"${selectedItem.title || '(untitled)'}" will be permanently removed.`
+                        : 'This collection will be removed.'
+                }
                 confirmLabel="Delete"
                 confirming={removing}
                 danger

@@ -1,12 +1,14 @@
 import path from 'path';
 
-import models from '~/models';
+import { models } from '~/models';
 
 import { LiveSyncConfig } from './live-images.types';
 import { normalizeIngestMode } from './live-images.utils';
 
 export class LiveImagesConfigRepository {
-    async ensureLiveSyncTables(defaultWatchDir = path.resolve('watch')): Promise<void> {
+    async ensureLiveSyncTables(
+        defaultWatchDir = path.resolve('watch'),
+    ): Promise<void> {
         await models.liveSyncConfig.upsert({
             where: {
                 id: 1,
@@ -22,14 +24,18 @@ export class LiveImagesConfigRepository {
         });
     }
 
-    async readConfig(defaultWatchDir = path.resolve('watch')): Promise<LiveSyncConfig> {
+    async readConfig(
+        defaultWatchDir = path.resolve('watch'),
+    ): Promise<LiveSyncConfig> {
         const row = await models.liveSyncConfig.findUnique({
             where: {
                 id: 1,
             },
         });
 
-        const watchDir = row?.watchDir ? path.resolve(row.watchDir) : path.resolve(defaultWatchDir);
+        const watchDir = row?.watchDir
+            ? path.resolve(row.watchDir)
+            : path.resolve(defaultWatchDir);
         const ingestMode = normalizeIngestMode(row?.ingestMode || 'copy');
         const deleteSourceOnDelete = Boolean(row?.deleteSourceOnDelete);
         const enabled = Boolean(row?.enabled);

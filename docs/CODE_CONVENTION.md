@@ -32,3 +32,5 @@
 ## Testing and Checks
 - 변경 중 주기적으로 `typecheck`와 `lint`를 실행합니다.
 - 기능 완료 전 최소 1회 관련 테스트/검증 명령을 실행합니다.
+- `lint`는 Biome 기준으로 실행합니다.
+- 기본 포맷/정렬은 Biome 자동 수정(`biome format --write`)을 우선 사용합니다.

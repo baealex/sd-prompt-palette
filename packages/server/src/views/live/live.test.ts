@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 
-import liveImagesService from '~/modules/live-images';
+import { liveImagesService } from '~/modules/live-images';
 import {
     deleteLiveImage,
     getLiveImageMetadata,
@@ -11,8 +11,7 @@ import {
 } from './live';
 
 jest.mock('~/modules/live-images', () => ({
-    __esModule: true,
-    default: {
+    liveImagesService: {
         getConfig: jest.fn(),
         getStatus: jest.fn(),
         updateConfig: jest.fn(),

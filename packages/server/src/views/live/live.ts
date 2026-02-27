@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-import liveImagesService from '~/modules/live-images';
+import { liveImagesService } from '~/modules/live-images';
 import { errorMessage, hasErrorCode } from '~/modules/live-images.errors';
 import { Controller } from '~/types';
 
@@ -63,7 +63,9 @@ function parsePathQuery(input: unknown): string | undefined {
 
 function isRootPath(targetPath: string): boolean {
     const resolvedPath = path.resolve(targetPath);
-    const rootPath = path.resolve(path.parse(resolvedPath).root || resolvedPath);
+    const rootPath = path.resolve(
+        path.parse(resolvedPath).root || resolvedPath,
+    );
 
     if (process.platform === 'win32') {
         return resolvedPath.toLowerCase() === rootPath.toLowerCase();
@@ -105,7 +107,9 @@ async function resolveDirectoryPath(requestedPath?: string): Promise<string> {
     }
 
     const config = await liveImagesService.getConfig();
-    const configWatchDir = path.resolve(config.watchDir || path.resolve('watch'));
+    const configWatchDir = path.resolve(
+        config.watchDir || path.resolve('watch'),
+    );
     if (await isExistingDirectory(configWatchDir)) {
         return configWatchDir;
     }
@@ -126,7 +130,9 @@ async function resolveDirectoryPath(requestedPath?: string): Promise<string> {
 }
 
 async function listDirectories(currentPath: string): Promise<DirectoryEntry[]> {
-    const entries = await fs.promises.readdir(currentPath, { withFileTypes: true });
+    const entries = await fs.promises.readdir(currentPath, {
+        withFileTypes: true,
+    });
 
     return entries
         .filter((entry) => entry.isDirectory())
@@ -134,20 +140,25 @@ async function listDirectories(currentPath: string): Promise<DirectoryEntry[]> {
             name: entry.name,
             path: path.resolve(currentPath, entry.name),
         }))
-        .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+        .sort((a, b) =>
+            a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+        );
 }
 
 export const getLiveConfig: Controller = async (_, res) => {
     const config = await liveImagesService.getConfig();
-    res.status(200).json({
-        ok: true,
-        config,
-        status: liveImagesService.getStatus(),
-    }).end();
+    res.status(200)
+        .json({
+            ok: true,
+            config,
+            status: liveImagesService.getStatus(),
+        })
+        .end();
 };
 
 export const updateLiveConfig: Controller = async (req, res) => {
-    const watchDir = typeof req.body?.watchDir === 'string' ? req.body.watchDir : undefined;
+    const watchDir =
+        typeof req.body?.watchDir === 'string' ? req.body.watchDir : undefined;
     const ingestMode = req.body?.ingestMode;
     const deleteSourceOnDelete = parseBoolean(req.body?.deleteSourceOnDelete);
     const enabled = parseBoolean(req.body?.enabled);
@@ -159,11 +170,13 @@ export const updateLiveConfig: Controller = async (req, res) => {
         enabled,
     });
 
-    res.status(200).json({
-        ok: true,
-        config,
-        status: liveImagesService.getStatus(),
-    }).end();
+    res.status(200)
+        .json({
+            ok: true,
+            config,
+            status: liveImagesService.getStatus(),
+        })
+        .end();
 };
 
 export const listLiveDirectories: Controller = async (req, res) => {
@@ -175,50 +188,63 @@ export const listLiveDirectories: Controller = async (req, res) => {
         stat = await fs.promises.stat(currentPath);
     } catch (error: unknown) {
         if (hasErrorCode(error, 'ENOENT')) {
-            res.status(404).json({
-                ok: false,
-                message: 'directory does not exist',
-            }).end();
+            res.status(404)
+                .json({
+                    ok: false,
+                    message: 'directory does not exist',
+                })
+                .end();
             return;
         }
         throw error;
     }
 
     if (!stat.isDirectory()) {
-        res.status(400).json({
-            ok: false,
-            message: 'path is not a directory',
-        }).end();
+        res.status(400)
+            .json({
+                ok: false,
+                message: 'path is not a directory',
+            })
+            .end();
         return;
     }
 
     const directories = await listDirectories(currentPath);
-    const parentPath = isRootPath(currentPath) ? null : path.dirname(currentPath);
+    const parentPath = isRootPath(currentPath)
+        ? null
+        : path.dirname(currentPath);
     const roots = await getWindowsRoots();
 
-    res.status(200).json({
-        ok: true,
-        currentPath,
-        parentPath,
-        roots,
-        directories,
-    }).end();
+    res.status(200)
+        .json({
+            ok: true,
+            currentPath,
+            parentPath,
+            roots,
+            directories,
+        })
+        .end();
 };
 
 export const pickLiveDirectory: Controller = async (_, res) => {
-    res.status(410).json({
-        ok: false,
-        message: 'Desktop picker is deprecated. Use /api/live/config/directories.',
-    }).end();
+    res.status(410)
+        .json({
+            ok: false,
+            message:
+                'Desktop picker is deprecated. Use /api/live/config/directories.',
+        })
+        .end();
 };
 
 export const liveStatus: Controller = async (_, res) => {
     const config = await liveImagesService.getConfig();
-    res.status(200).json({
-        ok: true,
-        config,
-        ...liveImagesService.getStatus(),
-    }).end();
+    res.status(200)
+        .json({
+            ok: true,
+            config,
+            ...liveImagesService.getStatus(),
+        })
+        .end();
 };
 
 export const listLiveImages: Controller = async (req, res) => {
@@ -226,130 +252,154 @@ export const listLiveImages: Controller = async (req, res) => {
     const limit = Number(req.query.limit || 60);
     const payload = await liveImagesService.listImages({ page, limit });
 
-    res.status(200).json({
-        ok: true,
-        updatedAt: Date.now(),
-        ...payload,
-    }).end();
+    res.status(200)
+        .json({
+            ok: true,
+            updatedAt: Date.now(),
+            ...payload,
+        })
+        .end();
 };
 
 export const getLiveImagePrompt: Controller = async (req, res) => {
     const imageId = parseId(req.params.id);
     if (!imageId) {
-        res.status(400).json({
-            ok: false,
-            message: 'invalid image id',
-        }).end();
+        res.status(400)
+            .json({
+                ok: false,
+                message: 'invalid image id',
+            })
+            .end();
         return;
     }
 
     const { image, prompt } = await liveImagesService.getPrompt(imageId);
     if (!image) {
-        res.status(404).json({
-            ok: false,
-            message: 'image not found',
-        }).end();
+        res.status(404)
+            .json({
+                ok: false,
+                message: 'image not found',
+            })
+            .end();
         return;
     }
 
-    res.status(200).json({
-        ok: true,
-        id: image.id,
-        prompt,
-    }).end();
+    res.status(200)
+        .json({
+            ok: true,
+            id: image.id,
+            prompt,
+        })
+        .end();
 };
 
 export const getLiveImageMetadata: Controller = async (req, res) => {
     const imageId = parseId(req.params.id);
     if (!imageId) {
-        res.status(400).json({
-            ok: false,
-            message: 'invalid image id',
-        }).end();
+        res.status(400)
+            .json({
+                ok: false,
+                message: 'invalid image id',
+            })
+            .end();
         return;
     }
 
     const { image, metadata } = await liveImagesService.getMetadata(imageId);
     if (!image) {
-        res.status(404).json({
-            ok: false,
-            message: 'image not found',
-        }).end();
+        res.status(404)
+            .json({
+                ok: false,
+                message: 'image not found',
+            })
+            .end();
         return;
     }
 
-    res.status(200).json({
-        ok: true,
-        id: image.id,
-        prompt: metadata.prompt,
-        negativePrompt: metadata.negativePrompt,
-        sourceType: metadata.sourceType,
-        parseVersion: metadata.parseVersion,
-        warnings: metadata.parseWarnings,
-        metadata: {
-            model: metadata.model,
-            modelHash: metadata.modelHash,
-            baseSampler: metadata.baseSampler,
-            baseScheduler: metadata.baseScheduler,
-            baseSteps: metadata.baseSteps,
-            baseCfgScale: metadata.baseCfgScale,
-            baseSeed: metadata.baseSeed,
-            upscaleSampler: metadata.upscaleSampler,
-            upscaleScheduler: metadata.upscaleScheduler,
-            upscaleSteps: metadata.upscaleSteps,
-            upscaleCfgScale: metadata.upscaleCfgScale,
-            upscaleSeed: metadata.upscaleSeed,
-            upscaleFactor: metadata.upscaleFactor,
-            upscaler: metadata.upscaler,
-            sizeWidth: metadata.sizeWidth,
-            sizeHeight: metadata.sizeHeight,
-            clipSkip: metadata.clipSkip,
-            vae: metadata.vae,
-            denoiseStrength: metadata.denoiseStrength,
-            createdAtFromMeta: metadata.createdAtFromMeta,
-        },
-    }).end();
+    res.status(200)
+        .json({
+            ok: true,
+            id: image.id,
+            prompt: metadata.prompt,
+            negativePrompt: metadata.negativePrompt,
+            sourceType: metadata.sourceType,
+            parseVersion: metadata.parseVersion,
+            warnings: metadata.parseWarnings,
+            metadata: {
+                model: metadata.model,
+                modelHash: metadata.modelHash,
+                baseSampler: metadata.baseSampler,
+                baseScheduler: metadata.baseScheduler,
+                baseSteps: metadata.baseSteps,
+                baseCfgScale: metadata.baseCfgScale,
+                baseSeed: metadata.baseSeed,
+                upscaleSampler: metadata.upscaleSampler,
+                upscaleScheduler: metadata.upscaleScheduler,
+                upscaleSteps: metadata.upscaleSteps,
+                upscaleCfgScale: metadata.upscaleCfgScale,
+                upscaleSeed: metadata.upscaleSeed,
+                upscaleFactor: metadata.upscaleFactor,
+                upscaler: metadata.upscaler,
+                sizeWidth: metadata.sizeWidth,
+                sizeHeight: metadata.sizeHeight,
+                clipSkip: metadata.clipSkip,
+                vae: metadata.vae,
+                denoiseStrength: metadata.denoiseStrength,
+                createdAtFromMeta: metadata.createdAtFromMeta,
+            },
+        })
+        .end();
 };
 
 export const deleteLiveImage: Controller = async (req, res) => {
     const imageId = parseId(req.params.id);
     if (!imageId) {
-        res.status(400).json({
-            ok: false,
-            message: 'invalid image id',
-        }).end();
+        res.status(400)
+            .json({
+                ok: false,
+                message: 'invalid image id',
+            })
+            .end();
         return;
     }
 
     const deleted = await liveImagesService.deleteImage(imageId);
     if (!deleted) {
-        res.status(404).json({
-            ok: false,
-            message: 'image not found',
-        }).end();
+        res.status(404)
+            .json({
+                ok: false,
+                message: 'image not found',
+            })
+            .end();
         return;
     }
 
-    res.status(200).json({
-        ok: true,
-        deleted: {
-            id: deleted.id,
-            url: deleted.url,
-        },
-    }).end();
+    res.status(200)
+        .json({
+            ok: true,
+            deleted: {
+                id: deleted.id,
+                url: deleted.url,
+            },
+        })
+        .end();
 };
 
 export const syncLiveImages: Controller = async (_, res) => {
     try {
         const result = await liveImagesService.syncNow('api:sync');
-        res.status(200).json({
-            ok: true,
-            ...result,
-        }).end();
+        res.status(200)
+            .json({
+                ok: true,
+                ...result,
+            })
+            .end();
     } catch (error: unknown) {
-        res.status(500).json({
-            ok: false,
-            message: errorMessage(error),
-        }).end();
+        res.status(500)
+            .json({
+                ok: false,
+                message: errorMessage(error),
+            })
+            .end();
     }
 };

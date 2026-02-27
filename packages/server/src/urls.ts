@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import * as views from './views';
-import useAsync from './modules/use-async';
+import { useAsync } from './modules/use-async';
 
-export default Router()
+export const router = Router()
     .get('/home', useAsync(views.home))
     .post('/image/metadata', useAsync(views.parseImageMetadata))
     .post('/image', useAsync(views.uploadImage))

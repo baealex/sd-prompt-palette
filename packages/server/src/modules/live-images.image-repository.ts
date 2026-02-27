@@ -1,4 +1,4 @@
-import models, { Image, ImageMeta } from '~/models';
+import { Image, ImageMeta, models } from '~/models';
 
 import { hasErrorCode } from './live-images.errors';
 import { StoredImageMetaInput } from './live-images.types';
@@ -28,7 +28,9 @@ const isRetryableSqliteWriteError = (error: unknown): boolean => {
         return false;
     }
 
-    return RETRYABLE_SQLITE_ERROR_PATTERNS.some((pattern) => pattern.test(error.message));
+    return RETRYABLE_SQLITE_ERROR_PATTERNS.some((pattern) =>
+        pattern.test(error.message),
+    );
 };
 
 export class LiveImagesImageRepository {
@@ -109,7 +111,7 @@ export class LiveImagesImageRepository {
             createdAt: Date;
             fileCreatedAt?: Date;
             fileModifiedAt?: Date;
-        }
+        },
     ): Promise<Image> {
         return models.image.update({
             where: { id: imageId },
@@ -194,8 +196,15 @@ export class LiveImagesImageRepository {
         });
     }
 
-    async upsertImageMeta(imageId: number, data: StoredImageMetaInput): Promise<void> {
-        for (let attempt = 0; attempt <= IMAGE_META_UPSERT_RETRY_DELAYS_MS.length; attempt += 1) {
+    async upsertImageMeta(
+        imageId: number,
+        data: StoredImageMetaInput,
+    ): Promise<void> {
+        for (
+            let attempt = 0;
+            attempt <= IMAGE_META_UPSERT_RETRY_DELAYS_MS.length;
+            attempt += 1
+        ) {
             try {
                 await models.imageMeta.upsert({
                     where: {
@@ -209,7 +218,8 @@ export class LiveImagesImageRepository {
                 });
                 return;
             } catch (error: unknown) {
-                const hasRetryRemaining = attempt < IMAGE_META_UPSERT_RETRY_DELAYS_MS.length;
+                const hasRetryRemaining =
+                    attempt < IMAGE_META_UPSERT_RETRY_DELAYS_MS.length;
                 if (!hasRetryRemaining || !isRetryableSqliteWriteError(error)) {
                     throw error;
                 }

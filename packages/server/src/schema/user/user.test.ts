@@ -1,7 +1,7 @@
 import request from 'supertest';
 
-import app from '~/app';
-import models from '~/models';
+import { app } from '~/app';
+import { models } from '~/models';
 
 beforeAll(async () => {
     await models.user.create({
@@ -26,8 +26,10 @@ afterAll(async () => {
 
 describe('User Schema', () => {
     it('return user list', async () => {
-        const res = await request(app).post('/graphql').send({
-            query: `
+        const res = await request(app)
+            .post('/graphql')
+            .send({
+                query: `
                 query {
                     allUsers {
                         id
@@ -38,14 +40,16 @@ describe('User Schema', () => {
                     }
                 }
             `,
-        });
+            });
 
         expect(res.body.data.allUsers).toHaveLength(2);
     });
 
     it('can not return password', async () => {
-        const res = await request(app).post('/graphql').send({
-            query: `
+        const res = await request(app)
+            .post('/graphql')
+            .send({
+                query: `
                 query {
                     allUsers {
                         id
@@ -57,15 +61,19 @@ describe('User Schema', () => {
                     }
                 }
             `,
-        });
+            });
 
         expect(res.status).toBe(200);
-        expect(res.body.errors[0].message).toContain('Cannot query field "password"');
+        expect(res.body.errors[0].message).toContain(
+            'Cannot query field "password"',
+        );
     });
 
     it('return user', async () => {
-        const res = await request(app).post('/graphql').send({
-            query: `
+        const res = await request(app)
+            .post('/graphql')
+            .send({
+                query: `
                 query {
                     user(id: 1) {
                         id
@@ -76,14 +84,16 @@ describe('User Schema', () => {
                     }
                 }
             `,
-        });
+            });
 
         expect(res.body.data.user.name).toBe('Test User 1');
     });
 
     it('create user', async () => {
-        const res = await request(app).post('/graphql').send({
-            query: `
+        const res = await request(app)
+            .post('/graphql')
+            .send({
+                query: `
                 mutation {
                     createUser(
                         name: "Test User 3"
@@ -98,14 +108,16 @@ describe('User Schema', () => {
                     }
                 }
             `,
-        });
+            });
 
         expect(res.body.data.createUser.name).toBe('Test User 3');
     });
 
     it('update user', async () => {
-        const res = await request(app).post('/graphql').send({
-            query: `
+        const res = await request(app)
+            .post('/graphql')
+            .send({
+                query: `
                 mutation {
                     updateUser(
                         id: 1
@@ -119,19 +131,21 @@ describe('User Schema', () => {
                     }
                 }
             `,
-        });
+            });
 
         expect(res.body.data.updateUser.name).toBe('Test User 1 Updated');
     });
 
     it('delete user', async () => {
-        const res = await request(app).post('/graphql').send({
-            query: `
+        const res = await request(app)
+            .post('/graphql')
+            .send({
+                query: `
                 mutation {
                     deleteUser(id: 1)
                 }
             `,
-        });
+            });
 
         expect(res.body.data.deleteUser).toBe(true);
     });

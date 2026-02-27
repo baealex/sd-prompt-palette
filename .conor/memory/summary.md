@@ -1,20 +1,9 @@
 # Memory Index
 
-<!--
-Zettelkasten 기반 메모리 인덱스
-이 파일은 항상 AI 컨텍스트에 로드됩니다. 최소한으로 유지하세요.
-각 항목은 한 줄로, chunks/ 디렉토리의 상세 파일을 참조합니다.
-형식: - [ID](chunks/ID.md) 요약 | #태그
--->
-
-## Project
-<!-- [P-ID](chunks/P-ID.md) 형식으로 프로젝트 정보 참조 추가 -->
-
 ## Decisions
-<!-- [D-ID](chunks/D-ID.md) 형식으로 결정 사항 참조 추가 -->
-- [D-20260227-meta-plan-contract](chunks/D-20260227-meta-plan-contract.md) Metadata contract: non-blocking ingest + ImageMeta 1:1 + GraphQL summary/REST detail | #metadata #architecture #api
-- [D-20260227-react-migration-option-b-tailwind](chunks/D-20260227-react-migration-option-b-tailwind.md) React migration lock: Option B cutover path + Tailwind-first styling | #frontend #migration #react #tailwind
+- [D-20260227-auto-collect-ux-control](chunks/D-20260227-auto-collect-ux-control.md) Collection control used technical `Realtime` labels and modal-first activation, slowing discoverability and enable flow. | #frontend #ux #live-collect (2026-02-27)
+- [D-20260227-meta-plan-contract](chunks/D-20260227-meta-plan-contract.md) Metadata expansion plan had conflicts across ingest safety, data ownership, and API transport. | #metadata #architecture #api (2026-02-27)
+- [D-20260227-react-migration-option-b-tailwind](chunks/D-20260227-react-migration-option-b-tailwind.md) React migration plan needed a fixed cutover path and styling standard. | #frontend #migration #react #tailwind (2026-02-27)
 
 ## Learnings
-<!-- [L-ID](chunks/L-ID.md) 형식으로 학습 내용 참조 추가 -->
-- [L-20260227-idea-page-selection-ux](chunks/L-20260227-idea-page-selection-ux.md) Idea page selection UX: tokenized checkbox card + clear selection states | #frontend #ux #consistency
+- [L-20260227-idea-page-selection-ux](chunks/L-20260227-idea-page-selection-ux.md) Idea 페이지의 기본형 체크박스는 선택 상태 가시성과 터치 사용성(44px)에서 일관성이 부족했다. | #frontend #ux #consistency (2026-02-27)

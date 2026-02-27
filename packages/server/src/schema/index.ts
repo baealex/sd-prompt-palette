@@ -19,4 +19,4 @@ const schema = makeExecutableSchema({
     ],
 });
 
-export default schema;
+export { schema };

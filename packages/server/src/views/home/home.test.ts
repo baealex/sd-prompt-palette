@@ -1,6 +1,6 @@
 import request from 'supertest';
 
-import app from '~/app';
+import { app } from '~/app';
 
 describe('GET /home', () => {
     it('return text Hello, My Express JS!', async () => {

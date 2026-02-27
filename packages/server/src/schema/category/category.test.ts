@@ -1,7 +1,7 @@
 import request from 'supertest';
 
-import app from '~/app';
-import models from '~/models';
+import { app } from '~/app';
+import { models } from '~/models';
 
 beforeAll(async () => {
     const colorCategory = await models.category.create({
@@ -18,10 +18,10 @@ beforeAll(async () => {
                     category: {
                         connect: {
                             id: colorCategory.id,
-                        }
-                    }
-                }
-            }
+                        },
+                    },
+                },
+            },
         },
     });
     await models.keyword.create({
@@ -33,10 +33,10 @@ beforeAll(async () => {
                     category: {
                         connect: {
                             id: colorCategory.id,
-                        }
-                    }
-                }
-            }
+                        },
+                    },
+                },
+            },
         },
     });
     const themeCategory = await models.category.create({
@@ -53,10 +53,10 @@ beforeAll(async () => {
                     category: {
                         connect: {
                             id: themeCategory.id,
-                        }
-                    }
-                }
-            }
+                        },
+                    },
+                },
+            },
         },
     });
     await models.keyword.create({
@@ -68,10 +68,10 @@ beforeAll(async () => {
                     category: {
                         connect: {
                             id: themeCategory.id,
-                        }
-                    }
-                }
-            }
+                        },
+                    },
+                },
+            },
         },
     });
 });
@@ -117,8 +117,10 @@ describe('Category Schema', () => {
     });
 
     it('카테고리를 생성한다.', async () => {
-        const res = await request(app).post('/graphql').send({
-            query: `
+        const res = await request(app)
+            .post('/graphql')
+            .send({
+                query: `
                 mutation {
                     createCategory(
                         name: "New Category"
@@ -128,7 +130,7 @@ describe('Category Schema', () => {
                     }
                 }
             `,
-        });
+            });
 
         expect(res.body.data.createCategory.name).toBe('New Category');
     });
@@ -136,8 +138,10 @@ describe('Category Schema', () => {
     it('카테고리를 수정한다.', async () => {
         const allCategories = await getAllCategories();
 
-        const res = await request(app).post('/graphql').send({
-            query: `
+        const res = await request(app)
+            .post('/graphql')
+            .send({
+                query: `
                 mutation {
                     updateCategory(
                         id: ${allCategories[0].id},
@@ -147,7 +151,7 @@ describe('Category Schema', () => {
                     }
                 }
             `,
-        });
+            });
 
         expect(res.body.data.updateCategory.name).toBe('Updated Category');
     });
@@ -155,18 +159,22 @@ describe('Category Schema', () => {
     it('카테고리를 삭제한다 / 카테고리가 존재하지 않는 키워드는 함께 삭제된다.', async () => {
         const allCategories = await getAllCategories();
 
-        const res1 = await request(app).post('/graphql').send({
-            query: `
+        const res1 = await request(app)
+            .post('/graphql')
+            .send({
+                query: `
                 mutation {
                     deleteCategory(id: ${allCategories[0].id})
                 }
             `,
-        });
+            });
 
         expect(res1.body.data.deleteCategory).toBe(true);
 
-        const res2 = await request(app).post('/graphql').send({
-            query: `
+        const res2 = await request(app)
+            .post('/graphql')
+            .send({
+                query: `
                 query {
                     allKeywords {
                         id
@@ -174,7 +182,7 @@ describe('Category Schema', () => {
                     }
                 }
             `,
-        });
+            });
         expect(res2.body.data.allKeywords).toHaveLength(2);
     });
 });

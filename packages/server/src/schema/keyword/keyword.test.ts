@@ -1,7 +1,7 @@
 import request from 'supertest';
 
-import app from '~/app';
-import models from '~/models';
+import { app } from '~/app';
+import { models } from '~/models';
 
 beforeAll(async () => {
     const colorCategory = await models.category.create({
@@ -18,10 +18,10 @@ beforeAll(async () => {
                     category: {
                         connect: {
                             id: colorCategory.id,
-                        }
-                    }
-                }
-            }
+                        },
+                    },
+                },
+            },
         },
     });
     await models.keyword.create({
@@ -33,10 +33,10 @@ beforeAll(async () => {
                     category: {
                         connect: {
                             id: colorCategory.id,
-                        }
-                    }
-                }
-            }
+                        },
+                    },
+                },
+            },
         },
     });
     const themeCategory = await models.category.create({
@@ -53,10 +53,10 @@ beforeAll(async () => {
                     category: {
                         connect: {
                             id: themeCategory.id,
-                        }
-                    }
-                }
-            }
+                        },
+                    },
+                },
+            },
         },
     });
     await models.keyword.create({
@@ -68,10 +68,10 @@ beforeAll(async () => {
                     category: {
                         connect: {
                             id: themeCategory.id,
-                        }
-                    }
-                }
-            }
+                        },
+                    },
+                },
+            },
         },
     });
 });
@@ -117,8 +117,10 @@ describe('Keyword Schema', () => {
     };
 
     it('키워드 리스트를 반환한다.', async () => {
-        const response = await request(app).post('/graphql').send({
-            query: `
+        const response = await request(app)
+            .post('/graphql')
+            .send({
+                query: `
                 query {
                     allKeywords {
                         id
@@ -130,7 +132,7 @@ describe('Keyword Schema', () => {
                     }
                 }
             `,
-        });
+            });
 
         expect(response.body.data.allKeywords).toHaveLength(4);
     });
@@ -138,8 +140,10 @@ describe('Keyword Schema', () => {
     it('키워드를 생성한다.', async () => {
         const allCategories = await getAllCategories();
 
-        const response = await request(app).post('/graphql').send({
-            query: `
+        const response = await request(app)
+            .post('/graphql')
+            .send({
+                query: `
                 mutation {
                     createKeyword(name: "Green", categoryId: "${allCategories[0].id}") {
                         id
@@ -151,7 +155,7 @@ describe('Keyword Schema', () => {
                     }
                 }
             `,
-        });
+            });
 
         expect(response.body.data.createKeyword).toHaveProperty('id');
         expect(response.body.data.createKeyword).toHaveProperty('name');
@@ -162,13 +166,15 @@ describe('Keyword Schema', () => {
         const allCategories = await getAllCategories();
         const allKeywords = await getAllKeywords();
 
-        const response = await request(app).post('/graphql').send({
-            query: `
+        const response = await request(app)
+            .post('/graphql')
+            .send({
+                query: `
                 mutation {
                     deleteKeyword(categoryId: "${allCategories[0].id}", keywordId: "${allKeywords[0].id}")
                 }
             `,
-        });
+            });
 
         expect(response.body.data.deleteKeyword).toBe(true);
     });
@@ -185,10 +191,10 @@ describe('Keyword Schema', () => {
                         category: {
                             connect: {
                                 id: Number(allCategories[0].id),
-                            }
-                        }
-                    }
-                }
+                            },
+                        },
+                    },
+                },
             },
         });
         await models.keyword.update({
@@ -202,22 +208,26 @@ describe('Keyword Schema', () => {
                         category: {
                             connect: {
                                 id: Number(allCategories[1].id),
-                            }
-                        }
-                    }
-                }
+                            },
+                        },
+                    },
+                },
             },
         });
 
-        await request(app).post('/graphql').send({
-            query: `
+        await request(app)
+            .post('/graphql')
+            .send({
+                query: `
                 mutation {
                     deleteKeyword(categoryId: "${allCategories[0].id}", keywordId: "${dataX.id}")
                 }
             `,
-        });
+            });
 
         const allKeywords = await getAllKeywords();
-        expect(allKeywords.find((keyword) => keyword.id === dataX.id)).not.toBeNull();
+        expect(
+            allKeywords.find((keyword) => keyword.id === dataX.id),
+        ).not.toBeNull();
     });
 });
