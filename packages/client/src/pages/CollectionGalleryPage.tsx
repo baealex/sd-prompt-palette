@@ -6,6 +6,7 @@ import { getCollections } from '~/api';
 import { CollectionNav } from '~/components/domain/CollectionNav';
 import { Image } from '~/components/domain/Image';
 import { PageFrame } from '~/components/domain/PageFrame';
+import { useLiveCollectionsRealtime } from '~/features/collection/use-live-collections-realtime';
 import type { Collection } from '~/models/types';
 import { usePathStore } from '~/state/path-store';
 
@@ -36,6 +37,8 @@ export const CollectionGalleryPage = () => {
     useEffect(() => {
         setPath('collection', '/collection/gallery');
     }, [setPath]);
+
+    useLiveCollectionsRealtime();
 
     const collectionsQuery = useInfiniteQuery({
         queryKey: ['collections', 'gallery', query] as const,

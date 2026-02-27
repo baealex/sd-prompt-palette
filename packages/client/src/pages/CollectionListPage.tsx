@@ -11,10 +11,11 @@ import {
     updateCollection,
     updateLiveConfig,
 } from '~/api';
-import type { LiveConfig, LiveDirectoryEntry } from '~/api';
+import type { LiveConfig, LiveDirectoryEntry, LiveStatusResponse } from '~/api';
 import { CollectionCard } from '~/components/domain/CollectionCard';
 import { CollectionNav } from '~/components/domain/CollectionNav';
 import { PageFrame } from '~/components/domain/PageFrame';
+import { useLiveCollectionsRealtime } from '~/features/collection/use-live-collections-realtime';
 import type { Collection } from '~/models/types';
 import { usePathStore } from '~/state/path-store';
 
@@ -58,6 +59,26 @@ const toDraft = (config: LiveConfig | null) => {
     };
 };
 
+const mergeLiveConfig = (current: LiveConfig | null, payload: Partial<LiveStatusResponse>): LiveConfig => {
+    const fallback: LiveConfig = current ?? {
+        watchDir: '',
+        ingestMode: 'copy',
+        deleteSourceOnDelete: false,
+        enabled: false,
+        updatedAt: Date.now(),
+    };
+
+    return {
+        watchDir: payload.watchDir ?? fallback.watchDir,
+        ingestMode: payload.ingestMode === 'move' ? 'move' : 'copy',
+        deleteSourceOnDelete: typeof payload.deleteSourceOnDelete === 'boolean'
+            ? payload.deleteSourceOnDelete
+            : fallback.deleteSourceOnDelete,
+        enabled: typeof payload.enabled === 'boolean' ? payload.enabled : fallback.enabled,
+        updatedAt: typeof payload.updatedAt === 'number' ? payload.updatedAt : fallback.updatedAt,
+    };
+};
+
 export const CollectionListPage = () => {
     const { setPath } = usePathStore();
     const queryClient = useQueryClient();
@@ -95,6 +116,12 @@ export const CollectionListPage = () => {
         setDraftDeleteSourceOnDelete(draft.deleteSourceOnDelete);
         setDraftEnabled(draft.enabled);
     }, []);
+
+    const handleRealtimeStatus = useCallback((payload: Partial<LiveStatusResponse>) => {
+        setLiveConfig((previous) => mergeLiveConfig(previous, payload));
+    }, []);
+
+    useLiveCollectionsRealtime({ onStatus: handleRealtimeStatus });
 
     const collectionsQuery = useInfiniteQuery({
         queryKey: ['collections', 'list', query] as const,
