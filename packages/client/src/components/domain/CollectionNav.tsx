@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 
-import { GridIcon, ImageIcon, ListIcon } from '~/icons';
+import { DataIcon, GridIcon, ImageIcon, ListIcon } from '~/icons';
 
 const BASE_CLASS_NAME = 'ui-focus-ring inline-flex h-9 items-center gap-1.5 rounded-token-md px-3 text-sm transition-colors';
 const ACTIVE_CLASS_NAME = `${BASE_CLASS_NAME} border border-line bg-surface-base font-semibold text-ink shadow-surface`;
@@ -33,6 +33,16 @@ export const CollectionNav = () => {
                 >
                     <GridIcon width={13} height={13} />
                     Grid
+                </Link>
+                <Link
+                    to="/collection/browse"
+                    activeOptions={ACTIVE_OPTIONS}
+                    className={BASE_CLASS_NAME}
+                    activeProps={{ className: ACTIVE_CLASS_NAME }}
+                    inactiveProps={{ className: IDLE_CLASS_NAME }}
+                >
+                    <DataIcon width={13} height={13} />
+                    Browse
                 </Link>
                 <Link
                     to="/collection/slide-show"

@@ -2,6 +2,7 @@ import { TanStackRouterDevtools } from '@tanstack/router-devtools';
 import { Outlet, createRootRoute, createRoute, createRouter, useParams } from '@tanstack/react-router';
 
 import { SiteLayout } from '~/components/domain/SiteLayout';
+import { CollectionBrowsePage } from '~/pages/CollectionBrowsePage';
 import { CollectionDetailPage } from '~/pages/CollectionDetailPage';
 import { CollectionGalleryPage } from '~/pages/CollectionGalleryPage';
 import { CollectionListPage } from '~/pages/CollectionListPage';
@@ -59,6 +60,12 @@ const collectionGalleryRoute = createRoute({
     component: CollectionGalleryPage,
 });
 
+const collectionBrowseRoute = createRoute({
+    getParentRoute: () => appLayoutRoute,
+    path: '/collection/browse',
+    component: CollectionBrowsePage,
+});
+
 const CollectionDetailRouteComponent = () => {
     const { id } = useParams({ from: '/app-layout/collection/$id' });
     return <CollectionDetailPage id={id} />;
@@ -83,6 +90,7 @@ export const routeTree = rootRoute.addChildren([
         ideaRoute,
         collectionListRoute,
         collectionGalleryRoute,
+        collectionBrowseRoute,
         collectionDetailRoute,
         imageLoadRoute,
     ]),
