@@ -24,6 +24,10 @@ export default defineConfig({
             '/assets/images': {
                 target: 'http://localhost:3332',
             },
+            '/socket.io': {
+                target: 'http://localhost:3332',
+                ws: true,
+            },
         },
     },
     preview: {
