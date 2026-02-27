@@ -6,7 +6,7 @@ import { Server as SocketIOServer } from 'socket.io';
 
 import { Image } from '~/models';
 import { logger } from './logger';
-import { readImagePrompt } from './prompt-reader';
+import { ParsedImageMeta, readImageMetadata } from './prompt-reader';
 import { LiveImagesConfigRepository } from './live-images.config-repository';
 import { errorMessage, hasErrorCode } from './live-images.errors';
 import { LiveImagesImageRepository } from './live-images.image-repository';
@@ -18,8 +18,8 @@ import {
     LiveImagesStatus,
     LiveSyncConfig,
     PromptCacheItem,
-    PromptParts,
     RegisterLibraryFileOptions,
+    StoredImageMetaInput,
     UpdateLiveSyncConfigInput,
 } from './live-images.types';
 import {
@@ -27,7 +27,6 @@ import {
     createDestinationPath,
     decodeFileNameFromUrl,
     deriveCreatedAt,
-    extractPromptParts,
     hashFile,
     imageUrlFromAbsolutePath,
     isImageFileName,
@@ -36,6 +35,8 @@ import {
     sanitizeLimit,
     sanitizePage,
 } from './live-images.utils';
+
+const IMAGE_META_RAW_JSON_LIMIT = 64_000;
 
 class LiveImagesService {
     private io: SocketIOServer | null = null;
@@ -196,32 +197,54 @@ class LiveImagesService {
     }
 
     async getPrompt(imageId: number): Promise<{ image: Image | null; prompt: string }> {
-        const image = await this.imageRepository.findImageById(imageId);
+        const { image, metadata } = await this.getMetadata(imageId);
         if (!image) {
             return { image: null, prompt: '' };
+        }
+        return {
+            image,
+            prompt: this.buildLegacyPromptText(metadata),
+        };
+    }
+
+    async getMetadata(imageId: number): Promise<{ image: Image | null; metadata: ParsedImageMeta }> {
+        const image = await this.imageRepository.findImageById(imageId);
+        if (!image) {
+            return { image: null, metadata: this.createEmptyMetadata() };
         }
 
         const absolutePath = this.absolutePathFromImageUrl(image.url);
         if (!absolutePath) {
-            return { image, prompt: '' };
+            const stored = await this.imageRepository.readImageMeta(image.id);
+            return {
+                image,
+                metadata: stored ? this.toParsedMetadata(stored) : this.createEmptyMetadata(),
+            };
         }
 
         const stats = await this.readStatIfExists(absolutePath);
         if (!stats) {
-            return { image, prompt: '' };
+            const stored = await this.imageRepository.readImageMeta(image.id);
+            return {
+                image,
+                metadata: stored ? this.toParsedMetadata(stored) : this.createEmptyMetadata(),
+            };
         }
 
         const cached = this.promptCache.get(image.id);
-        if (cached && cached.mtimeMs === stats.mtimeMs) {
-            return { image, prompt: cached.prompt };
+        if (cached && cached.mtimeMs === stats.mtimeMs && cached.metadata) {
+            return { image, metadata: cached.metadata };
         }
 
-        const prompt = await readImagePrompt(absolutePath);
+        const metadata = await readImageMetadata(absolutePath);
         this.promptCache.set(image.id, {
             mtimeMs: stats.mtimeMs,
-            prompt,
+            prompt: this.buildLegacyPromptText(metadata),
+            metadata,
         });
-        return { image, prompt };
+
+        await this.imageRepository.upsertImageMeta(image.id, this.toStoredImageMetaInput(metadata));
+        return { image, metadata };
     }
 
     async syncNow(reason = 'api:sync'): Promise<{ scanned: number }> {
@@ -365,12 +388,6 @@ class LiveImagesService {
 
             const fingerprint = `${stat.size}:${stat.mtimeMs}`;
             if (this.sourceFingerprint.get(sourcePath) === fingerprint) {
-                return;
-            }
-
-            const promptText = (await readImagePrompt(sourcePath)).trim();
-            if (!promptText) {
-                this.sourceFingerprint.set(sourcePath, fingerprint);
                 return;
             }
 
@@ -536,6 +553,8 @@ class LiveImagesService {
         const width = imageMeta.width || 0;
         const height = imageMeta.height || 0;
         const createdAt = options.preferredDate || (await deriveCreatedAt(absolutePath, stats));
+        const fileCreatedAt = this.resolveFileCreatedAt(stats, createdAt);
+        const fileModifiedAt = new Date(stats.mtime.getTime());
         const ensureCollectionForExisting = Boolean(options.ensureCollectionForExisting);
 
         const existingByHash = await this.imageRepository.findImageByHash(hash);
@@ -553,7 +572,10 @@ class LiveImagesService {
                 width,
                 height,
                 createdAt,
+                fileCreatedAt,
+                fileModifiedAt,
             });
+            await this.upsertImageMetadataForPath(updated.id, promptSourcePath);
             if (ensureCollectionForExisting) {
                 await this.ensureCollectionForImage(updated, promptSourcePath);
             }
@@ -568,7 +590,10 @@ class LiveImagesService {
                 width,
                 height,
                 createdAt,
+                fileCreatedAt,
+                fileModifiedAt,
             });
+            await this.upsertImageMetadataForPath(updated.id, absolutePath);
             if (ensureCollectionForExisting) {
                 await this.ensureCollectionForImage(updated, absolutePath);
             }
@@ -582,7 +607,10 @@ class LiveImagesService {
             width,
             height,
             createdAt,
+            fileCreatedAt,
+            fileModifiedAt,
         });
+        await this.upsertImageMetadataForPath(created.id, absolutePath);
         await this.ensureCollectionForImage(created, absolutePath);
         await this.upsertSourceLinkIfNeeded(created.id, options.sourcePath);
         return created;
@@ -607,34 +635,188 @@ class LiveImagesService {
         if (exists) {
             return;
         }
-
-        let parsedPrompt: PromptParts = {
-            prompt: '',
-            negativePrompt: '',
-        };
-
-        try {
-            const rawPrompt = await readImagePrompt(absolutePath);
-            parsedPrompt = extractPromptParts(rawPrompt);
-        } catch {
-            parsedPrompt = {
-                prompt: '',
-                negativePrompt: '',
-            };
-        }
+        const metadata = await readImageMetadata(absolutePath);
+        const prompt = metadata.prompt || '';
+        const negativePrompt = metadata.negativePrompt || '';
 
         const fileName = path.basename(absolutePath);
         await this.imageRepository.createCollectionForImage({
             imageId: image.id,
             title: fileName,
-            prompt: parsedPrompt.prompt,
-            negativePrompt: parsedPrompt.negativePrompt,
+            prompt,
+            negativePrompt,
         });
+    }
+
+    private createEmptyMetadata(): ParsedImageMeta {
+        return {
+            prompt: '',
+            negativePrompt: '',
+            sourceType: 'unknown',
+            parseWarnings: [],
+            parseVersion: '',
+        };
+    }
+
+    private buildLegacyPromptText(metadata: ParsedImageMeta): string {
+        if (!metadata.prompt && !metadata.negativePrompt) {
+            return '';
+        }
+
+        if (metadata.sourceType === 'comfy_prompt') {
+            const sections: string[] = [];
+            if (metadata.prompt) {
+                sections.push(`Positive Prompt\n${metadata.prompt}`);
+            }
+            if (metadata.negativePrompt) {
+                sections.push(`Negative Prompt\n${metadata.negativePrompt}`);
+            }
+            return sections.join('\n\n');
+        }
+
+        if (!metadata.negativePrompt) {
+            return metadata.prompt;
+        }
+        if (!metadata.prompt) {
+            return `Negative prompt: ${metadata.negativePrompt}`;
+        }
+        return `${metadata.prompt}\nNegative prompt: ${metadata.negativePrompt}`;
+    }
+
+    private toStoredImageMetaInput(metadata: ParsedImageMeta): StoredImageMetaInput {
+        const parseWarningsJson = JSON.stringify(Array.isArray(metadata.parseWarnings) ? metadata.parseWarnings : []);
+        const rawJson = JSON.stringify({
+            prompt: metadata.prompt,
+            negativePrompt: metadata.negativePrompt,
+            sourceType: metadata.sourceType,
+            parseWarnings: metadata.parseWarnings,
+            parseVersion: metadata.parseVersion,
+        });
+
+        return {
+            sourceType: metadata.sourceType || 'unknown',
+            prompt: metadata.prompt || '',
+            negativePrompt: metadata.negativePrompt || '',
+            model: metadata.model,
+            modelHash: metadata.modelHash,
+            baseSampler: metadata.baseSampler,
+            baseScheduler: metadata.baseScheduler,
+            baseSteps: metadata.baseSteps,
+            baseCfgScale: metadata.baseCfgScale,
+            baseSeed: metadata.baseSeed,
+            upscaleSampler: metadata.upscaleSampler,
+            upscaleScheduler: metadata.upscaleScheduler,
+            upscaleSteps: metadata.upscaleSteps,
+            upscaleCfgScale: metadata.upscaleCfgScale,
+            upscaleSeed: metadata.upscaleSeed,
+            upscaleFactor: metadata.upscaleFactor,
+            upscaler: metadata.upscaler,
+            sizeWidth: metadata.sizeWidth,
+            sizeHeight: metadata.sizeHeight,
+            clipSkip: metadata.clipSkip,
+            vae: metadata.vae,
+            denoiseStrength: metadata.denoiseStrength,
+            createdAtFromMeta: metadata.createdAtFromMeta ? new Date(metadata.createdAtFromMeta) : undefined,
+            parseWarningsJson,
+            parseVersion: metadata.parseVersion || '',
+            rawJson: rawJson.length <= IMAGE_META_RAW_JSON_LIMIT ? rawJson : undefined,
+        };
+    }
+
+    private toParsedMetadata(stored: {
+        sourceType: string;
+        prompt: string | null;
+        negativePrompt: string | null;
+        model: string | null;
+        modelHash: string | null;
+        baseSampler: string | null;
+        baseScheduler: string | null;
+        baseSteps: number | null;
+        baseCfgScale: number | null;
+        baseSeed: string | null;
+        upscaleSampler: string | null;
+        upscaleScheduler: string | null;
+        upscaleSteps: number | null;
+        upscaleCfgScale: number | null;
+        upscaleSeed: string | null;
+        upscaleFactor: number | null;
+        upscaler: string | null;
+        sizeWidth: number | null;
+        sizeHeight: number | null;
+        clipSkip: number | null;
+        vae: string | null;
+        denoiseStrength: number | null;
+        createdAtFromMeta: Date | null;
+        parseWarningsJson: string;
+        parseVersion: string;
+    }): ParsedImageMeta {
+        let parseWarnings: string[] = [];
+        try {
+            const parsed = JSON.parse(stored.parseWarningsJson || '[]');
+            if (Array.isArray(parsed)) {
+                parseWarnings = parsed.filter((item) => typeof item === 'string');
+            }
+        } catch {
+            parseWarnings = [];
+        }
+
+        return {
+            prompt: stored.prompt || '',
+            negativePrompt: stored.negativePrompt || '',
+            sourceType: (stored.sourceType as ParsedImageMeta['sourceType']) || 'unknown',
+            model: stored.model || undefined,
+            modelHash: stored.modelHash || undefined,
+            baseSampler: stored.baseSampler || undefined,
+            baseScheduler: stored.baseScheduler || undefined,
+            baseSteps: stored.baseSteps || undefined,
+            baseCfgScale: stored.baseCfgScale || undefined,
+            baseSeed: stored.baseSeed || undefined,
+            upscaleSampler: stored.upscaleSampler || undefined,
+            upscaleScheduler: stored.upscaleScheduler || undefined,
+            upscaleSteps: stored.upscaleSteps || undefined,
+            upscaleCfgScale: stored.upscaleCfgScale || undefined,
+            upscaleSeed: stored.upscaleSeed || undefined,
+            upscaleFactor: stored.upscaleFactor || undefined,
+            upscaler: stored.upscaler || undefined,
+            sizeWidth: stored.sizeWidth || undefined,
+            sizeHeight: stored.sizeHeight || undefined,
+            clipSkip: stored.clipSkip || undefined,
+            vae: stored.vae || undefined,
+            denoiseStrength: stored.denoiseStrength || undefined,
+            createdAtFromMeta: stored.createdAtFromMeta ? stored.createdAtFromMeta.toISOString() : undefined,
+            parseWarnings,
+            parseVersion: stored.parseVersion || '',
+        };
+    }
+
+    private async upsertImageMetadataForPath(imageId: number, absolutePath: string): Promise<void> {
+        try {
+            const metadata = await readImageMetadata(absolutePath);
+            await this.imageRepository.upsertImageMeta(imageId, this.toStoredImageMetaInput(metadata));
+            const stats = await this.readStatIfExists(absolutePath);
+            if (stats) {
+                this.promptCache.set(imageId, {
+                    mtimeMs: stats.mtimeMs,
+                    prompt: this.buildLegacyPromptText(metadata),
+                    metadata,
+                });
+            }
+        } catch (error: unknown) {
+            logger.warn(`[live-images] metadata upsert skipped imageId=${imageId}: ${errorMessage(error)}`);
+        }
     }
 
     private async deleteImageRecord(imageId: number): Promise<void> {
         await this.imageRepository.deleteImageAndRelations(imageId);
         this.promptCache.delete(imageId);
+    }
+
+    private resolveFileCreatedAt(stats: fs.Stats, fallback: Date): Date {
+        const birthTimeMs = stats.birthtime?.getTime?.() || 0;
+        if (Number.isFinite(birthTimeMs) && birthTimeMs > 0) {
+            return new Date(birthTimeMs);
+        }
+        return fallback;
     }
 
     private async readStatIfExists(targetPath: string): Promise<fs.Stats | null> {

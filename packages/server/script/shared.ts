@@ -3,13 +3,14 @@ import childProcess from 'child_process';
 import path from 'path';
 
 const prismaPath = path.resolve(__dirname, '../prisma');
+const packageRootPath = path.resolve(__dirname, '..');
+const prismaBinPath = process.platform === 'win32'
+    ? path.resolve(packageRootPath, 'node_modules/.bin/prisma.CMD')
+    : path.resolve(packageRootPath, 'node_modules/.bin/prisma');
 
 export const createDatabase = async () => {
-    childProcess.execSync('npx prisma generate', {
-        stdio: 'inherit',
-    });
-
-    childProcess.execSync('npx prisma migrate deploy', {
+    childProcess.execSync(`"${prismaBinPath}" migrate deploy`, {
+        cwd: packageRootPath,
         stdio: 'inherit',
     });
 };

@@ -63,9 +63,12 @@ model Image {
     width       Int          @default(0)
     height      Int          @default(0)
     createdAt   DateTime     @default(now())
+    fileCreatedAt DateTime?
+    fileModifiedAt DateTime?
     keywords    Keyword[]
     collections Collection[]
     sourceLink  LiveSyncSourceLink?
+    meta        ImageMeta?
 }
 
 model Collection {
@@ -92,4 +95,38 @@ model LiveSyncSourceLink {
     imageId    Int    @id
     sourcePath String
     image      Image  @relation(fields: [imageId], references: [id], onDelete: Cascade)
+}
+
+model ImageMeta {
+    id                 Int      @id @default(autoincrement())
+    imageId            Int      @unique
+    image              Image    @relation(fields: [imageId], references: [id], onDelete: Cascade)
+    sourceType         String   @default("unknown")
+    prompt             String?
+    negativePrompt     String?
+    model              String?
+    modelHash          String?
+    baseSampler        String?
+    baseScheduler      String?
+    baseSteps          Int?
+    baseCfgScale       Float?
+    baseSeed           String?
+    upscaleSampler     String?
+    upscaleScheduler   String?
+    upscaleSteps       Int?
+    upscaleCfgScale    Float?
+    upscaleSeed        String?
+    upscaleFactor      Float?
+    upscaler           String?
+    sizeWidth          Int?
+    sizeHeight         Int?
+    clipSkip           Int?
+    vae                String?
+    denoiseStrength    Float?
+    createdAtFromMeta  DateTime?
+    parseWarningsJson  String   @default("[]")
+    parseVersion       String   @default("")
+    rawJson            String?
+    createdAt          DateTime @default(now())
+    updatedAt          DateTime @updatedAt
 }

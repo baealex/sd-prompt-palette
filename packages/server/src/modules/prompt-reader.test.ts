@@ -4,7 +4,7 @@ import path from 'path';
 import zlib from 'zlib';
 import exifr from 'exifr';
 
-import { readImagePrompt } from './prompt-reader';
+import { readImageMetadata, readImageMetadataFromBuffer, readImagePrompt } from './prompt-reader';
 
 jest.mock('exifr', () => ({
     __esModule: true,
@@ -91,7 +91,6 @@ describe('readImagePrompt business logic', () => {
 
         // Assert
         expect(prompt).toBe('masterpiece portrait');
-        expect(mockedParse).not.toHaveBeenCalled();
     });
 
     it('formats Comfy prompt JSON into positive and negative sections', async () => {
@@ -158,7 +157,7 @@ describe('readImagePrompt business logic', () => {
 
         // Assert
         expect(prompt).toBe('fallback exif prompt');
-        expect(mockedParse).toHaveBeenCalledWith(filePath);
+        expect(mockedParse).toHaveBeenCalledWith(expect.any(Buffer));
     });
 
     it('returns empty string when metadata does not contain prompt text', async () => {
@@ -172,5 +171,41 @@ describe('readImagePrompt business logic', () => {
 
         // Assert
         expect(prompt).toBe('');
+    });
+
+    it('extracts structured A1111 metadata fields', async () => {
+        // Arrange
+        const parameters = [
+            'masterpiece portrait',
+            'Negative prompt: blurry, low quality',
+            'Steps: 30, Sampler: DPM++ 2M Karras, CFG scale: 6.5, Seed: 1234, Size: 1024x1024, Model: juggernautXL_v9, Model hash: abc123, Hires steps: 12, Hires upscale: 1.5, Hires upscaler: 4x-UltraSharp',
+        ].join('\n');
+        const { filePath, dirPath } = await writeTempPng([
+            createTextChunk('parameters', parameters),
+        ]);
+        tempDirPaths.push(dirPath);
+
+        // Act
+        const metadata = await readImageMetadata(filePath);
+
+        // Assert
+        expect(metadata.prompt).toBe('masterpiece portrait');
+        expect(metadata.negativePrompt).toBe('blurry, low quality');
+        expect(metadata.model).toBe('juggernautXL_v9');
+        expect(metadata.baseSteps).toBe(30);
+        expect(metadata.upscaleSteps).toBe(12);
+        expect(metadata.upscaleFactor).toBe(1.5);
+    });
+
+    it('returns safe empty metadata for empty buffer', async () => {
+        // Act
+        const metadata = await readImageMetadataFromBuffer(Buffer.alloc(0), {
+            extension: '.png',
+        });
+
+        // Assert
+        expect(metadata.sourceType).toBe('unknown');
+        expect(metadata.prompt).toBe('');
+        expect(metadata.parseWarnings.length).toBeGreaterThan(0);
     });
 });

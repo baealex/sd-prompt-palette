@@ -1,3 +1,5 @@
+import type { ParsedImageMeta } from './prompt-reader';
+
 export const DEFAULT_LIMIT = 60;
 export const MAX_LIMIT = 200;
 
@@ -6,6 +8,36 @@ export type IngestMode = 'copy' | 'move';
 export interface PromptCacheItem {
     mtimeMs: number;
     prompt: string;
+    metadata?: ParsedImageMeta;
+}
+
+export interface StoredImageMetaInput {
+    sourceType: string;
+    prompt?: string;
+    negativePrompt?: string;
+    model?: string;
+    modelHash?: string;
+    baseSampler?: string;
+    baseScheduler?: string;
+    baseSteps?: number;
+    baseCfgScale?: number;
+    baseSeed?: string;
+    upscaleSampler?: string;
+    upscaleScheduler?: string;
+    upscaleSteps?: number;
+    upscaleCfgScale?: number;
+    upscaleSeed?: string;
+    upscaleFactor?: number;
+    upscaler?: string;
+    sizeWidth?: number;
+    sizeHeight?: number;
+    clipSkip?: number;
+    vae?: string;
+    denoiseStrength?: number;
+    createdAtFromMeta?: Date;
+    parseWarningsJson: string;
+    parseVersion: string;
+    rawJson?: string;
 }
 
 export interface ListParams {

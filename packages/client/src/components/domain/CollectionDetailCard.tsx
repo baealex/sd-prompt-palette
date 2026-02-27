@@ -5,12 +5,32 @@ import { Image } from './Image';
 
 interface CollectionDetailCardProps {
     collection: Collection;
-    onClickCopy: (text: string) => void;
+    onClickCopy: (text: string, label?: string) => void;
     onClickRename: () => void;
     onClickDelete: () => void;
     renaming?: boolean;
     removing?: boolean;
 }
+
+const formatDateTime = (value?: string) => {
+    if (!value) {
+        return null;
+    }
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+        return value;
+    }
+
+    const pad = (input: number) => String(input).padStart(2, '0');
+    const year = parsed.getFullYear();
+    const month = pad(parsed.getMonth() + 1);
+    const day = pad(parsed.getDate());
+    const hour = pad(parsed.getHours());
+    const minute = pad(parsed.getMinutes());
+    const second = pad(parsed.getSeconds());
+    return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+};
 
 export const CollectionDetailCard = ({
     collection,
@@ -20,6 +40,39 @@ export const CollectionDetailCard = ({
     renaming = false,
     removing = false,
 }: CollectionDetailCardProps) => {
+    const generatedMetadata = collection.generatedMetadata || null;
+    const metadataRows = generatedMetadata
+        ? [
+            { label: 'Source Type', value: generatedMetadata.sourceType },
+            { label: 'Model', value: generatedMetadata.model },
+            { label: 'Model Hash', value: generatedMetadata.modelHash },
+            { label: 'Base Sampler', value: generatedMetadata.baseSampler },
+            { label: 'Base Scheduler', value: generatedMetadata.baseScheduler },
+            { label: 'Base Steps', value: generatedMetadata.baseSteps?.toString() },
+            { label: 'Base CFG', value: generatedMetadata.baseCfgScale?.toString() },
+            { label: 'Base Seed', value: generatedMetadata.baseSeed },
+            { label: 'Upscale Sampler', value: generatedMetadata.upscaleSampler },
+            { label: 'Upscale Scheduler', value: generatedMetadata.upscaleScheduler },
+            { label: 'Upscale Steps', value: generatedMetadata.upscaleSteps?.toString() },
+            { label: 'Upscale CFG', value: generatedMetadata.upscaleCfgScale?.toString() },
+            { label: 'Upscale Seed', value: generatedMetadata.upscaleSeed },
+            { label: 'Upscale Factor', value: generatedMetadata.upscaleFactor?.toString() },
+            { label: 'Upscaler', value: generatedMetadata.upscaler },
+            {
+                label: 'Size',
+                value:
+                    generatedMetadata.sizeWidth && generatedMetadata.sizeHeight
+                        ? `${generatedMetadata.sizeWidth} x ${generatedMetadata.sizeHeight}`
+                        : undefined,
+            },
+            { label: 'Clip Skip', value: generatedMetadata.clipSkip?.toString() },
+            { label: 'VAE', value: generatedMetadata.vae },
+            { label: 'Denoise Strength', value: generatedMetadata.denoiseStrength?.toString() },
+            { label: 'Generated At', value: formatDateTime(generatedMetadata.createdAtFromMeta || collection.fileCreatedAt || undefined) },
+            { label: 'Parse Version', value: generatedMetadata.parseVersion },
+        ].filter((item) => Boolean(item.value))
+        : [];
+
     return (
         <article className="space-y-5">
             <header className="flex flex-wrap items-center justify-between gap-2">
@@ -29,6 +82,12 @@ export const CollectionDetailCard = ({
                     </h2>
                     <p className="mt-1 text-xs text-ink-subtle">
                         {collection.image.width} x {collection.image.height}
+                    </p>
+                    <p className="mt-1 text-xs text-ink-subtle">
+                        File Created (FS): {formatDateTime(collection.fileCreatedAt || undefined) || '-'}
+                    </p>
+                    <p className="mt-1 text-xs text-ink-subtle">
+                        File Modified (FS): {formatDateTime(collection.fileModifiedAt || undefined) || '-'}
                     </p>
                 </div>
 
@@ -68,45 +127,78 @@ export const CollectionDetailCard = ({
                 </span>
             </div>
 
-            <details className="rounded-token-md border border-line bg-surface-base">
-                <summary className="ui-focus-ring cursor-pointer px-3 py-2 text-sm font-semibold text-ink">
-                    Prompt Metadata
-                </summary>
-
-                <div className="space-y-4 border-t border-line p-3">
-                    <div>
-                        <div className="mb-2 flex items-center justify-between gap-2">
-                            <h3 className="text-sm font-semibold text-ink">Prompt</h3>
-                            <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => onClickCopy(collection.prompt)}
-                            >
-                                Copy
-                            </Button>
-                        </div>
-                        <p className="rounded-token-md bg-surface-muted px-3 py-2 text-sm leading-relaxed text-ink-muted whitespace-pre-wrap">
-                            {collection.prompt || '-'}
-                        </p>
+            <section className="space-y-4">
+                <div>
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                        <h3 className="text-sm font-semibold text-ink">Collection Prompt</h3>
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => onClickCopy(collection.prompt, 'Collection prompt')}
+                        >
+                            Copy
+                        </Button>
                     </div>
-
-                    <div>
-                        <div className="mb-2 flex items-center justify-between gap-2">
-                            <h3 className="text-sm font-semibold text-ink">Negative Prompt</h3>
-                            <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => onClickCopy(collection.negativePrompt)}
-                            >
-                                Copy
-                            </Button>
-                        </div>
-                        <p className="rounded-token-md bg-surface-muted px-3 py-2 text-sm leading-relaxed text-ink-muted whitespace-pre-wrap">
-                            {collection.negativePrompt || '-'}
-                        </p>
-                    </div>
+                    <p className="rounded-token-md border border-line bg-surface-muted px-3 py-2 text-sm leading-relaxed text-ink-muted whitespace-pre-wrap">
+                        {collection.prompt || '-'}
+                    </p>
                 </div>
-            </details>
+
+                <div>
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                        <h3 className="text-sm font-semibold text-ink">Collection Negative Prompt</h3>
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => onClickCopy(collection.negativePrompt, 'Collection negative prompt')}
+                        >
+                            Copy
+                        </Button>
+                    </div>
+                    <p className="rounded-token-md border border-line bg-surface-muted px-3 py-2 text-sm leading-relaxed text-ink-muted whitespace-pre-wrap">
+                        {collection.negativePrompt || '-'}
+                    </p>
+                </div>
+
+                <div>
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                        <h3 className="text-sm font-semibold text-ink">Generated Metadata</h3>
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => onClickCopy(JSON.stringify(generatedMetadata || {}, null, 2), 'Metadata JSON')}
+                        >
+                            Copy JSON
+                        </Button>
+                    </div>
+
+                    {metadataRows.length > 0 ? (
+                        <div className="space-y-2 rounded-token-md border border-line bg-surface-muted px-3 py-2">
+                            {metadataRows.map((item) => (
+                                <div key={item.label} className="flex items-start justify-between gap-3 text-xs">
+                                    <p className="font-semibold text-ink">{item.label}</p>
+                                    <p className="max-w-[70%] text-right text-ink-muted break-words">{item.value}</p>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="rounded-token-md border border-line bg-surface-muted px-3 py-2 text-sm leading-relaxed text-ink-muted whitespace-pre-wrap">
+                            No generated metadata saved for this image.
+                        </p>
+                    )}
+                </div>
+
+                {generatedMetadata && generatedMetadata.parseWarnings.length > 0 ? (
+                    <div className="rounded-token-md border border-warning-200 bg-warning-50 px-3 py-2">
+                        <p className="text-xs font-semibold text-warning-700">Parse Warnings</p>
+                        <ul className="mt-1 space-y-1 text-xs text-warning-700">
+                            {generatedMetadata.parseWarnings.map((warning) => (
+                                <li key={warning}>- {warning}</li>
+                            ))}
+                        </ul>
+                    </div>
+                ) : null}
+            </section>
         </article>
     );
 };

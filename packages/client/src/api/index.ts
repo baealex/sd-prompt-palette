@@ -34,6 +34,15 @@ export interface Pagination {
     total: number;
 }
 
+export interface ImageUploadResponse {
+    id: number;
+    url: string;
+    width: number;
+    height: number;
+    fileCreatedAt?: string | null;
+    fileModifiedAt?: string | null;
+}
+
 const escapeGraphQLString = (value: string) => value
     .replace(/\\/g, '\\\\')
     .replace(/"/g, '\\"')
@@ -180,7 +189,7 @@ export function deleteKeyword(data: { keywordId: number; categoryId: number }) {
 }
 
 export function getCollection(data: { id: number }) {
-    return graphQLRequest<'collection', Pick<Collection, 'id' | 'title' | 'prompt' | 'negativePrompt' | 'image'>>(
+    return graphQLRequest<'collection', Pick<Collection, 'id' | 'title' | 'prompt' | 'negativePrompt' | 'image' | 'generatedMetadata' | 'fileCreatedAt' | 'fileModifiedAt'>>(
         `
         query($id: ID!) {
             collection(id: $id) {
@@ -188,11 +197,41 @@ export function getCollection(data: { id: number }) {
                 title
                 prompt
                 negativePrompt
+                fileCreatedAt
+                fileModifiedAt
                 image {
                     id
                     url
                     width
                     height
+                    createdAt
+                }
+                generatedMetadata {
+                    sourceType
+                    prompt
+                    negativePrompt
+                    model
+                    modelHash
+                    baseSampler
+                    baseScheduler
+                    baseSteps
+                    baseCfgScale
+                    baseSeed
+                    upscaleSampler
+                    upscaleScheduler
+                    upscaleSteps
+                    upscaleCfgScale
+                    upscaleSeed
+                    upscaleFactor
+                    upscaler
+                    sizeWidth
+                    sizeHeight
+                    clipSkip
+                    vae
+                    denoiseStrength
+                    createdAtFromMeta
+                    parseWarnings
+                    parseVersion
                 }
             }
         }
@@ -348,9 +387,48 @@ export function deleteSampleImage(data: { id: number }) {
 }
 
 export function imageUpload(data: { image: string }) {
-    return axios.request<{ id: number; url: string; width: number; height: number }>({
+    return axios.request<ImageUploadResponse>({
         method: 'POST',
         url: '/api/image',
+        data,
+    });
+}
+
+export interface ParsedImageMetadataResponse {
+    ok: boolean;
+    metadata: {
+        prompt: string;
+        negativePrompt: string;
+        sourceType: 'a1111_parameters' | 'comfy_prompt' | 'exif' | 'unknown';
+        model?: string;
+        modelHash?: string;
+        baseSampler?: string;
+        baseScheduler?: string;
+        baseSteps?: number;
+        baseCfgScale?: number;
+        baseSeed?: string;
+        upscaleSampler?: string;
+        upscaleScheduler?: string;
+        upscaleSteps?: number;
+        upscaleCfgScale?: number;
+        upscaleSeed?: string;
+        upscaleFactor?: number;
+        upscaler?: string;
+        sizeWidth?: number;
+        sizeHeight?: number;
+        clipSkip?: number;
+        vae?: string;
+        denoiseStrength?: number;
+        createdAtFromMeta?: string;
+        parseWarnings: string[];
+        parseVersion: string;
+    };
+}
+
+export function parseImageMetadata(data: { image: string }) {
+    return axios.request<ParsedImageMetadataResponse>({
+        method: 'POST',
+        url: '/api/image/metadata',
         data,
     });
 }
@@ -465,6 +543,45 @@ export function getLiveImagePrompt(data: { id: number }) {
     return axios.request<{ ok: boolean; id: number; prompt: string }>({
         method: 'GET',
         url: `/api/live/images/${data.id}/prompt`,
+    });
+}
+
+export interface LiveImageMetadataResponse {
+    ok: boolean;
+    id: number;
+    prompt: string;
+    negativePrompt: string;
+    sourceType: 'a1111_parameters' | 'comfy_prompt' | 'exif' | 'unknown';
+    parseVersion: string;
+    warnings: string[];
+    metadata: {
+        model?: string;
+        modelHash?: string;
+        baseSampler?: string;
+        baseScheduler?: string;
+        baseSteps?: number;
+        baseCfgScale?: number;
+        baseSeed?: string;
+        upscaleSampler?: string;
+        upscaleScheduler?: string;
+        upscaleSteps?: number;
+        upscaleCfgScale?: number;
+        upscaleSeed?: string;
+        upscaleFactor?: number;
+        upscaler?: string;
+        sizeWidth?: number;
+        sizeHeight?: number;
+        clipSkip?: number;
+        vae?: string;
+        denoiseStrength?: number;
+        createdAtFromMeta?: string;
+    };
+}
+
+export function getLiveImageMetadata(data: { id: number }) {
+    return axios.request<LiveImageMetadataResponse>({
+        method: 'GET',
+        url: `/api/live/images/${data.id}/metadata`,
     });
 }
 

@@ -9,6 +9,27 @@ interface AllCollections {
     pagination: Pagination;
 }
 
+function resolveCollectionOrderBy(orderBy?: string, order: 'asc' | 'desc' = 'desc') {
+    const normalizedOrder = order === 'asc' ? 'asc' : 'desc';
+    if (orderBy === 'fileCreatedAt') {
+        return {
+            image: {
+                fileCreatedAt: normalizedOrder,
+            },
+        } as const;
+    }
+    if (orderBy === 'fileModifiedAt') {
+        return {
+            image: {
+                fileModifiedAt: normalizedOrder,
+            },
+        } as const;
+    }
+    return {
+        [orderBy || 'createdAt']: normalizedOrder,
+    } as const;
+}
+
 export const CollectionType = gql`
     type Collection {
         id: ID!
@@ -16,8 +37,39 @@ export const CollectionType = gql`
         title: String!
         prompt: String!
         negativePrompt: String!
+        fileCreatedAt: String
+        fileModifiedAt: String
+        generatedMetadata: GeneratedMetadata
         createdAt: String!
         updatedAt: String!
+    }
+
+    type GeneratedMetadata {
+        sourceType: String!
+        prompt: String!
+        negativePrompt: String!
+        model: String
+        modelHash: String
+        baseSampler: String
+        baseScheduler: String
+        baseSteps: Int
+        baseCfgScale: Float
+        baseSeed: String
+        upscaleSampler: String
+        upscaleScheduler: String
+        upscaleSteps: Int
+        upscaleCfgScale: Float
+        upscaleSeed: String
+        upscaleFactor: Float
+        upscaler: String
+        sizeWidth: Int
+        sizeHeight: Int
+        clipSkip: Int
+        vae: String
+        denoiseStrength: Float
+        createdAtFromMeta: String
+        parseWarnings: [String!]!
+        parseVersion: String!
     }
 
     type Image {
@@ -85,9 +137,7 @@ export const CollectionResolvers: IResolvers = {
             } : undefined;
 
             const collections = await models.collection.findMany({
-                orderBy: {
-                    [orderBy || 'createdAt']: order || 'desc',
-                },
+                orderBy: resolveCollectionOrderBy(orderBy, order || 'desc'),
                 where,
                 take: limit,
                 skip: offset,
@@ -195,6 +245,69 @@ export const CollectionResolvers: IResolvers = {
                 id: collection.imageId,
             },
         }),
+        fileCreatedAt: async (collection: Collection) => {
+            const image = await models.image.findUnique({
+                where: { id: collection.imageId },
+                select: { fileCreatedAt: true },
+            });
+            return image?.fileCreatedAt?.toISOString?.() || null;
+        },
+        fileModifiedAt: async (collection: Collection) => {
+            const image = await models.image.findUnique({
+                where: { id: collection.imageId },
+                select: { fileModifiedAt: true },
+            });
+            return image?.fileModifiedAt?.toISOString?.() || null;
+        },
+        generatedMetadata: async (collection: Collection) => {
+            const metadata = await models.imageMeta.findUnique({
+                where: {
+                    imageId: collection.imageId,
+                },
+            });
+
+            if (!metadata) {
+                return null;
+            }
+
+            let parseWarnings: string[] = [];
+            try {
+                const parsed = JSON.parse(metadata.parseWarningsJson || '[]');
+                if (Array.isArray(parsed)) {
+                    parseWarnings = parsed.filter((item) => typeof item === 'string');
+                }
+            } catch {
+                parseWarnings = [];
+            }
+
+            return {
+                sourceType: metadata.sourceType || 'unknown',
+                prompt: metadata.prompt || '',
+                negativePrompt: metadata.negativePrompt || '',
+                model: metadata.model,
+                modelHash: metadata.modelHash,
+                baseSampler: metadata.baseSampler,
+                baseScheduler: metadata.baseScheduler,
+                baseSteps: metadata.baseSteps,
+                baseCfgScale: metadata.baseCfgScale,
+                baseSeed: metadata.baseSeed,
+                upscaleSampler: metadata.upscaleSampler,
+                upscaleScheduler: metadata.upscaleScheduler,
+                upscaleSteps: metadata.upscaleSteps,
+                upscaleCfgScale: metadata.upscaleCfgScale,
+                upscaleSeed: metadata.upscaleSeed,
+                upscaleFactor: metadata.upscaleFactor,
+                upscaler: metadata.upscaler,
+                sizeWidth: metadata.sizeWidth,
+                sizeHeight: metadata.sizeHeight,
+                clipSkip: metadata.clipSkip,
+                vae: metadata.vae,
+                denoiseStrength: metadata.denoiseStrength,
+                createdAtFromMeta: metadata.createdAtFromMeta?.toISOString() || null,
+                parseWarnings,
+                parseVersion: metadata.parseVersion || '',
+            };
+        },
     },
     AllCollections: {
         collections: async (allCollections: () => Promise<AllCollections>) => {

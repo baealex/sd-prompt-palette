@@ -1,5 +1,7 @@
-import models, { Image } from '~/models';
+import models, { Image, ImageMeta } from '~/models';
+
 import { hasErrorCode } from './live-images.errors';
+import { StoredImageMetaInput } from './live-images.types';
 
 export class LiveImagesImageRepository {
     async countImages(): Promise<number> {
@@ -44,6 +46,8 @@ export class LiveImagesImageRepository {
         width: number;
         height: number;
         createdAt: Date;
+        fileCreatedAt?: Date;
+        fileModifiedAt?: Date;
     }): Promise<Image> {
         try {
             return await models.image.create({
@@ -75,6 +79,8 @@ export class LiveImagesImageRepository {
             width: number;
             height: number;
             createdAt: Date;
+            fileCreatedAt?: Date;
+            fileModifiedAt?: Date;
         }
     ): Promise<Image> {
         return models.image.update({
@@ -94,6 +100,10 @@ export class LiveImagesImageRepository {
         });
 
         await models.liveSyncSourceLink.deleteMany({
+            where: { imageId },
+        });
+
+        await models.imageMeta.deleteMany({
             where: { imageId },
         });
 
@@ -144,6 +154,27 @@ export class LiveImagesImageRepository {
             create: {
                 imageId,
                 sourcePath,
+            },
+        });
+    }
+
+    async readImageMeta(imageId: number): Promise<ImageMeta | null> {
+        return models.imageMeta.findUnique({
+            where: {
+                imageId,
+            },
+        });
+    }
+
+    async upsertImageMeta(imageId: number, data: StoredImageMetaInput): Promise<void> {
+        await models.imageMeta.upsert({
+            where: {
+                imageId,
+            },
+            update: data,
+            create: {
+                imageId,
+                ...data,
             },
         });
     }

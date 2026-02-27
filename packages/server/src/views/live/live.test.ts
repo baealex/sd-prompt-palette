@@ -3,6 +3,7 @@ import type { Request, Response } from 'express';
 import liveImagesService from '~/modules/live-images';
 import {
     deleteLiveImage,
+    getLiveImageMetadata,
     getLiveImagePrompt,
     listLiveImages,
     syncLiveImages,
@@ -17,6 +18,7 @@ jest.mock('~/modules/live-images', () => ({
         updateConfig: jest.fn(),
         listImages: jest.fn(),
         getPrompt: jest.fn(),
+        getMetadata: jest.fn(),
         deleteImage: jest.fn(),
         syncNow: jest.fn(),
     },
@@ -58,6 +60,7 @@ describe('live controllers business logic', () => {
         updateConfig: jest.Mock;
         listImages: jest.Mock;
         getPrompt: jest.Mock;
+        getMetadata: jest.Mock;
         deleteImage: jest.Mock;
         syncNow: jest.Mock;
     };
@@ -67,6 +70,7 @@ describe('live controllers business logic', () => {
         mockedService.updateConfig.mockReset();
         mockedService.listImages.mockReset();
         mockedService.getPrompt.mockReset();
+        mockedService.getMetadata.mockReset();
         mockedService.deleteImage.mockReset();
         mockedService.syncNow.mockReset();
     });
@@ -177,6 +181,65 @@ describe('live controllers business logic', () => {
             ok: true,
             id: 11,
             prompt: 'cinematic shot',
+        });
+    });
+
+    it('returns metadata payload when image exists', async () => {
+        // Arrange
+        const req = createMockRequest({
+            params: { id: '21' },
+        });
+        const res = createMockResponse();
+        mockedService.getMetadata.mockResolvedValueOnce({
+            image: {
+                id: 21,
+            },
+            metadata: {
+                prompt: 'portrait',
+                negativePrompt: 'blurry',
+                sourceType: 'a1111_parameters',
+                parseVersion: 'v-test',
+                parseWarnings: [],
+                model: 'test-model',
+            },
+        });
+
+        // Act
+        await getLiveImageMetadata(req, res);
+
+        // Assert
+        expect(mockedService.getMetadata).toHaveBeenCalledWith(21);
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith({
+            ok: true,
+            id: 21,
+            prompt: 'portrait',
+            negativePrompt: 'blurry',
+            sourceType: 'a1111_parameters',
+            parseVersion: 'v-test',
+            warnings: [],
+            metadata: {
+                model: 'test-model',
+                modelHash: undefined,
+                baseSampler: undefined,
+                baseScheduler: undefined,
+                baseSteps: undefined,
+                baseCfgScale: undefined,
+                baseSeed: undefined,
+                upscaleSampler: undefined,
+                upscaleScheduler: undefined,
+                upscaleSteps: undefined,
+                upscaleCfgScale: undefined,
+                upscaleSeed: undefined,
+                upscaleFactor: undefined,
+                upscaler: undefined,
+                sizeWidth: undefined,
+                sizeHeight: undefined,
+                clipSkip: undefined,
+                vae: undefined,
+                denoiseStrength: undefined,
+                createdAtFromMeta: undefined,
+            },
         });
     });
 

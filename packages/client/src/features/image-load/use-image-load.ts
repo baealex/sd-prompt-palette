@@ -1,33 +1,22 @@
 import { useState } from 'react';
 
-import { createCollection, imageUpload } from '~/api';
-import { imageToBase64, readPromptInfo } from '~/modules/image';
+import {
+    createCollection,
+    imageUpload,
+    parseImageMetadata,
+    type ImageUploadResponse,
+    type ParsedImageMetadataResponse,
+} from '~/api';
+import { imageToBase64 } from '~/modules/image';
 
-interface ParsedPrompt {
-    prompt: string;
-    negativePrompt: string;
-}
-
-interface UploadedImage {
-    id: number;
-    url: string;
-    width: number;
-    height: number;
-}
-
-const cleanPromptText = (text: string) => {
-    return text
-        .replace(/[\b]/g, '')
-        .split(',')
-        .map((item) => item.trim())
-        .filter((item) => item.length > 0)
-        .join(', ');
-};
+type ParsedPrompt = ParsedImageMetadataResponse['metadata'];
+type UploadedImage = ImageUploadResponse;
 
 export const useImageLoad = () => {
     const [base64, setBase64] = useState<string | null>(null);
     const [parsedPrompt, setParsedPrompt] = useState<ParsedPrompt | null>(null);
     const [uploadedImage, setUploadedImage] = useState<UploadedImage | null>(null);
+    const [selectedFileModifiedAt, setSelectedFileModifiedAt] = useState<string | null>(null);
     const [savedCollectionId, setSavedCollectionId] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
@@ -36,23 +25,8 @@ export const useImageLoad = () => {
         setBase64(null);
         setParsedPrompt(null);
         setUploadedImage(null);
+        setSelectedFileModifiedAt(null);
         setSavedCollectionId(null);
-    };
-
-    const parsePrompt = (value: string) => {
-        readPromptInfo(value, {
-            onSuccess: (promptInfo) => {
-                setParsedPrompt({
-                    prompt: cleanPromptText(promptInfo.prompt),
-                    negativePrompt: cleanPromptText(promptInfo.negativePrompt),
-                });
-                setError(null);
-            },
-            onError: (message) => {
-                setParsedPrompt(null);
-                setError(message);
-            },
-        });
     };
 
     const onFile = async (file: File | null) => {
@@ -65,12 +39,18 @@ export const useImageLoad = () => {
         setLoading(true);
         setError(null);
         setUploadedImage(null);
+        setSelectedFileModifiedAt(Number.isFinite(file.lastModified) ? new Date(file.lastModified).toISOString() : null);
         setSavedCollectionId(null);
 
         try {
             const data = await imageToBase64(file);
             setBase64(data);
-            parsePrompt(data);
+            const metadataResponse = await parseImageMetadata({ image: data });
+            if (!metadataResponse.data.ok) {
+                throw new Error('Cannot read prompt info');
+            }
+            setParsedPrompt(metadataResponse.data.metadata);
+            setError(null);
         } catch (uploadError) {
             clearLoadedState();
             setError(uploadError instanceof Error ? uploadError.message : 'Failed to read image');
@@ -104,8 +84,8 @@ export const useImageLoad = () => {
             const createdCollection = await createCollection({
                 imageId: image.id,
                 title: trimmedTitle,
-                prompt: cleanPromptText(parsedPrompt.prompt),
-                negativePrompt: cleanPromptText(parsedPrompt.negativePrompt),
+                prompt: parsedPrompt.prompt || '',
+                negativePrompt: parsedPrompt.negativePrompt || '',
             });
 
             setSavedCollectionId(createdCollection.data.createCollection.id);
@@ -120,6 +100,8 @@ export const useImageLoad = () => {
         loading,
         error,
         parsedPrompt,
+        uploadedImage,
+        selectedFileModifiedAt,
         savedCollectionId,
         onFile,
         saveToCollection,

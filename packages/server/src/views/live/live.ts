@@ -259,6 +259,58 @@ export const getLiveImagePrompt: Controller = async (req, res) => {
     }).end();
 };
 
+export const getLiveImageMetadata: Controller = async (req, res) => {
+    const imageId = parseId(req.params.id);
+    if (!imageId) {
+        res.status(400).json({
+            ok: false,
+            message: 'invalid image id',
+        }).end();
+        return;
+    }
+
+    const { image, metadata } = await liveImagesService.getMetadata(imageId);
+    if (!image) {
+        res.status(404).json({
+            ok: false,
+            message: 'image not found',
+        }).end();
+        return;
+    }
+
+    res.status(200).json({
+        ok: true,
+        id: image.id,
+        prompt: metadata.prompt,
+        negativePrompt: metadata.negativePrompt,
+        sourceType: metadata.sourceType,
+        parseVersion: metadata.parseVersion,
+        warnings: metadata.parseWarnings,
+        metadata: {
+            model: metadata.model,
+            modelHash: metadata.modelHash,
+            baseSampler: metadata.baseSampler,
+            baseScheduler: metadata.baseScheduler,
+            baseSteps: metadata.baseSteps,
+            baseCfgScale: metadata.baseCfgScale,
+            baseSeed: metadata.baseSeed,
+            upscaleSampler: metadata.upscaleSampler,
+            upscaleScheduler: metadata.upscaleScheduler,
+            upscaleSteps: metadata.upscaleSteps,
+            upscaleCfgScale: metadata.upscaleCfgScale,
+            upscaleSeed: metadata.upscaleSeed,
+            upscaleFactor: metadata.upscaleFactor,
+            upscaler: metadata.upscaler,
+            sizeWidth: metadata.sizeWidth,
+            sizeHeight: metadata.sizeHeight,
+            clipSkip: metadata.clipSkip,
+            vae: metadata.vae,
+            denoiseStrength: metadata.denoiseStrength,
+            createdAtFromMeta: metadata.createdAtFromMeta,
+        },
+    }).end();
+};
+
 export const deleteLiveImage: Controller = async (req, res) => {
     const imageId = parseId(req.params.id);
     if (!imageId) {
