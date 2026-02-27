@@ -12,6 +12,8 @@ Zettelkasten 기반 메모리 인덱스
 
 ## Decisions
 <!-- [D-ID](chunks/D-ID.md) 형식으로 결정 사항 참조 추가 -->
+- [D-20260227-meta-plan-contract](chunks/D-20260227-meta-plan-contract.md) Metadata contract: non-blocking ingest + ImageMeta 1:1 + GraphQL summary/REST detail | #metadata #architecture #api
+- [D-20260227-react-migration-option-b-tailwind](chunks/D-20260227-react-migration-option-b-tailwind.md) React migration lock: Option B cutover path + Tailwind-first styling | #frontend #migration #react #tailwind
 
 ## Learnings
 <!-- [L-ID](chunks/L-ID.md) 형식으로 학습 내용 참조 추가 -->
