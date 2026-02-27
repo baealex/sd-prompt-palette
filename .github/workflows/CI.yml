@@ -46,14 +46,14 @@ jobs:
     - name: Build (Server)
       run: npx pnpm --filter @sdpp/server run build
 
-    - name: Lint (Client)
-      run: npx pnpm --filter @sdpp/legacy-client run lint
+    - name: Lint (Client React)
+      run: npx pnpm --filter @sdpp/client run lint
 
-    - name: Check (Client)
-      run: npx pnpm --filter @sdpp/legacy-client run check
+    - name: Typecheck (Client React)
+      run: npx pnpm --filter @sdpp/client run typecheck
 
-    - name: Test (Client)
-      run: npx pnpm --filter @sdpp/legacy-client run test
+    - name: Test (Client React)
+      run: npx pnpm --filter @sdpp/client run test
 
-    - name: Build (Client)
-      run: npx pnpm --filter @sdpp/legacy-client run build
+    - name: Build (Client React)
+      run: npx pnpm --filter @sdpp/client run build

@@ -6,7 +6,7 @@ import expressLogger, { logger } from './modules/logger';
 import router from './urls';
 import schema from './schema';
 
-const clientDistDir = path.resolve('../legacy-client/dist');
+const clientDistDir = path.resolve('../client/dist');
 
 export default express()
     .use(expressLogger)
@@ -29,5 +29,5 @@ export default express()
                 message: 'Not Found',
             });
         }
-        return res.sendFile(path.resolve('../legacy-client/dist/index.html'));
+        return res.sendFile(path.resolve('../client/dist/index.html'));
     });

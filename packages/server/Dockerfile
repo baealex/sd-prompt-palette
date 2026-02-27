@@ -1,13 +1,12 @@
 FROM node:21-alpine as client
 
-WORKDIR /app/packages/legacy-client
+WORKDIR /app/packages/client
 
-COPY ./packages/legacy-client/package.json ./
-COPY ./packages/legacy-client/pnpm-lock.yaml ./
+COPY ./packages/client/package.json ./
 
 RUN npx pnpm i
 
-COPY ./packages/legacy-client/ ./
+COPY ./packages/client/ ./
 
 RUN npm run build
 
@@ -27,7 +26,7 @@ FROM node:21-alpine
 WORKDIR /app/packages/server
 
 COPY --from=server /app/packages/server ./
-COPY --from=client /app/packages/legacy-client/dist /app/packages/legacy-client/dist
+COPY --from=client /app/packages/client/dist /app/packages/client/dist
 
 RUN mkdir -p /app/packages/server/public/assets/images
 RUN ln -s /app/packages/server/prisma/data /data
