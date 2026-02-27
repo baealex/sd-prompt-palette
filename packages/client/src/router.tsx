@@ -1,0 +1,97 @@
+import { TanStackRouterDevtools } from '@tanstack/router-devtools';
+import { Outlet, createRootRoute, createRoute, createRouter } from '@tanstack/react-router';
+
+import { SiteLayout } from '~/components/domain/SiteLayout';
+import CollectionDetailPage from '~/pages/CollectionDetailPage';
+import CollectionGalleryPage from '~/pages/CollectionGalleryPage';
+import CollectionListPage from '~/pages/CollectionListPage';
+import CollectionSlideShowPage from '~/pages/CollectionSlideShowPage';
+import HomePage from '~/pages/HomePage';
+import IdeaPage from '~/pages/IdeaPage';
+import ImageLoadPage from '~/pages/ImageLoadPage';
+
+function RootRouteComponent() {
+    return (
+        <>
+            <Outlet />
+            {import.meta.env.DEV ? <TanStackRouterDevtools position="bottom-right" /> : null}
+        </>
+    );
+}
+
+const rootRoute = createRootRoute({
+    component: RootRouteComponent,
+});
+
+const appLayoutRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    id: 'app-layout',
+    component: SiteLayout,
+});
+
+const slideShowRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/collection/slide-show',
+    component: CollectionSlideShowPage,
+});
+
+const homeRoute = createRoute({
+    getParentRoute: () => appLayoutRoute,
+    path: '/',
+    component: HomePage,
+});
+
+const ideaRoute = createRoute({
+    getParentRoute: () => appLayoutRoute,
+    path: '/idea',
+    component: IdeaPage,
+});
+
+const collectionListRoute = createRoute({
+    getParentRoute: () => appLayoutRoute,
+    path: '/collection',
+    component: CollectionListPage,
+});
+
+const collectionGalleryRoute = createRoute({
+    getParentRoute: () => appLayoutRoute,
+    path: '/collection/gallery',
+    component: CollectionGalleryPage,
+});
+
+const collectionDetailRoute = createRoute({
+    getParentRoute: () => appLayoutRoute,
+    path: '/collection/$id',
+    component: CollectionDetailRouteComponent,
+});
+
+const imageLoadRoute = createRoute({
+    getParentRoute: () => appLayoutRoute,
+    path: '/image-load',
+    component: ImageLoadPage,
+});
+
+function CollectionDetailRouteComponent() {
+    const { id } = collectionDetailRoute.useParams();
+    return <CollectionDetailPage id={id} />;
+}
+
+export const routeTree = rootRoute.addChildren([
+    slideShowRoute,
+    appLayoutRoute.addChildren([
+        homeRoute,
+        ideaRoute,
+        collectionListRoute,
+        collectionGalleryRoute,
+        collectionDetailRoute,
+        imageLoadRoute,
+    ]),
+]);
+
+export const router = createRouter({ routeTree });
+
+declare module '@tanstack/react-router' {
+    interface Register {
+        router: typeof router;
+    }
+}
