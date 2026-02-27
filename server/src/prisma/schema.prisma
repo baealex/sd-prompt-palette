@@ -65,6 +65,7 @@ model Image {
     createdAt   DateTime     @default(now())
     keywords    Keyword[]
     collections Collection[]
+    sourceLink  LiveSyncSourceLink?
 }
 
 model Collection {
@@ -76,4 +77,19 @@ model Collection {
     negativePrompt String?
     createdAt      DateTime @default(now())
     updatedAt      DateTime @updatedAt
+}
+
+model LiveSyncConfig {
+    id                   Int      @id
+    watchDir             String
+    ingestMode           String   @default("copy")
+    deleteSourceOnDelete Boolean  @default(false)
+    enabled              Boolean  @default(false)
+    updatedAt            DateTime @updatedAt
+}
+
+model LiveSyncSourceLink {
+    imageId    Int    @id
+    sourcePath String
+    image      Image  @relation(fields: [imageId], references: [id], onDelete: Cascade)
 }

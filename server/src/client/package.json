@@ -27,6 +27,7 @@
         "@baejino/ui": "^0.0.9",
         "axios": "^1.6.8",
         "badland": "^0.2.4",
-        "masonry-layout": "^4.2.2"
+        "masonry-layout": "^4.2.2",
+        "socket.io-client": "^4.8.1"
     }
 }

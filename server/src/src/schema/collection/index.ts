@@ -2,6 +2,7 @@ import { IResolvers } from '@graphql-tools/utils';
 
 import models, { Collection, Order, Pagination, Search } from '~/models';
 import { gql } from '~/modules/graphql';
+import liveImagesService from '~/modules/live-images';
 
 interface AllCollections {
     collections: Collection[];
@@ -124,6 +125,7 @@ export const CollectionResolvers: IResolvers = {
                 },
             });
 
+            liveImagesService.notifyCollectionsChanged('gql:createCollection');
             return collection;
         },
         updateCollection: async (_, { id, imageId, title, prompt, negativePrompt }: Partial<Collection>) => {
@@ -146,16 +148,43 @@ export const CollectionResolvers: IResolvers = {
                 },
             });
 
+            liveImagesService.notifyCollectionsChanged('gql:updateCollection');
             return collection;
         },
         deleteCollection: async (_, { id }: Collection) => {
             id = Number(id);
 
-            await models.collection.delete({
+            const target = await models.collection.findUnique({
                 where: {
                     id,
                 },
+                select: {
+                    id: true,
+                    imageId: true,
+                },
             });
+
+            if (!target) {
+                throw new Error('Collection not found');
+            }
+
+            await models.collection.delete({
+                where: {
+                    id: target.id,
+                },
+            });
+
+            const remains = await models.collection.count({
+                where: {
+                    imageId: target.imageId,
+                },
+            });
+
+            if (remains === 0) {
+                await liveImagesService.deleteImage(target.imageId);
+            } else {
+                liveImagesService.notifyCollectionsChanged('gql:deleteCollection');
+            }
 
             return true;
         },

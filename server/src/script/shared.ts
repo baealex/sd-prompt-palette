@@ -5,7 +5,7 @@ import path from 'path';
 const prismaPath = path.resolve(__dirname, '../prisma');
 
 export const createDatabase = async () => {
-    childProcess.execSync('npx prisma migrate dev', {
+    childProcess.execSync('npx prisma migrate deploy', {
         stdio: 'inherit',
     });
 };

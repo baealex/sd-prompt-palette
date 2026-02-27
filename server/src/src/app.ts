@@ -6,9 +6,11 @@ import expressLogger, { logger } from './modules/logger';
 import router from './urls';
 import schema from './schema';
 
+const clientDistDir = path.resolve('client/dist');
+
 export default express()
     .use(expressLogger)
-    .use(express.static(path.resolve('client/dist'), {
+    .use(express.static(clientDistDir, {
         extensions: ['html']
     }))
     .use(express.json({ limit: '50mb' }))
@@ -27,5 +29,5 @@ export default express()
                 message: 'Not Found',
             });
         }
-        res.sendFile(path.resolve('client/dist/index.html'));
+        return res.sendFile(path.resolve('client/dist/index.html'));
     });
