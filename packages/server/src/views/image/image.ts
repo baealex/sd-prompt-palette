@@ -103,72 +103,48 @@ export const uploadImage: Controller = async (req, res) => {
     const buffer = parsed.buffer;
 
     const sharpImage = sharp(buffer);
-    const previewImage = await sharpImage
-        .blur(100)
-        .jpeg({ quality: 50 })
-        .toBuffer();
-    const previewFileName = fileName.replace(`.${ext}`, '.preview.jpg');
+    const absoluteFilePath = path.resolve(imageDir, ...currentPath, fileName);
 
-    fs.writeFile(
-        path.resolve(imageDir, ...currentPath, previewFileName),
-        previewImage,
-        async (previewError) => {
-            if (previewError) {
-                res.status(500).json({ error: previewError }).end();
-                return;
-            }
+    try {
+        await fs.promises.writeFile(absoluteFilePath, buffer);
+    } catch (writeError) {
+        res.status(500).json({ error: writeError }).end();
+        return;
+    }
+
+    const metadata = await sharpImage.metadata();
+    const url = `/assets/images/${currentPath.join('/')}/${fileName}`;
+    const stats = await fs.promises.stat(absoluteFilePath);
+    const modifiedAt = new Date(stats.mtime.getTime());
+    const createdAtCandidate =
+        Number.isFinite(stats.birthtime.getTime()) &&
+        stats.birthtime.getTime() > 0
+            ? new Date(stats.birthtime.getTime())
+            : modifiedAt;
+    const generatedAt =
+        createdAtCandidate.getTime() > modifiedAt.getTime()
+            ? modifiedAt
+            : createdAtCandidate;
+    const image = await models.image.create({
+        data: {
+            hash,
+            url,
+            width: metadata.width || 0,
+            height: metadata.height || 0,
+            createdAt: generatedAt,
+            generatedAt,
         },
-    );
+    });
 
-    fs.writeFile(
-        path.resolve(imageDir, ...currentPath, fileName),
-        buffer,
-        async (writeError) => {
-            if (writeError) {
-                res.status(500).json({ error: writeError }).end();
-                return;
-            }
-
-            const metadata = await sharpImage.metadata();
-            const url = `/assets/images/${currentPath.join('/')}/${fileName}`;
-            const absoluteFilePath = path.resolve(
-                imageDir,
-                ...currentPath,
-                fileName,
-            );
-            const stats = await fs.promises.stat(absoluteFilePath);
-            const modifiedAt = new Date(stats.mtime.getTime());
-            const createdAtCandidate =
-                Number.isFinite(stats.birthtime.getTime()) &&
-                stats.birthtime.getTime() > 0
-                    ? new Date(stats.birthtime.getTime())
-                    : modifiedAt;
-            const generatedAt =
-                createdAtCandidate.getTime() > modifiedAt.getTime()
-                    ? modifiedAt
-                    : createdAtCandidate;
-            const image = await models.image.create({
-                data: {
-                    hash,
-                    url,
-                    width: metadata.width || 0,
-                    height: metadata.height || 0,
-                    createdAt: generatedAt,
-                    generatedAt,
-                },
-            });
-
-            res.status(200)
-                .json({
-                    id: image.id,
-                    url: image.url,
-                    width: image.width,
-                    height: image.height,
-                    generatedAt: image.generatedAt,
-                })
-                .end();
-        },
-    );
+    res.status(200)
+        .json({
+            id: image.id,
+            url: image.url,
+            width: image.width,
+            height: image.height,
+            generatedAt: image.generatedAt,
+        })
+        .end();
 };
 
 export const parseImageMetadata: Controller = async (req, res) => {

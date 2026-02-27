@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect } from 'react';
 
 import { getCollections } from '~/api';
+import { MasonryColumns } from '~/components/domain/MasonryColumns';
 import { Pagination } from '~/components/domain/Pagination';
 import { Image } from '~/components/domain/Image';
 import { Notice } from '~/components/ui/Notice';
@@ -193,13 +194,14 @@ export const CollectionGalleryPage = () => {
             {placeholderText ? (
                 <Notice variant="neutral">{placeholderText}</Notice>
             ) : (
-                <div className="columns-1 gap-4 md:columns-2 xl:columns-3">
-                    {items.map((item) => (
+                <MasonryColumns
+                    items={items}
+                    getItemKey={(item) => item.id}
+                    renderItem={(item) => (
                         <Link
-                            key={item.id}
                             to="/collection/$id"
                             params={{ id: String(item.id) }}
-                            className="group relative mb-4 block break-inside-avoid overflow-hidden rounded-token-md border border-line bg-surface-base shadow-surface"
+                            className="group relative block overflow-hidden rounded-token-md border border-line bg-surface-base shadow-surface"
                         >
                             <div className="pointer-events-none absolute inset-x-0 top-0 z-10 -translate-y-full bg-black/60 p-4 text-center text-sm font-semibold text-slate-100 transition group-hover:translate-y-0">
                                 {item.title || '(untitled)'}
@@ -212,8 +214,8 @@ export const CollectionGalleryPage = () => {
                                 height={item.image.height}
                             />
                         </Link>
-                    ))}
-                </div>
+                    )}
+                />
             )}
 
             {items.length > 0 && totalPages > 1 ? (

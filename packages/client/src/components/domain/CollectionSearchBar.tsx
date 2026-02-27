@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
 
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
@@ -21,6 +21,7 @@ export const CollectionSearchBar = ({
     onSubmit,
 }: CollectionSearchBarProps) => {
     const hasQuery = useMemo(() => value.trim().length > 0, [value]);
+    const inputId = useId();
 
     return (
         <form
@@ -30,9 +31,13 @@ export const CollectionSearchBar = ({
             }}
             className={cn('w-full', className)}
         >
+            <label htmlFor={inputId} className="sr-only">
+                Collection search
+            </label>
             <div className="relative rounded-token-lg border-2 border-brand-200 bg-surface-base p-1.5 shadow-surface">
                 <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-500" />
                 <Input
+                    id={inputId}
                     value={value}
                     onChange={(event) => onChange(event.target.value)}
                     placeholder={placeholder}
@@ -41,15 +46,23 @@ export const CollectionSearchBar = ({
                 <div className="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-1">
                     {hasQuery ? (
                         <Button
+                            type="button"
                             variant="ghost"
                             size="sm"
                             className="h-8 px-2"
+                            aria-label="Clear search query"
                             onClick={() => onChange('')}
                         >
                             <CrossIcon width={12} height={12} />
                         </Button>
                     ) : null}
-                    <Button type="submit" variant="primary" size="sm" className="h-8 px-3">
+                    <Button
+                        type="submit"
+                        variant="primary"
+                        size="sm"
+                        className="h-8 px-3"
+                        aria-label="Run collection search"
+                    >
                         Find
                     </Button>
                 </div>

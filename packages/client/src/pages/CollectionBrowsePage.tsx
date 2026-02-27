@@ -3,6 +3,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { deleteCollection, getCollections, updateCollection } from '~/api';
+import { MasonryColumns } from '~/components/domain/MasonryColumns';
 import { Pagination } from '~/components/domain/Pagination';
 import { Image } from '~/components/domain/Image';
 import { Badge } from '~/components/ui/Badge';
@@ -18,6 +19,11 @@ import type { Collection } from '~/models/types';
 import { usePathStore } from '~/state/path-store';
 
 const LIMIT = 20;
+const BROWSE_GALLERY_BREAKPOINTS = [
+    { minWidth: 300, columns: 3 },
+    { minWidth: 200, columns: 2 },
+    { minWidth: 0, columns: 1 },
+];
 
 type CollectionBrowseItem = Pick<
     Collection,
@@ -409,59 +415,67 @@ export const CollectionBrowsePage = () => {
                     {items.length > 0 ? (
                         <div
                             ref={galleryScrollRef}
-                            className="grid grid-cols-3 gap-1.5 xl:max-h-[62vh] xl:overflow-y-auto xl:pr-1"
+                            className="xl:max-h-[62vh] xl:overflow-y-auto xl:pr-1"
                         >
-                            {items.map((item) => (
-                                <Button
-                                    key={item.id}
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                        void navigate({
-                                            to: '/collection/browse',
-                                            replace: true,
-                                            resetScroll: false,
-                                            search: (previousSearch) => {
-                                                const nextSearch = {
-                                                    ...(previousSearch as Record<
-                                                        string,
-                                                        unknown
-                                                    >),
-                                                };
-                                                if (query) {
-                                                    nextSearch.query = query;
-                                                } else {
-                                                    delete nextSearch.query;
-                                                }
-                                                if (currentPage > 1) {
-                                                    nextSearch.page =
-                                                        currentPage;
-                                                } else {
-                                                    delete nextSearch.page;
-                                                }
-                                                nextSearch.selected = item.id;
-                                                return nextSearch;
-                                            },
-                                        });
-                                    }}
-                                    className={`!h-auto w-full !justify-start gap-0 border p-1.5 text-left transition-colors ${
-                                        selectedId === item.id
-                                            ? 'border-brand-400 bg-brand-50 shadow-surface'
-                                            : 'border-line bg-surface-base hover:border-brand-200 hover:bg-surface-muted'
-                                    }`}
-                                >
-                                    <div className="w-full overflow-hidden rounded-token-sm border border-line bg-surface-muted">
-                                        <Image
-                                            src={item.image.url}
-                                            alt={item.title || '(untitled)'}
-                                            width={item.image.width}
-                                            height={item.image.height}
-                                            className="block h-auto w-full"
-                                        />
-                                    </div>
-                                </Button>
-                            ))}
+                            <MasonryColumns
+                                items={items}
+                                breakpoints={BROWSE_GALLERY_BREAKPOINTS}
+                                breakpointMode="container"
+                                className="grid gap-1.5"
+                                columnClassName="space-y-1.5"
+                                getItemKey={(item) => item.id}
+                                renderItem={(item) => (
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                            void navigate({
+                                                to: '/collection/browse',
+                                                replace: true,
+                                                resetScroll: false,
+                                                search: (previousSearch) => {
+                                                    const nextSearch = {
+                                                        ...(previousSearch as Record<
+                                                            string,
+                                                            unknown
+                                                        >),
+                                                    };
+                                                    if (query) {
+                                                        nextSearch.query = query;
+                                                    } else {
+                                                        delete nextSearch.query;
+                                                    }
+                                                    if (currentPage > 1) {
+                                                        nextSearch.page =
+                                                            currentPage;
+                                                    } else {
+                                                        delete nextSearch.page;
+                                                    }
+                                                    nextSearch.selected =
+                                                        item.id;
+                                                    return nextSearch;
+                                                },
+                                            });
+                                        }}
+                                        className={`!h-auto w-full !justify-start gap-0 border p-1.5 text-left transition-colors ${
+                                            selectedId === item.id
+                                                ? 'border-brand-400 bg-brand-50 shadow-surface'
+                                                : 'border-line bg-surface-base hover:border-brand-200 hover:bg-surface-muted'
+                                        }`}
+                                    >
+                                        <div className="w-full overflow-hidden rounded-token-sm border border-line bg-surface-muted">
+                                            <Image
+                                                src={item.image.url}
+                                                alt={item.title || '(untitled)'}
+                                                width={item.image.width}
+                                                height={item.image.height}
+                                                className="block h-auto w-full"
+                                            />
+                                        </div>
+                                    </Button>
+                                )}
+                            />
                         </div>
                     ) : null}
 

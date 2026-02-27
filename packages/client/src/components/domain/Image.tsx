@@ -8,21 +8,42 @@ interface ImageProps {
     className?: string;
 }
 
-const toPreviewUrl = (src: string) => {
-    const lastDot = src.lastIndexOf('.');
-    if (lastDot < 0) {
-        return src;
-    }
-
-    return `${src.slice(0, lastDot)}.preview.jpg`;
-};
+const PLACEHOLDER_IMAGE_DATA_URL =
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIW2P48P/LfwAJqQPjouwnvAAAABBkZUJHNEFEMEE0QUQxNTkzRDgwNIe1oJIAAAAASUVORK5CYII=';
 
 export const Image = ({ src, alt, width, height, className }: ImageProps) => {
     const ref = useRef<HTMLImageElement | null>(null);
+    const normalizedWidth =
+        typeof width === 'number' && Number.isFinite(width) && width > 0
+            ? width
+            : undefined;
+    const normalizedHeight =
+        typeof height === 'number' && Number.isFinite(height) && height > 0
+            ? height
+            : undefined;
+    const aspectRatio =
+        normalizedWidth && normalizedHeight
+            ? `${normalizedWidth} / ${normalizedHeight}`
+            : undefined;
 
     useEffect(() => {
         const target = ref.current;
-        if (!target || !src) {
+        if (!target) {
+            return;
+        }
+
+        target.dataset.src = src;
+        target.src = PLACEHOLDER_IMAGE_DATA_URL;
+
+        const loadRealSource = () => {
+            const realSource = target.dataset.src;
+            if (realSource) {
+                target.src = realSource;
+            }
+        };
+
+        if (typeof IntersectionObserver === 'undefined') {
+            loadRealSource();
             return;
         }
 
@@ -32,17 +53,12 @@ export const Image = ({ src, alt, width, height, className }: ImageProps) => {
                     return;
                 }
 
-                const image = entry.target as HTMLImageElement;
-                const realSource = image.dataset.src;
-                if (realSource) {
-                    image.src = realSource;
-                }
-                currentObserver.unobserve(image);
+                loadRealSource();
+                currentObserver.unobserve(entry.target);
             });
         });
 
         observer.observe(target);
-
         return () => {
             observer.disconnect();
         };
@@ -52,10 +68,11 @@ export const Image = ({ src, alt, width, height, className }: ImageProps) => {
         <img
             ref={ref}
             className={className}
-            src={toPreviewUrl(src)}
+            src={PLACEHOLDER_IMAGE_DATA_URL}
             data-src={src}
-            width={width ?? undefined}
-            height={height ?? undefined}
+            width={normalizedWidth}
+            height={normalizedHeight}
+            style={aspectRatio ? { aspectRatio } : undefined}
             alt={alt}
             loading="lazy"
         />

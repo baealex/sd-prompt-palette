@@ -20,15 +20,15 @@ describe('Pagination', () => {
             />,
         );
 
-        expect(screen.getByRole('button', { name: '3' })).toHaveTextContent(
-            '3',
-        );
+        expect(
+            screen.getByRole('button', { name: 'Go to page 3' }),
+        ).toHaveAttribute('aria-current', 'page');
         fireEvent.click(screen.getByRole('button', { name: 'Next' }));
 
         expect(onPageChange).toHaveBeenCalledWith(4);
     });
 
-    it('supports first and last page jumps', () => {
+    it('supports edge page jumps via numbered controls', () => {
         const onPageChange = vi.fn();
 
         render(
@@ -40,8 +40,8 @@ describe('Pagination', () => {
             />,
         );
 
-        fireEvent.click(screen.getByRole('button', { name: 'First' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Last' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Go to page 1' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Go to page 10' }));
 
         expect(onPageChange).toHaveBeenCalledWith(1);
         expect(onPageChange).toHaveBeenCalledWith(10);

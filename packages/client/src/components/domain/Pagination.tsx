@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 
+import { ArrowLeftIcon, ArrowRightIcon } from '~/icons';
 import { getPageRange } from '~/modules/page';
 import { Button } from '~/components/ui/Button';
 
@@ -113,9 +114,9 @@ export const Pagination = ({
     return (
         <nav
             aria-label="Pagination"
-            className="mt-4 rounded-token-md border border-line bg-surface-base p-2 shadow-surface"
+            className="mt-4 rounded-token-md border border-line bg-surface-base p-3 shadow-surface md:p-4"
         >
-            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <p className="text-xs font-semibold text-ink-muted">
                     Page {currentPage} of {totalPages}
                 </p>
@@ -124,55 +125,22 @@ export const Pagination = ({
                 ) : null}
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-3">
                 <Button
                     variant="secondary"
-                    size="sm"
-                    className="hidden md:inline-flex"
-                    onClick={() => moveToPage(1)}
-                    disabled={currentPage <= 1}
-                >
-                    First
-                </Button>
-
-                <Button
-                    variant="secondary"
-                    size="sm"
-                    className="flex-1 sm:flex-none"
+                    size="md"
+                    className="flex-1 sm:min-w-[120px] sm:flex-none"
                     onClick={() => moveToPage(currentPage - 1)}
                     disabled={currentPage <= 1}
                 >
+                    <ArrowLeftIcon width={14} height={14} />
                     Prev
                 </Button>
 
-                <div className="inline-flex min-w-[88px] items-center justify-center rounded-token-md border border-line bg-surface-muted px-2 py-2 text-xs font-semibold text-ink sm:hidden">
-                    {currentPage} / {totalPages}
-                </div>
-
-                <Button
-                    variant="secondary"
-                    size="sm"
-                    className="flex-1 sm:flex-none"
-                    onClick={() => moveToPage(currentPage + 1)}
-                    disabled={currentPage >= totalPages}
-                >
-                    Next
-                </Button>
-
-                <Button
-                    variant="secondary"
-                    size="sm"
-                    className="hidden md:inline-flex"
-                    onClick={() => moveToPage(totalPages)}
-                    disabled={currentPage >= totalPages}
-                >
-                    Last
-                </Button>
-
-                <div className="hidden w-full flex-wrap items-center gap-2 sm:flex">
+                <div className="hidden min-w-0 flex-1 items-center justify-center gap-2.5 sm:flex">
                     {showFirstPage ? (
                         <Button
-                            size="sm"
+                            size="md"
                             onClick={() => moveToPage(1)}
                             variant={
                                 currentPage === 1 ? 'primary' : 'secondary'
@@ -180,6 +148,7 @@ export const Pagination = ({
                             aria-current={
                                 currentPage === 1 ? 'page' : undefined
                             }
+                            aria-label="Go to page 1"
                         >
                             1
                         </Button>
@@ -197,7 +166,7 @@ export const Pagination = ({
                     {pageRange.map((page) => (
                         <Button
                             key={page}
-                            size="sm"
+                            size="md"
                             onClick={() => moveToPage(page)}
                             variant={
                                 page === currentPage ? 'primary' : 'secondary'
@@ -205,6 +174,7 @@ export const Pagination = ({
                             aria-current={
                                 page === currentPage ? 'page' : undefined
                             }
+                            aria-label={`Go to page ${page}`}
                         >
                             {page}
                         </Button>
@@ -221,7 +191,7 @@ export const Pagination = ({
 
                     {showLastPage ? (
                         <Button
-                            size="sm"
+                            size="md"
                             onClick={() => moveToPage(totalPages)}
                             variant={
                                 currentPage === totalPages
@@ -231,11 +201,27 @@ export const Pagination = ({
                             aria-current={
                                 currentPage === totalPages ? 'page' : undefined
                             }
+                            aria-label={`Go to page ${totalPages}`}
                         >
                             {totalPages}
                         </Button>
                     ) : null}
                 </div>
+
+                <div className="inline-flex min-w-[108px] items-center justify-center rounded-token-md border border-line bg-surface-muted px-3 py-2 text-xs font-semibold text-ink sm:hidden">
+                    {currentPage} / {totalPages}
+                </div>
+
+                <Button
+                    variant="secondary"
+                    size="md"
+                    className="flex-1 sm:min-w-[120px] sm:flex-none"
+                    onClick={() => moveToPage(currentPage + 1)}
+                    disabled={currentPage >= totalPages}
+                >
+                    Next
+                    <ArrowRightIcon width={14} height={14} />
+                </Button>
             </div>
         </nav>
     );

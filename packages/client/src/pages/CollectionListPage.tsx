@@ -84,7 +84,7 @@ export const CollectionListPage = () => {
 
     const query = listSearch.query;
     const currentPage = listSearch.page;
-    const [error, setError] = useState<string | null>(null);
+    const [mutationError, setMutationError] = useState<string | null>(null);
     const [renamingId, setRenamingId] = useState<number | null>(null);
     const [removingId, setRemovingId] = useState<number | null>(null);
     const [renameTarget, setRenameTarget] = useState<CollectionListItem | null>(
@@ -100,6 +100,10 @@ export const CollectionListPage = () => {
             buildCollectionListPath({ query, page: currentPage }),
         );
     }, [currentPage, query, setPath]);
+
+    useEffect(() => {
+        setMutationError(null);
+    }, [currentPage, query]);
 
     const collectionsQuery = useQuery({
         queryKey: ['collections', 'list', query, currentPage] as const,
@@ -131,6 +135,12 @@ export const CollectionListPage = () => {
         },
         placeholderData: (previousData) => previousData,
     });
+
+    useEffect(() => {
+        if (collectionsQuery.isSuccess) {
+            setMutationError(null);
+        }
+    }, [collectionsQuery.dataUpdatedAt, collectionsQuery.isSuccess]);
 
     const items = collectionsQuery.data?.items ?? [];
     const loading = collectionsQuery.isPending;
@@ -196,6 +206,16 @@ export const CollectionListPage = () => {
         [navigate, query],
     );
 
+    const handleOpenDetail = useCallback(
+        (id: number) => {
+            void navigate({
+                to: '/collection/$id',
+                params: { id: String(id) },
+            });
+        },
+        [navigate],
+    );
+
     const handleRenameRequest = (item: CollectionListItem) => {
         setRenameTarget(item);
     };
@@ -211,18 +231,30 @@ export const CollectionListPage = () => {
                 id: renameTarget.id,
                 title: nextTitle.trim(),
             });
-            await collectionsQuery.refetch();
-            setError(null);
+            setMutationError(null);
             setRenameTarget(null);
         } catch (nextError) {
-            setError(
+            setMutationError(
                 nextError instanceof Error
                     ? nextError.message
                     : 'Failed to rename collection',
             );
-        } finally {
             setRenamingId(null);
+            return;
         }
+
+        try {
+            const refetchResult = await collectionsQuery.refetch();
+            if (refetchResult.error instanceof Error) {
+                setMutationError(
+                    `Collection renamed, but refresh failed: ${refetchResult.error.message}`,
+                );
+            }
+        } catch {
+            setMutationError('Collection renamed, but refresh failed.');
+        }
+
+        setRenamingId(null);
     };
 
     const handleDeleteRequest = (item: CollectionListItem) => {
@@ -237,25 +269,37 @@ export const CollectionListPage = () => {
         setRemovingId(removeTarget.id);
         try {
             await deleteCollection({ id: removeTarget.id });
-            await collectionsQuery.refetch();
-            setError(null);
+            setMutationError(null);
             setRemoveTarget(null);
         } catch (nextError) {
-            setError(
+            setMutationError(
                 nextError instanceof Error
                     ? nextError.message
                     : 'Failed to delete collection',
             );
-        } finally {
             setRemovingId(null);
+            return;
         }
+
+        try {
+            const refetchResult = await collectionsQuery.refetch();
+            if (refetchResult.error instanceof Error) {
+                setMutationError(
+                    `Collection deleted, but refresh failed: ${refetchResult.error.message}`,
+                );
+            }
+        } catch {
+            setMutationError('Collection deleted, but refresh failed.');
+        }
+
+        setRemovingId(null);
     };
 
     const queryErrorMessage =
         collectionsQuery.error instanceof Error
             ? collectionsQuery.error.message
             : null;
-    const displayError = error ?? queryErrorMessage;
+    const displayError = mutationError ?? queryErrorMessage;
 
     return (
         <>
@@ -272,8 +316,11 @@ export const CollectionListPage = () => {
                     <CollectionCard
                         key={item.id}
                         collection={item}
-                        onClickCopy={(text) => {
-                            void copyToClipboard(text, { label: 'Prompt' });
+                        onClickCopy={(text, label = 'Prompt') => {
+                            void copyToClipboard(text, { label });
+                        }}
+                        onClickOpenDetail={() => {
+                            handleOpenDetail(item.id);
                         }}
                         onClickRename={() => {
                             handleRenameRequest(item);
