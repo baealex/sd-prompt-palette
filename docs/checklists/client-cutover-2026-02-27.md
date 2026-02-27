@@ -14,8 +14,8 @@
 
 ## 2) Automated Checks
 - [x] `pnpm --filter @sdpp/client run typecheck`
-- [ ] `pnpm --filter @sdpp/client run test` (current branch has 1 failing test: `Pagination.test.tsx`, duplicated `Next` query target)
-- [ ] `pnpm --filter @sdpp/client run build` (current branch compile blocker: `src/router.tsx` cannot resolve `~/pages/HomePage`)
+- [x] `pnpm --filter @sdpp/client run test`
+- [x] `pnpm --filter @sdpp/client run build`
 - [x] `pnpm --filter @sdpp/server exec tsc --noEmit`
 - [ ] `pnpm --filter @sdpp/server run build` (blocked: Prisma engine file rename EPERM on Windows host)
 
@@ -48,7 +48,6 @@
 ## 7) Notes
 - Realtime collection refresh path is now socket-driven (`live:images`) with React Query invalidation.
 - Vite dev proxy includes `/socket.io` with `ws: true` for both client variants.
-- Validation note (2026-02-27): client test/build blockers are caused by other in-progress branch changes outside cutover scope.
 
 ## 8) Legacy Removal Progress
 - [x] Root default scripts switched to client flow (`dev`, `start`, `lint`, `test`)
