@@ -17,3 +17,4 @@ Zettelkasten 기반 메모리 인덱스
 
 ## Learnings
 <!-- [L-ID](chunks/L-ID.md) 형식으로 학습 내용 참조 추가 -->
+- [L-20260227-idea-page-selection-ux](chunks/L-20260227-idea-page-selection-ux.md) Idea page selection UX: tokenized checkbox card + clear selection states | #frontend #ux #consistency

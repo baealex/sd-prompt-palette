@@ -175,3 +175,8 @@ UI/FE 결과 보고에는 아래 3줄을 반드시 포함하세요.
 ## 9) Feedback Rule (Required)
 - Use toast notifications for transient feedback (`copy`, `save`, `remove`, and `error`), especially on long/scrollable pages.
 - Avoid inline status banners for short-lived feedback because they cause layout shift and are easy to miss.
+
+## 10) Collection Pagination Rule (Required)
+- Collection List and Collection Grid must use numbered pagination with explicit controls.
+- Use URL query state for pagination (`page`) so back/forward navigation restores the exact list state.
+- Infinite scroll and scroll-bottom auto-fetch are forbidden on collection browsing surfaces.

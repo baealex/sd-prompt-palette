@@ -1,10 +1,11 @@
-import { type InfiniteData, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 
 import { deleteCollection, getCollections, updateCollection } from '~/api';
 import { CollectionCard } from '~/components/domain/CollectionCard';
 import { CollectionNav } from '~/components/domain/CollectionNav';
+import { Pagination } from '~/components/domain/Pagination';
 import { CollectionRealtimeControl } from '~/components/domain/CollectionRealtimeControl';
 import { CollectionSearchBar } from '~/components/domain/CollectionSearchBar';
 import { PageFrame } from '~/components/domain/PageFrame';
@@ -18,28 +19,72 @@ import { usePathStore } from '~/state/path-store';
 const LIMIT = 20;
 
 type CollectionListItem = Pick<Collection, 'id' | 'title' | 'prompt' | 'negativePrompt' | 'image'>;
-interface CollectionListChunk {
+interface CollectionListPayload {
     items: CollectionListItem[];
     page: number;
     lastPage: number;
+    total: number;
 }
 
 const getLastPage = (total: number, limit: number) => {
     return Math.max(1, Math.ceil(total / limit));
 };
 
+const normalizeNumericParam = (input: unknown): number | null => {
+    if (typeof input === 'number') {
+        return Number.isFinite(input) ? input : null;
+    }
+
+    if (typeof input === 'string') {
+        const trimmed = input.trim();
+        if (!trimmed) {
+            return null;
+        }
+        const parsed = Number(trimmed);
+        return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    return null;
+};
+
+const parsePage = (input: unknown) => {
+    const parsed = normalizeNumericParam(input);
+    if (!parsed || parsed <= 0) {
+        return 1;
+    }
+    return Math.max(1, Math.trunc(parsed));
+};
+
+const buildCollectionListPath = (next: { query: string; page: number }) => {
+    const params = new URLSearchParams();
+    if (next.query) {
+        params.set('query', next.query);
+    }
+    if (next.page > 1) {
+        params.set('page', String(next.page));
+    }
+    const queryString = params.toString();
+    return queryString ? `/collection?${queryString}` : '/collection';
+};
+
 export const CollectionListPage = () => {
     const navigate = useNavigate();
     const { copyToClipboard } = useClipboardToast();
     const { setPath } = usePathStore();
-    const queryClient = useQueryClient();
-    const query = useSearch({
+    const listSearch = useSearch({
         strict: false,
         select: (search) => {
             const queryValue = (search as Record<string, unknown>).query;
-            return typeof queryValue === 'string' ? queryValue : '';
+            const pageValue = (search as Record<string, unknown>).page;
+            return {
+                query: typeof queryValue === 'string' ? queryValue : '',
+                page: parsePage(pageValue),
+            };
         },
     });
+
+    const query = listSearch.query;
+    const currentPage = listSearch.page;
     const [draftQuery, setDraftQuery] = useState<string>(query);
     const [error, setError] = useState<string | null>(null);
     const [renamingId, setRenamingId] = useState<number | null>(null);
@@ -48,19 +93,18 @@ export const CollectionListPage = () => {
     const [removeTarget, setRemoveTarget] = useState<CollectionListItem | null>(null);
 
     useEffect(() => {
-        setPath('collection', '/collection');
-    }, [setPath]);
+        setPath('collection', buildCollectionListPath({ query, page: currentPage }));
+    }, [currentPage, query, setPath]);
 
     useEffect(() => {
         setDraftQuery(query);
     }, [query]);
 
-    const collectionsQuery = useInfiniteQuery({
-        queryKey: ['collections', 'list', query] as const,
-        initialPageParam: 1,
-        queryFn: async ({ pageParam }) => {
+    const collectionsQuery = useQuery({
+        queryKey: ['collections', 'list', query, currentPage] as const,
+        queryFn: async () => {
             const response = await getCollections({
-                page: pageParam,
+                page: currentPage,
                 limit: LIMIT,
                 query,
             });
@@ -72,42 +116,50 @@ export const CollectionListPage = () => {
                 negativePrompt: item.negativePrompt,
                 image: item.image,
             }));
-            const responseLastPage = getLastPage(response.data.allCollections.pagination.total, LIMIT);
+            const total = response.data.allCollections.pagination.total;
+            const responseLastPage = getLastPage(total, LIMIT);
 
             return {
                 items: responseItems,
-                page: pageParam,
+                page: currentPage,
                 lastPage: responseLastPage,
-            } satisfies CollectionListChunk;
+                total,
+            } satisfies CollectionListPayload;
         },
-        getNextPageParam: (lastChunk) => (lastChunk.page < lastChunk.lastPage ? lastChunk.page + 1 : undefined),
+        placeholderData: (previousData) => previousData,
     });
 
-    const items = collectionsQuery.data?.pages.flatMap((chunk) => chunk.items) ?? [];
+    const items = collectionsQuery.data?.items ?? [];
     const loading = collectionsQuery.isPending;
-    const loadingMore = collectionsQuery.isFetchingNextPage;
-    const hasNextPage = collectionsQuery.hasNextPage;
-    const fetchNextPage = collectionsQuery.fetchNextPage;
+    const totalPages = collectionsQuery.data?.lastPage ?? 1;
+    const totalItems = collectionsQuery.data?.total ?? 0;
 
     useEffect(() => {
-        const handleScroll = () => {
-            const reachedBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 100;
+        if (!collectionsQuery.data || currentPage <= collectionsQuery.data.lastPage) {
+            return;
+        }
 
-            if (!hasNextPage || !reachedBottom || loading || loadingMore) {
-                return;
-            }
+        const safePage = collectionsQuery.data.lastPage;
+        void navigate({
+            to: '/collection',
+            replace: true,
+            search: (previousSearch) => {
+                const nextSearch = { ...(previousSearch as Record<string, unknown>) };
+                if (query) {
+                    nextSearch.query = query;
+                } else {
+                    delete nextSearch.query;
+                }
 
-            void fetchNextPage()
-                .catch((nextError) => {
-                    setError(nextError instanceof Error ? nextError.message : 'Failed to load more collections');
-                });
-        };
-
-        window.addEventListener('scroll', handleScroll);
-        return () => {
-            window.removeEventListener('scroll', handleScroll);
-        };
-    }, [fetchNextPage, hasNextPage, loading, loadingMore]);
+                if (safePage > 1) {
+                    nextSearch.page = safePage;
+                } else {
+                    delete nextSearch.page;
+                }
+                return nextSearch;
+            },
+        });
+    }, [collectionsQuery.data, currentPage, navigate, query]);
 
     const applySearch = useCallback(() => {
         const nextQuery = draftQuery.trim();
@@ -121,32 +173,33 @@ export const CollectionListPage = () => {
                 } else {
                     delete nextSearch.query;
                 }
+                delete nextSearch.page;
                 return nextSearch;
             },
         });
     }, [draftQuery, navigate]);
 
-    const patchCollectionListCache = useCallback(
-        (updater: (prevItems: CollectionListItem[]) => CollectionListItem[]) => {
-            queryClient.setQueriesData<InfiniteData<CollectionListChunk>>(
-                { queryKey: ['collections', 'list'] },
-                (previousData) => {
-                    if (!previousData) {
-                        return previousData;
-                    }
+    const handlePageChange = useCallback((nextPage: number) => {
+        void navigate({
+            to: '/collection',
+            replace: true,
+            search: (previousSearch) => {
+                const nextSearch = { ...(previousSearch as Record<string, unknown>) };
+                if (query) {
+                    nextSearch.query = query;
+                } else {
+                    delete nextSearch.query;
+                }
 
-                    return {
-                        ...previousData,
-                        pages: previousData.pages.map((pageChunk) => ({
-                            ...pageChunk,
-                            items: updater(pageChunk.items),
-                        })),
-                    };
-                },
-            );
-        },
-        [queryClient],
-    );
+                if (nextPage > 1) {
+                    nextSearch.page = nextPage;
+                } else {
+                    delete nextSearch.page;
+                }
+                return nextSearch;
+            },
+        });
+    }, [navigate, query]);
 
     const handleRenameRequest = (item: CollectionListItem) => {
         setRenameTarget(item);
@@ -160,11 +213,7 @@ export const CollectionListPage = () => {
         setRenamingId(renameTarget.id);
         try {
             await updateCollection({ id: renameTarget.id, title: nextTitle.trim() });
-            patchCollectionListCache((previousItems) => previousItems.map((entry) => (
-                entry.id === renameTarget.id
-                    ? { ...entry, title: nextTitle.trim() }
-                    : entry
-            )));
+            await collectionsQuery.refetch();
             setError(null);
             setRenameTarget(null);
         } catch (nextError) {
@@ -186,7 +235,7 @@ export const CollectionListPage = () => {
         setRemovingId(removeTarget.id);
         try {
             await deleteCollection({ id: removeTarget.id });
-            patchCollectionListCache((previousItems) => previousItems.filter((entry) => entry.id !== removeTarget.id));
+            await collectionsQuery.refetch();
             setError(null);
             setRemoveTarget(null);
         } catch (nextError) {
@@ -243,8 +292,18 @@ export const CollectionListPage = () => {
                 ))}
             </div>
 
-            {loadingMore ? (
-                <Notice variant="neutral" className="mt-4 text-center">Loading more...</Notice>
+            {items.length > 0 && totalPages > 1 ? (
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                />
+            ) : null}
+
+            {items.length > 0 ? (
+                <p className="mt-2 text-xs text-ink-muted">
+                    {totalItems} collections total
+                </p>
             ) : null}
 
             {displayError ? (

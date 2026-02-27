@@ -1,9 +1,10 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 
 import { getCollections } from '~/api';
 import { CollectionNav } from '~/components/domain/CollectionNav';
+import { Pagination } from '~/components/domain/Pagination';
 import { CollectionRealtimeControl } from '~/components/domain/CollectionRealtimeControl';
 import { CollectionSearchBar } from '~/components/domain/CollectionSearchBar';
 import { Image } from '~/components/domain/Image';
@@ -15,42 +16,85 @@ import { usePathStore } from '~/state/path-store';
 const LIMIT = 20;
 
 type CollectionGalleryItem = Pick<Collection, 'id' | 'title' | 'image'>;
-interface CollectionGalleryChunk {
+interface CollectionGalleryPayload {
     items: CollectionGalleryItem[];
     page: number;
     lastPage: number;
+    total: number;
 }
 
 const getLastPage = (total: number, limit: number) => {
     return Math.max(1, Math.ceil(total / limit));
 };
 
+const normalizeNumericParam = (input: unknown): number | null => {
+    if (typeof input === 'number') {
+        return Number.isFinite(input) ? input : null;
+    }
+
+    if (typeof input === 'string') {
+        const trimmed = input.trim();
+        if (!trimmed) {
+            return null;
+        }
+        const parsed = Number(trimmed);
+        return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    return null;
+};
+
+const parsePage = (input: unknown) => {
+    const parsed = normalizeNumericParam(input);
+    if (!parsed || parsed <= 0) {
+        return 1;
+    }
+    return Math.max(1, Math.trunc(parsed));
+};
+
+const buildCollectionGalleryPath = (next: { query: string; page: number }) => {
+    const params = new URLSearchParams();
+    if (next.query) {
+        params.set('query', next.query);
+    }
+    if (next.page > 1) {
+        params.set('page', String(next.page));
+    }
+    const queryString = params.toString();
+    return queryString ? `/collection/gallery?${queryString}` : '/collection/gallery';
+};
+
 export const CollectionGalleryPage = () => {
     const navigate = useNavigate();
     const { setPath } = usePathStore();
-    const query = useSearch({
+    const gallerySearch = useSearch({
         strict: false,
         select: (search) => {
             const queryValue = (search as Record<string, unknown>).query;
-            return typeof queryValue === 'string' ? queryValue : '';
+            const pageValue = (search as Record<string, unknown>).page;
+            return {
+                query: typeof queryValue === 'string' ? queryValue : '',
+                page: parsePage(pageValue),
+            };
         },
     });
+    const query = gallerySearch.query;
+    const currentPage = gallerySearch.page;
     const [draftQuery, setDraftQuery] = useState<string>(query);
 
     useEffect(() => {
-        setPath('collection', '/collection/gallery');
-    }, [setPath]);
+        setPath('collection', buildCollectionGalleryPath({ query, page: currentPage }));
+    }, [currentPage, query, setPath]);
 
     useEffect(() => {
         setDraftQuery(query);
     }, [query]);
 
-    const collectionsQuery = useInfiniteQuery({
-        queryKey: ['collections', 'gallery', query] as const,
-        initialPageParam: 1,
-        queryFn: async ({ pageParam }) => {
+    const collectionsQuery = useQuery({
+        queryKey: ['collections', 'gallery', query, currentPage] as const,
+        queryFn: async () => {
             const response = await getCollections({
-                page: pageParam,
+                page: currentPage,
                 limit: LIMIT,
                 query,
             });
@@ -60,40 +104,51 @@ export const CollectionGalleryPage = () => {
                 title: collection.title,
                 image: collection.image,
             }));
-            const responseLastPage = getLastPage(response.data.allCollections.pagination.total, LIMIT);
+            const total = response.data.allCollections.pagination.total;
+            const responseLastPage = getLastPage(total, LIMIT);
 
             return {
                 items: responseCollections,
-                page: pageParam,
+                page: currentPage,
                 lastPage: responseLastPage,
-            } satisfies CollectionGalleryChunk;
+                total,
+            } satisfies CollectionGalleryPayload;
         },
-        getNextPageParam: (lastChunk) => (lastChunk.page < lastChunk.lastPage ? lastChunk.page + 1 : undefined),
+        placeholderData: (previousData) => previousData,
     });
 
-    const items = collectionsQuery.data?.pages.flatMap((chunk) => chunk.items) ?? [];
+    const items = collectionsQuery.data?.items ?? [];
     const loading = collectionsQuery.isPending;
-    const loadingMore = collectionsQuery.isFetchingNextPage;
-    const hasNextPage = collectionsQuery.hasNextPage;
-    const fetchNextPage = collectionsQuery.fetchNextPage;
+    const totalPages = collectionsQuery.data?.lastPage ?? 1;
+    const totalItems = collectionsQuery.data?.total ?? 0;
     const error = collectionsQuery.error instanceof Error ? collectionsQuery.error.message : null;
 
     useEffect(() => {
-        const handleScroll = () => {
-            const reachedBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 100;
+        if (!collectionsQuery.data || currentPage <= collectionsQuery.data.lastPage) {
+            return;
+        }
 
-            if (!hasNextPage || !reachedBottom || loading || loadingMore) {
-                return;
-            }
+        const safePage = collectionsQuery.data.lastPage;
+        void navigate({
+            to: '/collection/gallery',
+            replace: true,
+            search: (previousSearch) => {
+                const nextSearch = { ...(previousSearch as Record<string, unknown>) };
+                if (query) {
+                    nextSearch.query = query;
+                } else {
+                    delete nextSearch.query;
+                }
 
-            void fetchNextPage();
-        };
-
-        window.addEventListener('scroll', handleScroll);
-        return () => {
-            window.removeEventListener('scroll', handleScroll);
-        };
-    }, [fetchNextPage, hasNextPage, loading, loadingMore]);
+                if (safePage > 1) {
+                    nextSearch.page = safePage;
+                } else {
+                    delete nextSearch.page;
+                }
+                return nextSearch;
+            },
+        });
+    }, [collectionsQuery.data, currentPage, navigate, query]);
 
     const applySearch = useCallback(() => {
         const nextQuery = draftQuery.trim();
@@ -107,10 +162,33 @@ export const CollectionGalleryPage = () => {
                 } else {
                     delete nextSearch.query;
                 }
+                delete nextSearch.page;
                 return nextSearch;
             },
         });
     }, [draftQuery, navigate]);
+
+    const handlePageChange = useCallback((nextPage: number) => {
+        void navigate({
+            to: '/collection/gallery',
+            replace: true,
+            search: (previousSearch) => {
+                const nextSearch = { ...(previousSearch as Record<string, unknown>) };
+                if (query) {
+                    nextSearch.query = query;
+                } else {
+                    delete nextSearch.query;
+                }
+
+                if (nextPage > 1) {
+                    nextSearch.page = nextPage;
+                } else {
+                    delete nextSearch.page;
+                }
+                return nextSearch;
+            },
+        });
+    }, [navigate, query]);
 
     const placeholderText = loading
         ? 'Loading collections...'
@@ -160,8 +238,18 @@ export const CollectionGalleryPage = () => {
                 </div>
             )}
 
-            {loadingMore ? (
-                <Notice variant="neutral" className="mt-4 text-center">Loading more...</Notice>
+            {items.length > 0 && totalPages > 1 ? (
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                />
+            ) : null}
+
+            {items.length > 0 ? (
+                <p className="mt-2 text-xs text-ink-muted">
+                    {totalItems} collections total
+                </p>
             ) : null}
 
             {error ? (
