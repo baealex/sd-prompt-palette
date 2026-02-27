@@ -51,6 +51,19 @@ export const keywordTypeDefs = `
     ${keywordMutation}
 `;
 
+const clampOrderToIndex = (order: number, length: number) => {
+    if (length <= 0) {
+        return 0;
+    }
+    if (order <= 1) {
+        return 0;
+    }
+    if (order >= length) {
+        return length - 1;
+    }
+    return order - 1;
+};
+
 export const keywordResolvers: IResolvers = {
     Query: {
         allKeywords: models.keyword.findMany,
@@ -171,44 +184,41 @@ export const keywordResolvers: IResolvers = {
             });
         },
         updateKeywordOrder: async (_, { categoryId, keywordId, order }: KeywordToCategory) => {
-            categoryId = Number(categoryId);
-            keywordId = Number(keywordId);
+            const parsedCategoryId = Number(categoryId);
+            const parsedKeywordId = Number(keywordId);
+            const targetOrder = Number(order);
 
             const keywords = await models.keywordToCategory.findMany({
                 where: {
-                    categoryId,
+                    categoryId: parsedCategoryId,
                 },
                 orderBy: {
                     order: 'asc',
                 }
             });
 
-            let idx = 1;
-            for (const keyword of keywords) {
-                if (keyword.keywordId === keywordId) {
-                    await models.keywordToCategory.update({
-                        where: {
-                            id: keyword.id,
-                        },
-                        data: {
-                            order,
-                        },
-                    });
-                } else {
-                    if (idx === order) {
-                        idx += 1;
-                    }
-                    await models.keywordToCategory.update({
-                        where: {
-                            id: keyword.id,
-                        },
-                        data: {
-                            order: idx,
-                        },
-                    });
-                    idx += 1;
-                }
+            const fromIndex = keywords.findIndex((keyword) => keyword.keywordId === parsedKeywordId);
+            if (fromIndex < 0) {
+                throw new Error('Keyword does not exist in category');
             }
+
+            const toIndex = clampOrderToIndex(targetOrder, keywords.length);
+            if (fromIndex === toIndex) {
+                return true;
+            }
+
+            const reordered = [...keywords];
+            const [moved] = reordered.splice(fromIndex, 1);
+            reordered.splice(toIndex, 0, moved);
+
+            await models.$transaction(reordered.map((keyword, index) => models.keywordToCategory.update({
+                where: {
+                    id: keyword.id,
+                },
+                data: {
+                    order: index + 1,
+                },
+            })));
 
             return true;
         },

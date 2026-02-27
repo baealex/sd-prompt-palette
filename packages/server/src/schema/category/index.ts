@@ -39,6 +39,19 @@ export const categoryTypeDefs = `
     ${categoryMutation}
 `;
 
+const clampOrderToIndex = (order: number, length: number) => {
+    if (length <= 0) {
+        return 0;
+    }
+    if (order <= 1) {
+        return 0;
+    }
+    if (order >= length) {
+        return length - 1;
+    }
+    return order - 1;
+};
+
 export const categoryResolvers: IResolvers = {
     Query: {
         allCategories: () => {
@@ -87,7 +100,8 @@ export const categoryResolvers: IResolvers = {
             },
         }),
         updateCategoryOrder: async (_, { id, order }: Category) => {
-            id = Number(id);
+            const categoryId = Number(id);
+            const targetOrder = Number(order);
 
             const categories = await models.category.findMany({
                 orderBy: {
@@ -95,32 +109,28 @@ export const categoryResolvers: IResolvers = {
                 },
             });
 
-            let idx = 1;
-            for (const category of categories) {
-                if (category.id === id) {
-                    await models.category.update({
-                        where: {
-                            id,
-                        },
-                        data: {
-                            order,
-                        },
-                    });
-                } else {
-                    if (idx === order) {
-                        idx += 1;
-                    }
-                    await models.category.update({
-                        where: {
-                            id: category.id,
-                        },
-                        data: {
-                            order: idx,
-                        },
-                    });
-                    idx += 1;
-                }
+            const fromIndex = categories.findIndex((category) => category.id === categoryId);
+            if (fromIndex < 0) {
+                throw new Error('Category does not exist');
             }
+
+            const toIndex = clampOrderToIndex(targetOrder, categories.length);
+            if (fromIndex === toIndex) {
+                return true;
+            }
+
+            const reordered = [...categories];
+            const [moved] = reordered.splice(fromIndex, 1);
+            reordered.splice(toIndex, 0, moved);
+
+            await models.$transaction(reordered.map((category, index) => models.category.update({
+                where: {
+                    id: category.id,
+                },
+                data: {
+                    order: index + 1,
+                },
+            })));
 
             return true;
         },
@@ -145,20 +155,16 @@ export const categoryResolvers: IResolvers = {
                 },
             });
             const categories = await models.category.findMany({
-                orderBy: {
-                    order: 'desc',
-                },
+                orderBy: { order: 'asc' },
             });
-            for (const category of categories) {
-                await models.category.update({
-                    where: {
-                        id: category.id,
-                    },
-                    data: {
-                        order: category.order - 1,
-                    },
-                });
-            }
+            await models.$transaction(categories.map((category, index) => models.category.update({
+                where: {
+                    id: category.id,
+                },
+                data: {
+                    order: index + 1,
+                },
+            })));
 
             return true;
         }
