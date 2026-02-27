@@ -5,12 +5,18 @@ on:
     branches:
       - main
     paths:
-      - 'server/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/CI.yml'
   pull_request:
     branches:
       - main
     paths:
-      - 'server/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/CI.yml'
   workflow_dispatch:
 
 jobs:
@@ -28,38 +34,26 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
 
-    - name: Install (Server)
+    - name: Install Dependencies
       run: npx pnpm i
-      working-directory: server/src
     
     - name: Lint (Server)
-      run: npm run lint
-      working-directory: server/src
+      run: npx pnpm --filter @sdpp/server run lint
     
     - name: Test (Server)
-      run: npm run test
-      working-directory: server/src
+      run: npx pnpm --filter @sdpp/server run test
     
     - name: Build (Server)
-      run: npm run build
-      working-directory: server/src
+      run: npx pnpm --filter @sdpp/server run build
 
-    - name: Install (Client)
-      run: npx pnpm i
-      working-directory: server/src/client/src
-    
     - name: Lint (Client)
-      run: npm run lint
-      working-directory: server/src/client/src
+      run: npx pnpm --filter @sdpp/legacy-client run lint
 
     - name: Check (Client)
-      run: npm run check
-      working-directory: server/src/client/src
+      run: npx pnpm --filter @sdpp/legacy-client run check
 
     - name: Test (Client)
-      run: npm run test
-      working-directory: server/src/client/src
+      run: npx pnpm --filter @sdpp/legacy-client run test
 
     - name: Build (Client)
-      run: npm run build
-      working-directory: server/src/client/src
+      run: npx pnpm --filter @sdpp/legacy-client run build

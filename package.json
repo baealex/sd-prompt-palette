@@ -1,0 +1,20 @@
+{
+    "name": "sd-prompt-palette-workspace",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "dev": "pnpm --parallel --stream --filter @sdpp/server --filter @sdpp/legacy-client run dev",
+        "start": "pnpm --parallel --stream --filter @sdpp/server --filter @sdpp/legacy-client run start",
+        "dev:server": "pnpm --filter @sdpp/server run dev",
+        "dev:legacy-client": "pnpm --filter @sdpp/legacy-client run dev",
+        "dev:legacy": "pnpm --parallel --stream --filter @sdpp/server --filter @sdpp/legacy-client run dev",
+        "build:server": "pnpm --filter @sdpp/server run build",
+        "build:legacy-client": "pnpm --filter @sdpp/legacy-client run build",
+        "build:legacy": "pnpm run build:legacy-client && pnpm run build:server",
+        "start:server": "pnpm --filter @sdpp/server run start",
+        "start:legacy": "pnpm run build:legacy && pnpm run start:server",
+        "lint": "pnpm --filter @sdpp/server run lint && pnpm --filter @sdpp/legacy-client run lint",
+        "check:legacy-client": "pnpm --filter @sdpp/legacy-client run check",
+        "test": "pnpm --filter @sdpp/server run test && pnpm --filter @sdpp/legacy-client run test"
+    }
+}

@@ -1,13 +1,13 @@
 {
-    "name": "sd-prompt-palette",
+    "name": "@sdpp/server",
     "version": "1.0.0",
+    "private": true,
     "description": "",
     "scripts": {
+        "postinstall": "prisma generate",
+        "prisma:generate": "prisma generate",
         "dev": "cross-env PORT=3332 ts-node script/_dev.ts",
-        "dev:client": "npm run dev --prefix client",
-        "dev:with": "concurrently \"npm run dev\" \"npm run dev:client\"",
-        "build": "tsc",
-        "build:client": "npm run build --prefix client",
+        "build": "pnpm run prisma:generate && tsc",
         "start": "cross-env PORT=3332 ts-node script/_start.ts",
         "lint": "eslint src",
         "test": "cross-env DATABASE_URL=file:./test.sqlite3 ts-node script/_test.ts"
@@ -45,7 +45,6 @@
         "@types/supertest": "^2.0.16",
         "@typescript-eslint/eslint-plugin": "^6.21.0",
         "@typescript-eslint/parser": "^6.21.0",
-        "concurrently": "^8.2.2",
         "cross-env": "^7.0.3",
         "eslint": "^8.57.0",
         "eslint-plugin-jest": "^27.9.0",

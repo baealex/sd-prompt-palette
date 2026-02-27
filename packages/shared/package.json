@@ -1,0 +1,13 @@
+{
+    "name": "@sdpp/shared",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "main": "src/index.ts",
+    "types": "src/index.ts",
+    "scripts": {
+        "build": "echo \"No build specified\" && exit 0",
+        "lint": "echo \"No lint specified\" && exit 0",
+        "test": "echo \"No test specified\" && exit 0"
+    }
+}
