@@ -3,12 +3,8 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { deleteCollection, getCollections, updateCollection } from '~/api';
-import { CollectionNav } from '~/components/domain/CollectionNav';
 import { Pagination } from '~/components/domain/Pagination';
-import { CollectionRealtimeControl } from '~/components/domain/CollectionRealtimeControl';
-import { CollectionSearchBar } from '~/components/domain/CollectionSearchBar';
 import { Image } from '~/components/domain/Image';
-import { PageFrame } from '~/components/domain/PageFrame';
 import { Badge } from '~/components/ui/Badge';
 import { Button } from '~/components/ui/Button';
 import { Card } from '~/components/ui/Card';
@@ -96,13 +92,13 @@ export const CollectionBrowsePage = () => {
     const query = browseSearch.query;
     const currentPage = browseSearch.page;
     const selectedId = browseSearch.selected;
-    const [draftQuery, setDraftQuery] = useState<string>(query);
     const [actionMenuOpen, setActionMenuOpen] = useState(false);
     const [renameDialogOpen, setRenameDialogOpen] = useState(false);
     const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
     const [renaming, setRenaming] = useState(false);
     const [removing, setRemoving] = useState(false);
     const actionMenuRef = useRef<HTMLDivElement | null>(null);
+    const galleryScrollRef = useRef<HTMLDivElement | null>(null);
     const queryErrorToastRef = useRef<string | null>(null);
     const { pushToast } = useToast();
 
@@ -132,10 +128,6 @@ export const CollectionBrowsePage = () => {
             buildBrowsePath({ query, page: currentPage, selected: null }),
         );
     }, [buildBrowsePath, currentPage, query, setPath]);
-
-    useEffect(() => {
-        setDraftQuery(query);
-    }, [query]);
 
     const collectionsQuery = useQuery({
         queryKey: ['collections', 'browse', query, currentPage] as const,
@@ -222,6 +214,10 @@ export const CollectionBrowsePage = () => {
     }, [selectedId]);
 
     useEffect(() => {
+        galleryScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+    }, [currentPage, query]);
+
+    useEffect(() => {
         if (items.length === 0) {
             if (selectedId !== null) {
                 void navigate({
@@ -285,28 +281,6 @@ export const CollectionBrowsePage = () => {
         }
         return items.find((item) => item.id === selectedId) ?? null;
     }, [items, selectedId]);
-
-    const applySearch = useCallback(() => {
-        const nextQuery = draftQuery.trim();
-        void navigate({
-            to: '/collection/browse',
-            replace: true,
-            resetScroll: false,
-            search: (previousSearch) => {
-                const nextSearch = {
-                    ...(previousSearch as Record<string, unknown>),
-                };
-                if (nextQuery) {
-                    nextSearch.query = nextQuery;
-                } else {
-                    delete nextSearch.query;
-                }
-                delete nextSearch.page;
-                delete nextSearch.selected;
-                return nextSearch;
-            },
-        });
-    }, [draftQuery, navigate]);
 
     const handlePageChange = useCallback(
         (nextPage: number) => {
@@ -408,30 +382,18 @@ export const CollectionBrowsePage = () => {
     };
 
     return (
-        <PageFrame
-            title="Collection Browse"
-            description="Pick from the thumbnail gallery on the left and inspect the selected image in detail on the right."
-        >
-            <div className="mb-6 space-y-4">
-                <CollectionSearchBar
-                    value={draftQuery}
-                    onChange={setDraftQuery}
-                    onSubmit={applySearch}
-                    placeholder="Search title, prompt, or negative prompt"
-                />
-                <CollectionNav />
-                <CollectionRealtimeControl />
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
-                <Card className="h-fit">
+        <>
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(300px,360px)_minmax(0,1fr)]">
+                <Card className="h-fit xl:sticky xl:top-20 xl:self-start">
                     <div className="mb-3 flex items-center justify-between gap-2">
-                        <h2 className="text-base font-semibold text-ink">
-                            Gallery
-                        </h2>
-                        <Badge variant="neutral">
-                            Page {currentPage}/{totalPages}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                            <h2 className="text-base font-semibold text-ink">
+                                Gallery
+                            </h2>
+                            <Badge variant="neutral">
+                                Page {currentPage}/{totalPages}
+                            </Badge>
+                        </div>
                     </div>
 
                     {loading && items.length === 0 ? (
@@ -445,7 +407,10 @@ export const CollectionBrowsePage = () => {
                     ) : null}
 
                     {items.length > 0 ? (
-                        <div className="grid grid-cols-2 gap-2">
+                        <div
+                            ref={galleryScrollRef}
+                            className="grid grid-cols-3 gap-1.5 xl:max-h-[62vh] xl:overflow-y-auto xl:pr-1"
+                        >
                             {items.map((item) => (
                                 <Button
                                     key={item.id}
@@ -480,24 +445,21 @@ export const CollectionBrowsePage = () => {
                                             },
                                         });
                                     }}
-                                    className={`!h-auto !justify-start gap-0 border p-1 text-left transition-colors ${
+                                    className={`!h-auto w-full !justify-start gap-0 border p-1.5 text-left transition-colors ${
                                         selectedId === item.id
                                             ? 'border-brand-400 bg-brand-50 shadow-surface'
                                             : 'border-line bg-surface-base hover:border-brand-200 hover:bg-surface-muted'
                                     }`}
                                 >
-                                    <div className="overflow-hidden rounded-token-sm border border-line bg-surface-muted">
+                                    <div className="w-full overflow-hidden rounded-token-sm border border-line bg-surface-muted">
                                         <Image
                                             src={item.image.url}
                                             alt={item.title || '(untitled)'}
                                             width={item.image.width}
                                             height={item.image.height}
-                                            className="block h-28 w-full object-cover"
+                                            className="block h-auto w-full"
                                         />
                                     </div>
-                                    <p className="mt-1 truncate text-xs font-semibold text-ink">
-                                        {item.title || '(untitled)'}
-                                    </p>
                                 </Button>
                             ))}
                         </div>
@@ -507,6 +469,7 @@ export const CollectionBrowsePage = () => {
                         <Pagination
                             currentPage={currentPage}
                             totalPages={totalPages}
+                            variant="compact"
                             totalItems={totalItems}
                             itemsPerPage={LIMIT}
                             onPageChange={handlePageChange}
@@ -653,6 +616,6 @@ export const CollectionBrowsePage = () => {
                     setRemoveDialogOpen(open);
                 }}
             />
-        </PageFrame>
+        </>
     );
 };

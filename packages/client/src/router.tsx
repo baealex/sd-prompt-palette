@@ -1,5 +1,11 @@
 import { TanStackRouterDevtools } from '@tanstack/router-devtools';
-import { Outlet, createRootRoute, createRoute, createRouter, useParams } from '@tanstack/react-router';
+import {
+    Outlet,
+    createRootRoute,
+    createRoute,
+    createRouter,
+    useParams,
+} from '@tanstack/react-router';
 
 import { SiteLayout } from '~/components/domain/SiteLayout';
 import { CollectionBrowsePage } from '~/pages/CollectionBrowsePage';
@@ -7,6 +13,7 @@ import { CollectionDetailPage } from '~/pages/CollectionDetailPage';
 import { CollectionGalleryPage } from '~/pages/CollectionGalleryPage';
 import { CollectionListPage } from '~/pages/CollectionListPage';
 import { CollectionSlideShowPage } from '~/pages/CollectionSlideShowPage';
+import { CollectionViewLayout } from '~/components/domain/CollectionViewLayout';
 import { HomePage } from '~/pages/HomePage';
 import { IdeaPage } from '~/pages/IdeaPage';
 import { ImageLoadPage } from '~/pages/ImageLoadPage';
@@ -15,7 +22,9 @@ const RootRouteComponent = () => {
     return (
         <>
             <Outlet />
-            {import.meta.env.DEV ? <TanStackRouterDevtools position="bottom-right" /> : null}
+            {import.meta.env.DEV ? (
+                <TanStackRouterDevtools position="bottom-right" />
+            ) : null}
         </>
     );
 };
@@ -48,20 +57,26 @@ const ideaRoute = createRoute({
     component: IdeaPage,
 });
 
-const collectionListRoute = createRoute({
+const collectionViewLayoutRoute = createRoute({
     getParentRoute: () => appLayoutRoute,
+    id: 'collection-view-layout',
+    component: CollectionViewLayout,
+});
+
+const collectionListRoute = createRoute({
+    getParentRoute: () => collectionViewLayoutRoute,
     path: '/collection',
     component: CollectionListPage,
 });
 
 const collectionGalleryRoute = createRoute({
-    getParentRoute: () => appLayoutRoute,
+    getParentRoute: () => collectionViewLayoutRoute,
     path: '/collection/gallery',
     component: CollectionGalleryPage,
 });
 
 const collectionBrowseRoute = createRoute({
-    getParentRoute: () => appLayoutRoute,
+    getParentRoute: () => collectionViewLayoutRoute,
     path: '/collection/browse',
     component: CollectionBrowsePage,
 });
@@ -88,9 +103,11 @@ export const routeTree = rootRoute.addChildren([
     appLayoutRoute.addChildren([
         homeRoute,
         ideaRoute,
-        collectionListRoute,
-        collectionGalleryRoute,
-        collectionBrowseRoute,
+        collectionViewLayoutRoute.addChildren([
+            collectionListRoute,
+            collectionGalleryRoute,
+            collectionBrowseRoute,
+        ]),
         collectionDetailRoute,
         imageLoadRoute,
     ]),

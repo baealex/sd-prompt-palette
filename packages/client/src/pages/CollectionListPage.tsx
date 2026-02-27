@@ -4,11 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { deleteCollection, getCollections, updateCollection } from '~/api';
 import { CollectionCard } from '~/components/domain/CollectionCard';
-import { CollectionNav } from '~/components/domain/CollectionNav';
 import { Pagination } from '~/components/domain/Pagination';
-import { CollectionRealtimeControl } from '~/components/domain/CollectionRealtimeControl';
-import { CollectionSearchBar } from '~/components/domain/CollectionSearchBar';
-import { PageFrame } from '~/components/domain/PageFrame';
 import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 import { Notice } from '~/components/ui/Notice';
 import { PromptDialog } from '~/components/ui/PromptDialog';
@@ -18,7 +14,10 @@ import { usePathStore } from '~/state/path-store';
 
 const LIMIT = 20;
 
-type CollectionListItem = Pick<Collection, 'id' | 'title' | 'prompt' | 'negativePrompt' | 'image'>;
+type CollectionListItem = Pick<
+    Collection,
+    'id' | 'title' | 'prompt' | 'negativePrompt' | 'image'
+>;
 interface CollectionListPayload {
     items: CollectionListItem[];
     page: number;
@@ -85,20 +84,22 @@ export const CollectionListPage = () => {
 
     const query = listSearch.query;
     const currentPage = listSearch.page;
-    const [draftQuery, setDraftQuery] = useState<string>(query);
     const [error, setError] = useState<string | null>(null);
     const [renamingId, setRenamingId] = useState<number | null>(null);
     const [removingId, setRemovingId] = useState<number | null>(null);
-    const [renameTarget, setRenameTarget] = useState<CollectionListItem | null>(null);
-    const [removeTarget, setRemoveTarget] = useState<CollectionListItem | null>(null);
+    const [renameTarget, setRenameTarget] = useState<CollectionListItem | null>(
+        null,
+    );
+    const [removeTarget, setRemoveTarget] = useState<CollectionListItem | null>(
+        null,
+    );
 
     useEffect(() => {
-        setPath('collection', buildCollectionListPath({ query, page: currentPage }));
+        setPath(
+            'collection',
+            buildCollectionListPath({ query, page: currentPage }),
+        );
     }, [currentPage, query, setPath]);
-
-    useEffect(() => {
-        setDraftQuery(query);
-    }, [query]);
 
     const collectionsQuery = useQuery({
         queryKey: ['collections', 'list', query, currentPage] as const,
@@ -109,13 +110,15 @@ export const CollectionListPage = () => {
                 query,
             });
 
-            const responseItems = response.data.allCollections.collections.map((item) => ({
-                id: item.id,
-                title: item.title,
-                prompt: item.prompt,
-                negativePrompt: item.negativePrompt,
-                image: item.image,
-            }));
+            const responseItems = response.data.allCollections.collections.map(
+                (item) => ({
+                    id: item.id,
+                    title: item.title,
+                    prompt: item.prompt,
+                    negativePrompt: item.negativePrompt,
+                    image: item.image,
+                }),
+            );
             const total = response.data.allCollections.pagination.total;
             const responseLastPage = getLastPage(total, LIMIT);
 
@@ -135,7 +138,10 @@ export const CollectionListPage = () => {
     const totalItems = collectionsQuery.data?.total ?? 0;
 
     useEffect(() => {
-        if (!collectionsQuery.data || currentPage <= collectionsQuery.data.lastPage) {
+        if (
+            !collectionsQuery.data ||
+            currentPage <= collectionsQuery.data.lastPage
+        ) {
             return;
         }
 
@@ -144,7 +150,9 @@ export const CollectionListPage = () => {
             to: '/collection',
             replace: true,
             search: (previousSearch) => {
-                const nextSearch = { ...(previousSearch as Record<string, unknown>) };
+                const nextSearch = {
+                    ...(previousSearch as Record<string, unknown>),
+                };
                 if (query) {
                     nextSearch.query = query;
                 } else {
@@ -161,45 +169,32 @@ export const CollectionListPage = () => {
         });
     }, [collectionsQuery.data, currentPage, navigate, query]);
 
-    const applySearch = useCallback(() => {
-        const nextQuery = draftQuery.trim();
-        void navigate({
-            to: '/collection',
-            replace: true,
-            search: (previousSearch) => {
-                const nextSearch = { ...(previousSearch as Record<string, unknown>) };
-                if (nextQuery) {
-                    nextSearch.query = nextQuery;
-                } else {
-                    delete nextSearch.query;
-                }
-                delete nextSearch.page;
-                return nextSearch;
-            },
-        });
-    }, [draftQuery, navigate]);
+    const handlePageChange = useCallback(
+        (nextPage: number) => {
+            void navigate({
+                to: '/collection',
+                replace: true,
+                search: (previousSearch) => {
+                    const nextSearch = {
+                        ...(previousSearch as Record<string, unknown>),
+                    };
+                    if (query) {
+                        nextSearch.query = query;
+                    } else {
+                        delete nextSearch.query;
+                    }
 
-    const handlePageChange = useCallback((nextPage: number) => {
-        void navigate({
-            to: '/collection',
-            replace: true,
-            search: (previousSearch) => {
-                const nextSearch = { ...(previousSearch as Record<string, unknown>) };
-                if (query) {
-                    nextSearch.query = query;
-                } else {
-                    delete nextSearch.query;
-                }
-
-                if (nextPage > 1) {
-                    nextSearch.page = nextPage;
-                } else {
-                    delete nextSearch.page;
-                }
-                return nextSearch;
-            },
-        });
-    }, [navigate, query]);
+                    if (nextPage > 1) {
+                        nextSearch.page = nextPage;
+                    } else {
+                        delete nextSearch.page;
+                    }
+                    return nextSearch;
+                },
+            });
+        },
+        [navigate, query],
+    );
 
     const handleRenameRequest = (item: CollectionListItem) => {
         setRenameTarget(item);
@@ -212,12 +207,19 @@ export const CollectionListPage = () => {
 
         setRenamingId(renameTarget.id);
         try {
-            await updateCollection({ id: renameTarget.id, title: nextTitle.trim() });
+            await updateCollection({
+                id: renameTarget.id,
+                title: nextTitle.trim(),
+            });
             await collectionsQuery.refetch();
             setError(null);
             setRenameTarget(null);
         } catch (nextError) {
-            setError(nextError instanceof Error ? nextError.message : 'Failed to rename collection');
+            setError(
+                nextError instanceof Error
+                    ? nextError.message
+                    : 'Failed to rename collection',
+            );
         } finally {
             setRenamingId(null);
         }
@@ -239,31 +241,24 @@ export const CollectionListPage = () => {
             setError(null);
             setRemoveTarget(null);
         } catch (nextError) {
-            setError(nextError instanceof Error ? nextError.message : 'Failed to delete collection');
+            setError(
+                nextError instanceof Error
+                    ? nextError.message
+                    : 'Failed to delete collection',
+            );
         } finally {
             setRemovingId(null);
         }
     };
 
-    const queryErrorMessage = collectionsQuery.error instanceof Error ? collectionsQuery.error.message : null;
+    const queryErrorMessage =
+        collectionsQuery.error instanceof Error
+            ? collectionsQuery.error.message
+            : null;
     const displayError = error ?? queryErrorMessage;
 
     return (
-        <PageFrame
-            title="Collection"
-            description="Browse, search, and manage saved prompts."
-        >
-            <div className="mb-6 space-y-4">
-                <CollectionSearchBar
-                    value={draftQuery}
-                    onChange={setDraftQuery}
-                    onSubmit={applySearch}
-                    placeholder="Search title, prompt, or negative prompt"
-                />
-                <CollectionNav />
-                <CollectionRealtimeControl />
-            </div>
-
+        <>
             {loading && items.length === 0 ? (
                 <Notice variant="neutral">Loading collections...</Notice>
             ) : null}
@@ -309,7 +304,9 @@ export const CollectionListPage = () => {
             ) : null}
 
             {displayError ? (
-                <Notice variant="error" className="mt-4">{displayError}</Notice>
+                <Notice variant="error" className="mt-4">
+                    {displayError}
+                </Notice>
             ) : null}
 
             <PromptDialog
@@ -318,7 +315,9 @@ export const CollectionListPage = () => {
                 description="Use a title that is easy to scan later."
                 defaultValue={renameTarget?.title ?? ''}
                 placeholder="Collection title"
-                submitting={renameTarget !== null && renamingId === renameTarget.id}
+                submitting={
+                    renameTarget !== null && renamingId === renameTarget.id
+                }
                 onSubmit={(nextTitle) => {
                     void handleRename(nextTitle);
                 }}
@@ -332,9 +331,15 @@ export const CollectionListPage = () => {
             <ConfirmDialog
                 open={removeTarget !== null}
                 title="Delete collection"
-                description={removeTarget ? `"${removeTarget.title || '(untitled)'}" will be permanently removed.` : 'This collection will be removed.'}
+                description={
+                    removeTarget
+                        ? `"${removeTarget.title || '(untitled)'}" will be permanently removed.`
+                        : 'This collection will be removed.'
+                }
                 confirmLabel="Delete"
-                confirming={removeTarget !== null && removingId === removeTarget.id}
+                confirming={
+                    removeTarget !== null && removingId === removeTarget.id
+                }
                 danger
                 onConfirm={() => {
                     void handleDelete();
@@ -345,6 +350,6 @@ export const CollectionListPage = () => {
                     }
                 }}
             />
-        </PageFrame>
+        </>
     );
 };

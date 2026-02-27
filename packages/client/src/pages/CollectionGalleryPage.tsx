@@ -1,14 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 
 import { getCollections } from '~/api';
-import { CollectionNav } from '~/components/domain/CollectionNav';
 import { Pagination } from '~/components/domain/Pagination';
-import { CollectionRealtimeControl } from '~/components/domain/CollectionRealtimeControl';
-import { CollectionSearchBar } from '~/components/domain/CollectionSearchBar';
 import { Image } from '~/components/domain/Image';
-import { PageFrame } from '~/components/domain/PageFrame';
 import { Notice } from '~/components/ui/Notice';
 import type { Collection } from '~/models/types';
 import { usePathStore } from '~/state/path-store';
@@ -61,7 +57,9 @@ const buildCollectionGalleryPath = (next: { query: string; page: number }) => {
         params.set('page', String(next.page));
     }
     const queryString = params.toString();
-    return queryString ? `/collection/gallery?${queryString}` : '/collection/gallery';
+    return queryString
+        ? `/collection/gallery?${queryString}`
+        : '/collection/gallery';
 };
 
 export const CollectionGalleryPage = () => {
@@ -80,15 +78,13 @@ export const CollectionGalleryPage = () => {
     });
     const query = gallerySearch.query;
     const currentPage = gallerySearch.page;
-    const [draftQuery, setDraftQuery] = useState<string>(query);
 
     useEffect(() => {
-        setPath('collection', buildCollectionGalleryPath({ query, page: currentPage }));
+        setPath(
+            'collection',
+            buildCollectionGalleryPath({ query, page: currentPage }),
+        );
     }, [currentPage, query, setPath]);
-
-    useEffect(() => {
-        setDraftQuery(query);
-    }, [query]);
 
     const collectionsQuery = useQuery({
         queryKey: ['collections', 'gallery', query, currentPage] as const,
@@ -99,11 +95,12 @@ export const CollectionGalleryPage = () => {
                 query,
             });
 
-            const responseCollections = response.data.allCollections.collections.map((collection) => ({
-                id: collection.id,
-                title: collection.title,
-                image: collection.image,
-            }));
+            const responseCollections =
+                response.data.allCollections.collections.map((collection) => ({
+                    id: collection.id,
+                    title: collection.title,
+                    image: collection.image,
+                }));
             const total = response.data.allCollections.pagination.total;
             const responseLastPage = getLastPage(total, LIMIT);
 
@@ -121,10 +118,16 @@ export const CollectionGalleryPage = () => {
     const loading = collectionsQuery.isPending;
     const totalPages = collectionsQuery.data?.lastPage ?? 1;
     const totalItems = collectionsQuery.data?.total ?? 0;
-    const error = collectionsQuery.error instanceof Error ? collectionsQuery.error.message : null;
+    const error =
+        collectionsQuery.error instanceof Error
+            ? collectionsQuery.error.message
+            : null;
 
     useEffect(() => {
-        if (!collectionsQuery.data || currentPage <= collectionsQuery.data.lastPage) {
+        if (
+            !collectionsQuery.data ||
+            currentPage <= collectionsQuery.data.lastPage
+        ) {
             return;
         }
 
@@ -133,7 +136,9 @@ export const CollectionGalleryPage = () => {
             to: '/collection/gallery',
             replace: true,
             search: (previousSearch) => {
-                const nextSearch = { ...(previousSearch as Record<string, unknown>) };
+                const nextSearch = {
+                    ...(previousSearch as Record<string, unknown>),
+                };
                 if (query) {
                     nextSearch.query = query;
                 } else {
@@ -150,68 +155,41 @@ export const CollectionGalleryPage = () => {
         });
     }, [collectionsQuery.data, currentPage, navigate, query]);
 
-    const applySearch = useCallback(() => {
-        const nextQuery = draftQuery.trim();
-        void navigate({
-            to: '/collection/gallery',
-            replace: true,
-            search: (previousSearch) => {
-                const nextSearch = { ...(previousSearch as Record<string, unknown>) };
-                if (nextQuery) {
-                    nextSearch.query = nextQuery;
-                } else {
-                    delete nextSearch.query;
-                }
-                delete nextSearch.page;
-                return nextSearch;
-            },
-        });
-    }, [draftQuery, navigate]);
+    const handlePageChange = useCallback(
+        (nextPage: number) => {
+            void navigate({
+                to: '/collection/gallery',
+                replace: true,
+                search: (previousSearch) => {
+                    const nextSearch = {
+                        ...(previousSearch as Record<string, unknown>),
+                    };
+                    if (query) {
+                        nextSearch.query = query;
+                    } else {
+                        delete nextSearch.query;
+                    }
 
-    const handlePageChange = useCallback((nextPage: number) => {
-        void navigate({
-            to: '/collection/gallery',
-            replace: true,
-            search: (previousSearch) => {
-                const nextSearch = { ...(previousSearch as Record<string, unknown>) };
-                if (query) {
-                    nextSearch.query = query;
-                } else {
-                    delete nextSearch.query;
-                }
-
-                if (nextPage > 1) {
-                    nextSearch.page = nextPage;
-                } else {
-                    delete nextSearch.page;
-                }
-                return nextSearch;
-            },
-        });
-    }, [navigate, query]);
+                    if (nextPage > 1) {
+                        nextSearch.page = nextPage;
+                    } else {
+                        delete nextSearch.page;
+                    }
+                    return nextSearch;
+                },
+            });
+        },
+        [navigate, query],
+    );
 
     const placeholderText = loading
         ? 'Loading collections...'
         : items.length === 0
-            ? 'No collections found.'
-            : null;
+          ? 'No collections found.'
+          : null;
 
     return (
-        <PageFrame
-            title="Collection Gallery"
-            description="Visual browsing for saved prompts and images."
-        >
-            <div className="mb-6 space-y-4">
-                <CollectionSearchBar
-                    value={draftQuery}
-                    onChange={setDraftQuery}
-                    onSubmit={applySearch}
-                    placeholder="Search in gallery by title"
-                />
-                <CollectionNav />
-                <CollectionRealtimeControl />
-            </div>
-
+        <>
             {placeholderText ? (
                 <Notice variant="neutral">{placeholderText}</Notice>
             ) : (
@@ -255,8 +233,10 @@ export const CollectionGalleryPage = () => {
             ) : null}
 
             {error ? (
-                <Notice variant="error" className="mt-4">{error}</Notice>
+                <Notice variant="error" className="mt-4">
+                    {error}
+                </Notice>
             ) : null}
-        </PageFrame>
+        </>
     );
 };

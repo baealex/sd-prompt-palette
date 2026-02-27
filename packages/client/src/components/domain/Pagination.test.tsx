@@ -20,7 +20,9 @@ describe('Pagination', () => {
             />,
         );
 
-        expect(screen.getByRole('button', { name: '3' })).toHaveTextContent('3');
+        expect(screen.getByRole('button', { name: '3' })).toHaveTextContent(
+            '3',
+        );
         fireEvent.click(screen.getByRole('button', { name: 'Next' }));
 
         expect(onPageChange).toHaveBeenCalledWith(4);
@@ -92,6 +94,30 @@ describe('Pagination', () => {
 
         expect(screen.getByText('Page 3 of 10')).toBeInTheDocument();
         expect(screen.getByText('41-60 of 194')).toBeInTheDocument();
+    });
+
+    it('renders compact controls without first/last and page numbers', () => {
+        const onPageChange = vi.fn();
+
+        render(
+            <Pagination
+                currentPage={2}
+                totalPages={10}
+                variant="compact"
+                onPageChange={onPageChange}
+            />,
+        );
+
+        expect(
+            screen.queryByRole('button', { name: 'First' }),
+        ).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole('button', { name: 'Last' }),
+        ).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole('button', { name: '2' }),
+        ).not.toBeInTheDocument();
+        expect(screen.getByText('2 / 10')).toBeInTheDocument();
     });
 
     it('does not render controls when only one page exists', () => {
