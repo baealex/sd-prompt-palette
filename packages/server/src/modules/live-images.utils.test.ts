@@ -181,24 +181,41 @@ Steps: 25, Sampler: Euler a
         it('creates date directory and appends suffix when base filename is taken', async () => {
             // Arrange
             const createdAt = new Date(2026, 1, 15, 12, 0, 0);
+            const serverRegisteredAtMs = 1_772_037_001_443;
+            const hash =
+                '12ABCDEF34567890FFFEEE1111222233334444555566667777888899990000';
+            const registeredAt = new Date(serverRegisteredAtMs);
+            const serverTimeToken = `${String(registeredAt.getHours()).padStart(2, '0')}${String(registeredAt.getMinutes()).padStart(2, '0')}${String(registeredAt.getSeconds()).padStart(2, '0')}`;
             const basePath = path.resolve(
                 tempDirPath,
                 '2026',
                 '2',
                 '15',
-                `${createdAt.getTime()}.png`
+                `${createdAt.getTime()}-${serverTimeToken}-12abcdef3456.png`
             );
 
             // Act
-            const firstPath = await createDestinationPath(tempDirPath, createdAt, 'PNG');
+            const firstPath = await createDestinationPath({
+                imageBaseDirPath: tempDirPath,
+                createdAt,
+                serverRegisteredAtMs,
+                contentHash: hash,
+                extensionWithDot: 'PNG',
+            });
             await fs.promises.writeFile(firstPath, 'occupied');
-            const secondPath = await createDestinationPath(tempDirPath, createdAt, '.png');
+            const secondPath = await createDestinationPath({
+                imageBaseDirPath: tempDirPath,
+                createdAt,
+                serverRegisteredAtMs,
+                contentHash: hash,
+                extensionWithDot: '.png',
+            });
             const secondExpectedPath = path.resolve(
                 tempDirPath,
                 '2026',
                 '2',
                 '15',
-                `${createdAt.getTime()}_1.png`
+                `${createdAt.getTime()}-${serverTimeToken}-12abcdef3456_1.png`
             );
 
             // Assert

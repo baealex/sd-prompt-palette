@@ -14,6 +14,7 @@
         "lint:client": "pnpm --filter @sdpp/client run lint",
         "lint": "pnpm --filter @sdpp/server run lint && pnpm --filter @sdpp/client run lint",
         "guard:agent-rules": "node scripts/guardrails/check-agent-rules.mjs",
+        "guard:function-params": "node scripts/guardrails/check-function-params.mjs",
         "guard:ui-contract": "node scripts/guardrails/check-ui-contract.mjs",
         "hooks:install": "lefthook install",
         "typecheck:client": "pnpm --filter @sdpp/client run typecheck",

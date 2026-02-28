@@ -10,6 +10,11 @@ import {
     PromptParts,
 } from './live-images.types';
 import { hasErrorCode } from './live-images.errors';
+import {
+    resolveCreatedAtEpochToken,
+    resolveDatePathSegments,
+    resolveServerTimeToken,
+} from './live-images.time-format';
 
 const IMAGE_EXTENSIONS = new Set([
     '.jpg',
@@ -130,6 +135,18 @@ export async function deriveCreatedAt(filePath: string, stats: fs.Stats): Promis
     return new Date(stats.mtime.getTime());
 }
 
+export function resolveGeneratedAt(stats: fs.Stats): Date {
+    const modifiedAt = new Date(stats.mtime.getTime());
+    const birthTimeMs = stats.birthtime?.getTime?.() || 0;
+    const createdAtCandidate =
+        Number.isFinite(birthTimeMs) && birthTimeMs > 0
+            ? new Date(birthTimeMs)
+            : modifiedAt;
+    return createdAtCandidate.getTime() > modifiedAt.getTime()
+        ? modifiedAt
+        : createdAtCandidate;
+}
+
 export function decodeFileNameFromUrl(url: string): string {
     try {
         return decodeURIComponent(path.basename(url));
@@ -230,21 +247,37 @@ export function absolutePathFromImageUrl(imageBaseDirPath: string, url: string):
     return absolutePath;
 }
 
-export async function createDestinationPath(
-    imageBaseDirPath: string,
-    createdAt: Date,
-    extensionWithDot: string
-): Promise<string> {
+interface CreateDestinationPathInput {
+    imageBaseDirPath: string;
+    createdAt: Date;
+    serverRegisteredAtMs: number;
+    contentHash: string;
+    extensionWithDot: string;
+}
+
+export async function createDestinationPath({
+    imageBaseDirPath,
+    createdAt,
+    serverRegisteredAtMs,
+    contentHash,
+    extensionWithDot,
+}: CreateDestinationPathInput): Promise<string> {
     const normalizedExtension = extensionWithDot.startsWith('.')
         ? extensionWithDot.toLowerCase()
         : `.${extensionWithDot.toLowerCase()}`;
-    const year = String(createdAt.getFullYear());
-    const month = String(createdAt.getMonth() + 1);
-    const day = String(createdAt.getDate());
+    const { year, month, day } = resolveDatePathSegments(createdAt);
     const dateDirPath = path.resolve(imageBaseDirPath, year, month, day);
     await fs.promises.mkdir(dateDirPath, { recursive: true });
 
-    const baseName = `${createdAt.getTime()}`;
+    const serverTimeToken = resolveServerTimeToken(serverRegisteredAtMs);
+    const hashFragment = (contentHash || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '')
+        .slice(0, 12);
+    const normalizedHashFragment =
+        hashFragment.length > 0 ? hashFragment : 'nohash';
+    const createdAtToken = resolveCreatedAtEpochToken(createdAt);
+    const baseName = `${createdAtToken}-${serverTimeToken}-${normalizedHashFragment}`;
 
     for (let index = 0; index < Number.MAX_SAFE_INTEGER; index += 1) {
         const suffix = index === 0 ? '' : `_${index}`;

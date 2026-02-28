@@ -4,7 +4,12 @@ import sharp from 'sharp';
 import crpyto from 'crypto';
 
 import { models } from '~/models';
+import {
+    resolveCreatedAtEpochToken,
+    resolveDatePathSegments,
+} from '~/modules/live-images.time-format';
 import { readImageMetadataFromBuffer } from '~/modules/prompt-reader';
+import { resolveGeneratedAt } from '~/modules/live-images.utils';
 import { Controller } from '~/types';
 
 const imageDir = path.resolve('./public/assets/images');
@@ -91,15 +96,13 @@ export const uploadImage: Controller = async (req, res) => {
         return;
     }
 
-    const currentPath = [
-        new Date().getFullYear().toString(),
-        (new Date().getMonth() + 1).toString(),
-        new Date().getDate().toString(),
-    ];
+    const now = new Date();
+    const datePath = resolveDatePathSegments(now);
+    const currentPath = [datePath.year, datePath.month, datePath.day];
     makePath(['./public', 'assets', 'images', ...currentPath]);
 
     const ext = parsed.extension;
-    const fileName = `${Date.now()}.${ext}`;
+    const fileName = `${resolveCreatedAtEpochToken(now)}.${ext}`;
     const buffer = parsed.buffer;
 
     const sharpImage = sharp(buffer);
@@ -115,16 +118,7 @@ export const uploadImage: Controller = async (req, res) => {
     const metadata = await sharpImage.metadata();
     const url = `/assets/images/${currentPath.join('/')}/${fileName}`;
     const stats = await fs.promises.stat(absoluteFilePath);
-    const modifiedAt = new Date(stats.mtime.getTime());
-    const createdAtCandidate =
-        Number.isFinite(stats.birthtime.getTime()) &&
-        stats.birthtime.getTime() > 0
-            ? new Date(stats.birthtime.getTime())
-            : modifiedAt;
-    const generatedAt =
-        createdAtCandidate.getTime() > modifiedAt.getTime()
-            ? modifiedAt
-            : createdAtCandidate;
+    const generatedAt = resolveGeneratedAt(stats);
     const image = await models.image.create({
         data: {
             hash,

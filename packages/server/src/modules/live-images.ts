@@ -32,6 +32,7 @@ import {
     isImageFileName,
     moveFile,
     normalizeIngestMode,
+    resolveGeneratedAt,
     sanitizeLimit,
     sanitizePage,
 } from './live-images.utils';
@@ -461,11 +462,14 @@ class LiveImagesService {
 
                 const createdAt = await deriveCreatedAt(sourcePath, stat);
                 const extension = path.extname(sourcePath).toLowerCase();
-                const destinationPath = await createDestinationPath(
-                    this.imageBaseDirPath,
+                const serverRegisteredAtMs = Date.now();
+                const destinationPath = await createDestinationPath({
+                    imageBaseDirPath: this.imageBaseDirPath,
                     createdAt,
-                    extension,
-                );
+                    serverRegisteredAtMs,
+                    contentHash: hash,
+                    extensionWithDot: extension,
+                });
 
                 if (this.ingestMode === 'move') {
                     await moveFile(sourcePath, destinationPath);
@@ -648,7 +652,7 @@ class LiveImagesService {
         const createdAt =
             options.preferredDate ||
             (await deriveCreatedAt(absolutePath, stats));
-        const generatedAt = this.resolveGeneratedAt(stats);
+        const generatedAt = resolveGeneratedAt(stats);
         const ensureCollectionForExisting = Boolean(
             options.ensureCollectionForExisting,
         );
@@ -932,18 +936,6 @@ class LiveImagesService {
     private async deleteImageRecord(imageId: number): Promise<void> {
         await this.imageRepository.deleteImageAndRelations(imageId);
         this.promptCache.delete(imageId);
-    }
-
-    private resolveGeneratedAt(stats: fs.Stats): Date {
-        const modifiedAt = new Date(stats.mtime.getTime());
-        const birthTimeMs = stats.birthtime?.getTime?.() || 0;
-        const createdAtCandidate =
-            Number.isFinite(birthTimeMs) && birthTimeMs > 0
-                ? new Date(birthTimeMs)
-                : modifiedAt;
-        return createdAtCandidate.getTime() > modifiedAt.getTime()
-            ? modifiedAt
-            : createdAtCandidate;
     }
 
     private async readStatIfExists(
