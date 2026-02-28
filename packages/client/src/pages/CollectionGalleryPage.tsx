@@ -91,12 +91,24 @@ export const CollectionGalleryPage = () => {
     useEffect(() => {
         setPath(
             'collection',
-            buildCollectionGalleryPath({ query, model, sort, page: currentPage }),
+            buildCollectionGalleryPath({
+                query,
+                model,
+                sort,
+                page: currentPage,
+            }),
         );
     }, [currentPage, model, query, setPath, sort]);
 
     const collectionsQuery = useQuery({
-        queryKey: ['collections', 'gallery', query, model, sort, currentPage] as const,
+        queryKey: [
+            'collections',
+            'gallery',
+            query,
+            model,
+            sort,
+            currentPage,
+        ] as const,
         queryFn: async () => {
             const response = await getCollections({
                 page: currentPage,
@@ -171,7 +183,11 @@ export const CollectionGalleryPage = () => {
                     const nextSearch = {
                         ...(previousSearch as Record<string, unknown>),
                     };
-                    applyCollectionFilterSearch(nextSearch, { query, model, sort });
+                    applyCollectionFilterSearch(nextSearch, {
+                        query,
+                        model,
+                        sort,
+                    });
 
                     if (nextPage > 1) {
                         nextSearch.page = nextPage;
@@ -205,7 +221,7 @@ export const CollectionGalleryPage = () => {
                             params={{ id: String(item.id) }}
                             className="group relative block overflow-hidden rounded-token-md border border-line bg-surface-base shadow-surface"
                         >
-                            <div className="pointer-events-none absolute inset-x-0 top-0 z-10 -translate-y-full bg-black/60 p-4 text-center text-sm font-semibold text-slate-100 transition group-hover:translate-y-0">
+                            <div className="pointer-events-none absolute inset-x-0 top-0 z-10 -translate-y-full bg-overlay/60 p-4 text-center text-sm font-semibold text-ink-inverse transition group-hover:translate-y-0">
                                 {item.title || '(untitled)'}
                             </div>
                             <Image

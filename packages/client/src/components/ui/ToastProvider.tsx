@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import type { ReactNode } from 'react';
 
 type ToastVariant = 'info' | 'success' | 'warning' | 'error' | 'neutral';
@@ -47,22 +55,29 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
         setToasts((prev) => prev.filter((toast) => toast.id !== id));
     }, []);
 
-    const pushToast = useCallback((input: ToastInput) => {
-        const id = nextIdRef.current++;
-        const variant = input.variant ?? 'neutral';
-        const durationMs = input.durationMs ?? (variant === 'error' ? 4200 : 2600);
+    const pushToast = useCallback(
+        (input: ToastInput) => {
+            const id = nextIdRef.current++;
+            const variant = input.variant ?? 'neutral';
+            const durationMs =
+                input.durationMs ?? (variant === 'error' ? 4200 : 2600);
 
-        setToasts((prev) => [...prev, {
-            id,
-            message: input.message,
-            variant,
-        }]);
+            setToasts((prev) => [
+                ...prev,
+                {
+                    id,
+                    message: input.message,
+                    variant,
+                },
+            ]);
 
-        const timerId = window.setTimeout(() => {
-            dismissToast(id);
-        }, durationMs);
-        timerRef.current.set(id, timerId);
-    }, [dismissToast]);
+            const timerId = window.setTimeout(() => {
+                dismissToast(id);
+            }, durationMs);
+            timerRef.current.set(id, timerId);
+        },
+        [dismissToast],
+    );
 
     const contextValue = useMemo(() => ({ pushToast }), [pushToast]);
 
@@ -88,7 +103,7 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
                         <p className="leading-snug">{toast.message}</p>
                         <button
                             type="button"
-                            className="ui-focus-ring shrink-0 rounded-token-sm px-1.5 py-0.5 text-xs font-semibold transition-colors hover:bg-black/10"
+                            className="ui-focus-ring ui-touch shrink-0 rounded-token-sm text-xs font-semibold transition-colors hover:bg-black/10"
                             onClick={() => dismissToast(toast.id)}
                             aria-label="Dismiss notification"
                         >

@@ -28,16 +28,27 @@ export const CollectionSlideShowPage = () => {
 
         const load = async () => {
             try {
-                const response = await getCollections({ page: 1, limit: LIMIT });
+                const response = await getCollections({
+                    page: 1,
+                    limit: LIMIT,
+                });
                 if (cancelled) {
                     return;
                 }
-                setCollections(shuffleCollections(response.data.allCollections.collections));
+                setCollections(
+                    shuffleCollections(
+                        response.data.allCollections.collections,
+                    ),
+                );
             } catch (nextError) {
                 if (cancelled) {
                     return;
                 }
-                setError(nextError instanceof Error ? nextError.message : 'Failed to load slideshow');
+                setError(
+                    nextError instanceof Error
+                        ? nextError.message
+                        : 'Failed to load slideshow',
+                );
             }
         };
 
@@ -74,19 +85,29 @@ export const CollectionSlideShowPage = () => {
     return (
         <div className="relative h-screen w-full overflow-hidden bg-black text-white">
             {error ? (
-                <Notice variant="error" className="absolute left-1/2 top-8 z-30 -translate-x-1/2">{error}</Notice>
+                <Notice
+                    variant="error"
+                    className="absolute left-1/2 top-8 z-30 -translate-x-1/2"
+                >
+                    {error}
+                </Notice>
             ) : null}
 
             {!activeSlide ? (
-                <div className="flex h-full items-center justify-center text-sm text-slate-200">
+                <div className="flex h-full items-center justify-center text-sm text-ink-inverse">
                     Generating a show for you...
                 </div>
             ) : (
                 <div className="h-full">
-                    <section key={`${activeSlide.id}-${index}`} className="relative h-full w-full">
+                    <section
+                        key={`${activeSlide.id}-${index}`}
+                        className="relative h-full w-full"
+                    >
                         <div
                             className="absolute inset-[-12%] bg-cover bg-center blur-3xl"
-                            style={{ backgroundImage: `url(${activeSlide.image.url})` }}
+                            style={{
+                                backgroundImage: `url(${activeSlide.image.url})`,
+                            }}
                         />
                         <img
                             src={activeSlide.image.url}
@@ -111,7 +132,11 @@ export const CollectionSlideShowPage = () => {
                 onClick={() => setPlay((prev) => !prev)}
                 className="fixed bottom-8 right-8 z-30 rounded-full border border-brand-300 bg-brand-100/90 text-brand-900 backdrop-blur"
             >
-                {play ? <PauseIcon width={16} height={16} /> : <PlayIcon width={16} height={16} />}
+                {play ? (
+                    <PauseIcon width={16} height={16} />
+                ) : (
+                    <PlayIcon width={16} height={16} />
+                )}
                 {play ? 'Pause' : 'Play'}
             </Button>
         </div>

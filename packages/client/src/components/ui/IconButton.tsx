@@ -6,7 +6,8 @@ import { cn } from './cn';
 type IconButtonVariant = 'secondary' | 'ghost' | 'danger';
 type IconButtonSize = 'sm' | 'md';
 
-interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
+interface IconButtonProps
+    extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
     icon: ReactNode;
     variant?: IconButtonVariant;
     size?: IconButtonSize;
@@ -14,26 +15,30 @@ interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 
 }
 
 const VARIANT_CLASS: Record<IconButtonVariant, string> = {
-    secondary: 'border-line-strong bg-surface-base text-ink-muted hover:bg-surface-muted',
+    secondary:
+        'border-line-strong bg-surface-base text-ink-muted shadow-surface hover:bg-surface-muted',
     ghost: 'border-transparent bg-transparent text-ink-muted hover:bg-surface-muted',
     danger: 'border-danger-200 bg-danger-50 text-danger-700 hover:bg-danger-200',
 };
 
 const SIZE_CLASS: Record<IconButtonSize, string> = {
-    sm: 'h-9 w-9',
+    sm: 'h-11 w-11',
     md: 'h-11 w-11',
 };
 
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
-    ({
-        icon,
-        variant = 'secondary',
-        size = 'md',
-        label,
-        className,
-        type = 'button',
-        ...props
-    }, ref) => {
+    (
+        {
+            icon,
+            variant = 'secondary',
+            size = 'md',
+            label,
+            className,
+            type = 'button',
+            ...props
+        },
+        ref,
+    ) => {
         return (
             <button
                 ref={ref}

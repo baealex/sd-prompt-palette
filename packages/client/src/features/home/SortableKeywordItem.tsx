@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { SyntheticEvent } from 'react';
 
 import { Button } from '~/components/ui/Button';
-import { IconButton } from '~/components/ui/IconButton';
-import { DragHandleIcon, MoreIcon } from '~/icons';
+import { cn } from '~/components/ui/cn';
+import { MoreIcon } from '~/icons';
 import type { Keyword } from '~/models/types';
 
 import { makeKeywordSortableId } from './dnd-ids';
@@ -33,13 +33,13 @@ export const SortableKeywordItem = ({
 }: SortableKeywordItemProps) => {
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement | null>(null);
+    const wasDraggingRef = useRef(false);
 
     const sortableId = makeKeywordSortableId(categoryId, keyword.id);
     const {
         attributes,
         listeners,
         setNodeRef,
-        setActivatorNodeRef,
         transform,
         transition,
         isDragging,
@@ -49,10 +49,16 @@ export const SortableKeywordItem = ({
     });
 
     const style = {
-        transform: CSS.Transform.toString(transform),
+        transform: CSS.Translate.toString(transform),
         transition,
         touchAction: 'none',
     };
+
+    useEffect(() => {
+        if (isDragging) {
+            wasDraggingRef.current = true;
+        }
+    }, [isDragging]);
 
     useEffect(() => {
         if (!menuOpen) {
@@ -90,28 +96,36 @@ export const SortableKeywordItem = ({
         setMenuOpen(false);
     };
 
+    const handleCopyClick = () => {
+        if (wasDraggingRef.current) {
+            wasDraggingRef.current = false;
+            return;
+        }
+        onCopyKeyword(keyword.name);
+    };
+
     return (
         <li
             ref={setNodeRef}
             style={style}
-            className={`group relative list-none rounded-token-md border border-line bg-surface-base p-2 text-sm text-ink-muted shadow-surface select-none ${isDragging ? 'z-10 opacity-70' : ''}`}
+            className={cn(
+                'group relative min-h-11 list-none rounded-token-md border border-line bg-surface-base py-2 pl-3 pr-1 text-sm shadow-surface select-none',
+                isDragging ? 'z-10 opacity-70' : '',
+                disabled
+                    ? 'cursor-default'
+                    : 'cursor-grab active:cursor-grabbing',
+            )}
+            {...attributes}
+            {...listeners}
         >
-            <div className="relative z-10 flex items-start justify-between gap-2">
-                <div className="flex min-w-0 items-center gap-2">
-                    <IconButton
-                        ref={setActivatorNodeRef}
-                        label={`Drag ${keyword.name}`}
-                        icon={<DragHandleIcon width={14} height={14} />}
-                        size="sm"
-                        className={disabled ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'}
-                        disabled={disabled}
-                        {...attributes}
-                        {...listeners}
-                    />
-                    <p className="truncate text-left text-sm font-medium text-ink">
-                        {keyword.name}
-                    </p>
-                </div>
+            <div className="flex min-w-0 items-center gap-0.5">
+                <button
+                    type="button"
+                    className="ui-focus-ring min-w-0 truncate rounded-sm text-left text-sm font-medium text-ink"
+                    onClick={handleCopyClick}
+                >
+                    {keyword.name}
+                </button>
 
                 <div
                     ref={menuRef}
@@ -119,15 +133,17 @@ export const SortableKeywordItem = ({
                     onPointerDown={stopDragFromMenu}
                     onClick={stopDragFromMenu}
                 >
-                    <IconButton
-                        label={`${keyword.name} actions`}
-                        icon={<MoreIcon width={14} height={14} />}
-                        size="sm"
+                    <button
+                        type="button"
+                        className="ui-focus-ring inline-flex h-7 w-7 items-center justify-center rounded-token-sm text-ink-subtle transition-colors hover:bg-surface-muted hover:text-ink-muted"
                         onClick={() => setMenuOpen((prev) => !prev)}
                         disabled={disabled}
-                    />
+                        aria-label={`${keyword.name} actions`}
+                    >
+                        <MoreIcon width={12} height={12} />
+                    </button>
                     {menuOpen ? (
-                        <div className="absolute right-0 top-12 z-30 min-w-[152px] rounded-token-md border border-line bg-surface-base p-1 shadow-raised">
+                        <div className="absolute right-0 top-8 z-30 min-w-[152px] rounded-token-md border border-line bg-surface-base p-1 shadow-raised">
                             <Button
                                 variant="ghost"
                                 size="sm"

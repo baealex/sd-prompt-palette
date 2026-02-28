@@ -48,7 +48,7 @@ export const PromptDialog = ({
     return (
         <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
             <DialogPrimitive.Portal>
-                <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-slate-900/45" />
+                <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-overlay/45" />
                 <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-token-lg border border-line bg-surface-base p-5 shadow-overlay ui-focus-ring">
                     <DialogPrimitive.Title className="text-lg font-semibold text-ink">
                         {title}
@@ -91,4 +91,3 @@ export const PromptDialog = ({
         </DialogPrimitive.Root>
     );
 };
-

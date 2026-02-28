@@ -40,7 +40,9 @@ const config: Config = {
                     50: 'rgb(var(--color-danger-50) / <alpha-value>)',
                     200: 'rgb(var(--color-danger-200) / <alpha-value>)',
                     700: 'rgb(var(--color-danger-700) / <alpha-value>)',
+                    800: 'rgb(var(--color-danger-800) / <alpha-value>)',
                 },
+                overlay: 'rgb(var(--color-overlay) / <alpha-value>)',
                 brand: {
                     50: '#effaf8',
                     100: '#d9f3ee',
@@ -79,7 +81,12 @@ const config: Config = {
                 overlay: 'var(--shadow-overlay)',
             },
             fontFamily: {
-                sans: ['"Pretendard"', '"Noto Sans KR"', 'system-ui', 'sans-serif'],
+                sans: [
+                    '"Pretendard"',
+                    '"Noto Sans KR"',
+                    'system-ui',
+                    'sans-serif',
+                ],
             },
         },
     },

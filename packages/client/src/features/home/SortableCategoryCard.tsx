@@ -1,5 +1,18 @@
-import { closestCenter, DndContext, KeyboardSensor, PointerSensor, type DragEndEvent, useSensor, useSensors } from '@dnd-kit/core';
-import { rectSortingStrategy, SortableContext, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable';
+import {
+    closestCenter,
+    DndContext,
+    KeyboardSensor,
+    PointerSensor,
+    type DragEndEvent,
+    useSensor,
+    useSensors,
+} from '@dnd-kit/core';
+import {
+    rectSortingStrategy,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    useSortable,
+} from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent, SyntheticEvent } from 'react';
@@ -19,7 +32,10 @@ interface SortableCategoryCardProps {
     onCopyAllKeywords: (category: HomeCategory) => void;
     onRenameCategory: (category: HomeCategory) => void;
     onRemoveCategory: (categoryId: number) => void;
-    onAddKeywords: (categoryId: number, rawKeywords: string) => Promise<boolean>;
+    onAddKeywords: (
+        categoryId: number,
+        rawKeywords: string,
+    ) => Promise<boolean>;
     onCopyKeyword: (keywordName: string) => void;
     onViewCollection: (keywordName: string) => void;
     onRemoveKeyword: (categoryId: number, keywordId: number) => void;
@@ -69,7 +85,7 @@ export const SortableCategoryCard = ({
     );
 
     const style = {
-        transform: CSS.Transform.toString(transform),
+        transform: CSS.Translate.toString(transform),
         transition,
     };
 
@@ -109,7 +125,9 @@ export const SortableCategoryCard = ({
         event.stopPropagation();
     };
 
-    const handleAddKeywordSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    const handleAddKeywordSubmit = async (
+        event: FormEvent<HTMLFormElement>,
+    ) => {
         event.preventDefault();
         const input = keywordInput.trim();
         if (!input) {
@@ -133,14 +151,22 @@ export const SortableCategoryCard = ({
                         ref={setActivatorNodeRef}
                         label={`Drag ${category.name}`}
                         icon={<DragHandleIcon width={14} height={14} />}
-                        className={saving ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'}
+                        className={
+                            saving
+                                ? 'cursor-default'
+                                : 'cursor-grab active:cursor-grabbing'
+                        }
                         disabled={saving}
                         {...attributes}
                         {...listeners}
                     />
                     <div className="min-w-0">
-                        <h3 className="truncate text-base font-semibold text-ink">{category.name}</h3>
-                        <p className="text-xs text-ink-subtle">Order #{category.order}</p>
+                        <h3 className="truncate text-base font-semibold text-ink">
+                            {category.name}
+                        </h3>
+                        <p className="text-xs text-ink-subtle">
+                            Order #{category.order}
+                        </p>
                     </div>
                 </div>
 
@@ -202,7 +228,9 @@ export const SortableCategoryCard = ({
                 onDragEnd={(event) => onKeywordDragEnd(category.id, event)}
             >
                 <SortableContext
-                    items={category.keywords.map((keyword) => makeKeywordSortableId(category.id, keyword.id))}
+                    items={category.keywords.map((keyword) =>
+                        makeKeywordSortableId(category.id, keyword.id),
+                    )}
                     strategy={rectSortingStrategy}
                 >
                     <ul className="flex flex-wrap gap-2">
@@ -214,7 +242,9 @@ export const SortableCategoryCard = ({
                                 disabled={saving}
                                 onCopyKeyword={onCopyKeyword}
                                 onViewCollection={onViewCollection}
-                                onRemoveKeyword={(keywordId) => onRemoveKeyword(category.id, keywordId)}
+                                onRemoveKeyword={(keywordId) =>
+                                    onRemoveKeyword(category.id, keywordId)
+                                }
                                 onAddSampleImage={onAddKeywordSampleImage}
                                 onRemoveSampleImage={onRemoveKeywordSampleImage}
                             />
@@ -223,7 +253,10 @@ export const SortableCategoryCard = ({
                 </SortableContext>
             </DndContext>
 
-            <form onSubmit={handleAddKeywordSubmit} className="mt-3 flex flex-wrap gap-2">
+            <form
+                onSubmit={handleAddKeywordSubmit}
+                className="mt-3 flex flex-wrap gap-2"
+            >
                 <Input
                     value={keywordInput}
                     onChange={(event) => setKeywordInput(event.target.value)}
