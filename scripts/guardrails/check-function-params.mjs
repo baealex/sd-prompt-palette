@@ -120,6 +120,20 @@ const hasChangedLineInRange = ({
     return false;
 };
 
+const resolveFunctionSignatureLineRange = ({ node, sourceFile }) => {
+    const signatureStart = sourceFile.getLineAndCharacterOfPosition(
+        node.getStart(sourceFile),
+    );
+    const signatureEnd = sourceFile.getLineAndCharacterOfPosition(
+        node.parameters.end,
+    );
+
+    return {
+        startLine: signatureStart.line + 1,
+        endLine: signatureEnd.line + 1,
+    };
+};
+
 const resolveFunctionName = (node) => {
     if (node.name && ts.isIdentifier(node.name)) {
         return node.name.text;
@@ -160,14 +174,11 @@ for (const filePath of targetFiles) {
         if (isTargetFunctionNode(node)) {
             const parameterCount = countParameters(node);
             if (parameterCount >= 3) {
-                const start = sourceFile.getLineAndCharacterOfPosition(
-                    node.getStart(sourceFile),
-                );
-                const end = sourceFile.getLineAndCharacterOfPosition(
-                    node.end,
-                );
-                const startLine = start.line + 1;
-                const endLine = end.line + 1;
+                const { startLine, endLine } =
+                    resolveFunctionSignatureLineRange({
+                        node,
+                        sourceFile,
+                    });
 
                 if (
                     hasChangedLineInRange({

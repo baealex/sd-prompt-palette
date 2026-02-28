@@ -6,10 +6,16 @@ import { Server as SocketIOServer } from 'socket.io';
 
 import { Image } from '~/models';
 import { logger } from './logger';
-import { ParsedImageMeta, readImageMetadata } from './prompt-reader';
+import { type ParsedImageMeta, readImageMetadata } from './prompt-reader';
 import { LiveImagesConfigRepository } from './live-images.config-repository';
 import { errorMessage, hasErrorCode } from './live-images.errors';
 import { LiveImagesImageRepository } from './live-images.image-repository';
+import {
+    buildLegacyPromptText,
+    createEmptyParsedMetadata,
+    toParsedMetadata,
+    toStoredImageMetaInput,
+} from './live-images.metadata';
 import {
     DEFAULT_LIMIT,
     IngestMode,
@@ -19,7 +25,6 @@ import {
     LiveSyncConfig,
     PromptCacheItem,
     RegisterLibraryFileOptions,
-    StoredImageMetaInput,
     UpdateLiveSyncConfigInput,
 } from './live-images.types';
 import {
@@ -36,8 +41,11 @@ import {
     sanitizeLimit,
     sanitizePage,
 } from './live-images.utils';
-
-const IMAGE_META_RAW_JSON_LIMIT = 64_000;
+import {
+    isIgnoredLibraryPath,
+    isIgnoredSourcePath,
+    walkWatchImageFiles,
+} from './live-images.watch-paths';
 
 class LiveImagesService {
     private io: SocketIOServer | null = null;
@@ -232,7 +240,7 @@ class LiveImagesService {
         }
         return {
             image,
-            prompt: this.buildLegacyPromptText(metadata),
+            prompt: buildLegacyPromptText(metadata),
         };
     }
 
@@ -241,7 +249,7 @@ class LiveImagesService {
     ): Promise<{ image: Image | null; metadata: ParsedImageMeta }> {
         const image = await this.imageRepository.findImageById(imageId);
         if (!image) {
-            return { image: null, metadata: this.createEmptyMetadata() };
+            return { image: null, metadata: createEmptyParsedMetadata() };
         }
 
         const absolutePath = this.absolutePathFromImageUrl(image.url);
@@ -250,8 +258,8 @@ class LiveImagesService {
             return {
                 image,
                 metadata: stored
-                    ? this.toParsedMetadata(stored)
-                    : this.createEmptyMetadata(),
+                    ? toParsedMetadata(stored)
+                    : createEmptyParsedMetadata(),
             };
         }
 
@@ -261,8 +269,8 @@ class LiveImagesService {
             return {
                 image,
                 metadata: stored
-                    ? this.toParsedMetadata(stored)
-                    : this.createEmptyMetadata(),
+                    ? toParsedMetadata(stored)
+                    : createEmptyParsedMetadata(),
             };
         }
 
@@ -274,13 +282,13 @@ class LiveImagesService {
         const metadata = await readImageMetadata(absolutePath);
         this.promptCache.set(image.id, {
             mtimeMs: stats.mtimeMs,
-            prompt: this.buildLegacyPromptText(metadata),
+            prompt: buildLegacyPromptText(metadata),
             metadata,
         });
 
         await this.imageRepository.upsertImageMeta(
             image.id,
-            this.toStoredImageMetaInput(metadata),
+            toStoredImageMetaInput(metadata),
         );
         return { image, metadata };
     }
@@ -347,7 +355,10 @@ class LiveImagesService {
             },
             ignored: (targetPath: string) => {
                 const resolved = path.resolve(targetPath);
-                return this.isIgnoredSourcePath(resolved);
+                return isIgnoredSourcePath({
+                    targetPath: resolved,
+                    imageBaseDirPath: this.imageBaseDirPath,
+                });
             },
         });
 
@@ -432,7 +443,12 @@ class LiveImagesService {
         sourcePath: string,
         reason: string,
     ): Promise<void> {
-        if (this.isIgnoredSourcePath(sourcePath)) {
+        if (
+            isIgnoredSourcePath({
+                targetPath: sourcePath,
+                imageBaseDirPath: this.imageBaseDirPath,
+            })
+        ) {
             return;
         }
 
@@ -509,7 +525,7 @@ class LiveImagesService {
         reason: string,
     ): Promise<void> {
         const removed = await this.enqueueImageMutation(async () => {
-            if (this.isIgnoredLibraryPath(targetPath)) {
+            if (isIgnoredLibraryPath(targetPath)) {
                 return false;
             }
 
@@ -532,79 +548,15 @@ class LiveImagesService {
         }
     }
 
-    private isIgnoredSourcePath(targetPath: string): boolean {
-        const resolved = path.resolve(targetPath);
-        if (
-            resolved === this.imageBaseDirPath ||
-            resolved.startsWith(`${this.imageBaseDirPath}${path.sep}`)
-        ) {
-            return true;
-        }
-
-        const segments = resolved
-            .split(/[/\\]+/)
-            .map((segment) => segment.trim().toLowerCase())
-            .filter(Boolean);
-
-        if (segments.includes('node_modules') || segments.includes('.git')) {
-            return true;
-        }
-
-        return false;
-    }
-
-    private isIgnoredLibraryPath(targetPath: string): boolean {
-        const fileName = path.basename(targetPath).toLowerCase();
-        return fileName.endsWith('.preview.jpg');
-    }
-
-    private async walkWatchImageFiles(): Promise<string[]> {
-        const stack = [this.watchDirPath];
-        const result: string[] = [];
-
-        while (stack.length > 0) {
-            const currentPath = stack.pop();
-            if (!currentPath) {
-                continue;
-            }
-
-            const entries = await fs.promises.readdir(currentPath, {
-                withFileTypes: true,
-            });
-            for (const entry of entries) {
-                const absolutePath = path.resolve(currentPath, entry.name);
-                if (entry.isDirectory()) {
-                    if (this.isIgnoredSourcePath(absolutePath)) {
-                        continue;
-                    }
-                    stack.push(absolutePath);
-                    continue;
-                }
-
-                if (!entry.isFile()) {
-                    continue;
-                }
-
-                if (
-                    !isImageFileName(entry.name) ||
-                    this.isIgnoredSourcePath(absolutePath)
-                ) {
-                    continue;
-                }
-
-                result.push(absolutePath);
-            }
-        }
-
-        return result;
-    }
-
     private async syncWatchDirectory(reason: string): Promise<number> {
         return this.enqueueImageMutation(async () => {
             await fs.promises.mkdir(this.watchDirPath, { recursive: true });
             await fs.promises.mkdir(this.imageBaseDirPath, { recursive: true });
 
-            const entries = await this.walkWatchImageFiles();
+            const entries = await walkWatchImageFiles({
+                watchDirPath: this.watchDirPath,
+                imageBaseDirPath: this.imageBaseDirPath,
+            });
             let scanned = 0;
 
             for (const sourcePath of entries) {
@@ -759,155 +711,6 @@ class LiveImagesService {
         });
     }
 
-    private createEmptyMetadata(): ParsedImageMeta {
-        return {
-            prompt: '',
-            negativePrompt: '',
-            sourceType: 'unknown',
-            parseWarnings: [],
-            parseVersion: '',
-        };
-    }
-
-    private buildLegacyPromptText(metadata: ParsedImageMeta): string {
-        if (!metadata.prompt && !metadata.negativePrompt) {
-            return '';
-        }
-
-        if (metadata.sourceType === 'comfy_prompt') {
-            const sections: string[] = [];
-            if (metadata.prompt) {
-                sections.push(`Positive Prompt\n${metadata.prompt}`);
-            }
-            if (metadata.negativePrompt) {
-                sections.push(`Negative Prompt\n${metadata.negativePrompt}`);
-            }
-            return sections.join('\n\n');
-        }
-
-        if (!metadata.negativePrompt) {
-            return metadata.prompt;
-        }
-        if (!metadata.prompt) {
-            return `Negative prompt: ${metadata.negativePrompt}`;
-        }
-        return `${metadata.prompt}\nNegative prompt: ${metadata.negativePrompt}`;
-    }
-
-    private toStoredImageMetaInput(
-        metadata: ParsedImageMeta,
-    ): StoredImageMetaInput {
-        const parseWarningsJson = JSON.stringify(
-            Array.isArray(metadata.parseWarnings) ? metadata.parseWarnings : [],
-        );
-        const rawJson = JSON.stringify({
-            prompt: metadata.prompt,
-            negativePrompt: metadata.negativePrompt,
-            sourceType: metadata.sourceType,
-            parseWarnings: metadata.parseWarnings,
-            parseVersion: metadata.parseVersion,
-        });
-
-        return {
-            sourceType: metadata.sourceType || 'unknown',
-            prompt: metadata.prompt || '',
-            negativePrompt: metadata.negativePrompt || '',
-            model: metadata.model,
-            modelHash: metadata.modelHash,
-            baseSampler: metadata.baseSampler,
-            baseScheduler: metadata.baseScheduler,
-            baseSteps: metadata.baseSteps,
-            baseCfgScale: metadata.baseCfgScale,
-            baseSeed: metadata.baseSeed,
-            upscaleSampler: metadata.upscaleSampler,
-            upscaleScheduler: metadata.upscaleScheduler,
-            upscaleSteps: metadata.upscaleSteps,
-            upscaleCfgScale: metadata.upscaleCfgScale,
-            upscaleSeed: metadata.upscaleSeed,
-            upscaleFactor: metadata.upscaleFactor,
-            upscaler: metadata.upscaler,
-            sizeWidth: metadata.sizeWidth,
-            sizeHeight: metadata.sizeHeight,
-            clipSkip: metadata.clipSkip,
-            vae: metadata.vae,
-            denoiseStrength: metadata.denoiseStrength,
-            parseWarningsJson,
-            parseVersion: metadata.parseVersion || '',
-            rawJson:
-                rawJson.length <= IMAGE_META_RAW_JSON_LIMIT
-                    ? rawJson
-                    : undefined,
-        };
-    }
-
-    private toParsedMetadata(stored: {
-        sourceType: string;
-        prompt: string | null;
-        negativePrompt: string | null;
-        model: string | null;
-        modelHash: string | null;
-        baseSampler: string | null;
-        baseScheduler: string | null;
-        baseSteps: number | null;
-        baseCfgScale: number | null;
-        baseSeed: string | null;
-        upscaleSampler: string | null;
-        upscaleScheduler: string | null;
-        upscaleSteps: number | null;
-        upscaleCfgScale: number | null;
-        upscaleSeed: string | null;
-        upscaleFactor: number | null;
-        upscaler: string | null;
-        sizeWidth: number | null;
-        sizeHeight: number | null;
-        clipSkip: number | null;
-        vae: string | null;
-        denoiseStrength: number | null;
-        parseWarningsJson: string;
-        parseVersion: string;
-    }): ParsedImageMeta {
-        let parseWarnings: string[] = [];
-        try {
-            const parsed = JSON.parse(stored.parseWarningsJson || '[]');
-            if (Array.isArray(parsed)) {
-                parseWarnings = parsed.filter(
-                    (item) => typeof item === 'string',
-                );
-            }
-        } catch {
-            parseWarnings = [];
-        }
-
-        return {
-            prompt: stored.prompt || '',
-            negativePrompt: stored.negativePrompt || '',
-            sourceType:
-                (stored.sourceType as ParsedImageMeta['sourceType']) ||
-                'unknown',
-            model: stored.model || undefined,
-            modelHash: stored.modelHash || undefined,
-            baseSampler: stored.baseSampler || undefined,
-            baseScheduler: stored.baseScheduler || undefined,
-            baseSteps: stored.baseSteps || undefined,
-            baseCfgScale: stored.baseCfgScale || undefined,
-            baseSeed: stored.baseSeed || undefined,
-            upscaleSampler: stored.upscaleSampler || undefined,
-            upscaleScheduler: stored.upscaleScheduler || undefined,
-            upscaleSteps: stored.upscaleSteps || undefined,
-            upscaleCfgScale: stored.upscaleCfgScale || undefined,
-            upscaleSeed: stored.upscaleSeed || undefined,
-            upscaleFactor: stored.upscaleFactor || undefined,
-            upscaler: stored.upscaler || undefined,
-            sizeWidth: stored.sizeWidth || undefined,
-            sizeHeight: stored.sizeHeight || undefined,
-            clipSkip: stored.clipSkip || undefined,
-            vae: stored.vae || undefined,
-            denoiseStrength: stored.denoiseStrength || undefined,
-            parseWarnings,
-            parseVersion: stored.parseVersion || '',
-        };
-    }
-
     private async upsertImageMetadataForPath(
         imageId: number,
         absolutePath: string,
@@ -916,13 +719,13 @@ class LiveImagesService {
             const metadata = await readImageMetadata(absolutePath);
             await this.imageRepository.upsertImageMeta(
                 imageId,
-                this.toStoredImageMetaInput(metadata),
+                toStoredImageMetaInput(metadata),
             );
             const stats = await this.readStatIfExists(absolutePath);
             if (stats) {
                 this.promptCache.set(imageId, {
                     mtimeMs: stats.mtimeMs,
-                    prompt: this.buildLegacyPromptText(metadata),
+                    prompt: buildLegacyPromptText(metadata),
                     metadata,
                 });
             }
