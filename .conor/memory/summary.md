@@ -1,6 +1,7 @@
 # Memory Index
 
 ## Decisions
+- [D-20260228-function-param-guard](chunks/D-20260228-function-param-guard.md) 3+ positional params in changed functions are blocked by pre-commit to enforce object-parameter signatures. | #backend #guardrails #convention (2026-02-28)
 - [D-20260227-auto-collect-ux-control](chunks/D-20260227-auto-collect-ux-control.md) Collection control used technical `Realtime` labels and modal-first activation, slowing discoverability and enable flow. | #frontend #ux #live-collect (2026-02-27)
 - [D-20260227-meta-plan-contract](chunks/D-20260227-meta-plan-contract.md) Metadata expansion plan had conflicts across ingest safety, data ownership, and API transport. | #metadata #architecture #api (2026-02-27)
 - [D-20260227-react-migration-option-b-tailwind](chunks/D-20260227-react-migration-option-b-tailwind.md) React migration plan needed a fixed cutover path and styling standard. | #frontend #migration #react #tailwind (2026-02-27)
