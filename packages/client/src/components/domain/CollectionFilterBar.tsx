@@ -17,7 +17,6 @@ interface CollectionFilterBarProps {
     className?: string;
     onSortChange: (sort: CollectionSort) => void;
     onModelChange: (value: string) => void;
-    onApply: () => void;
     onReset: () => void;
 }
 
@@ -29,7 +28,6 @@ export const CollectionFilterBar = ({
     className,
     onSortChange,
     onModelChange,
-    onApply,
     onReset,
 }: CollectionFilterBarProps) => {
     const canReset = model.length > 0 || sort !== DEFAULT_COLLECTION_SORT;
@@ -46,13 +44,9 @@ export const CollectionFilterBar = ({
     }, [model, modelOptions]);
 
     return (
-        <form
-            onSubmit={(event) => {
-                event.preventDefault();
-                onApply();
-            }}
+        <div
             className={cn(
-                'grid gap-3 rounded-token-lg border border-line bg-surface-base p-3 md:grid-cols-[minmax(0,1fr)_240px_auto_auto] md:items-end',
+                'grid gap-3 rounded-token-lg border border-line bg-surface-base p-3 md:grid-cols-[minmax(0,1fr)_240px_auto] md:items-end',
                 className,
             )}
         >
@@ -104,9 +98,6 @@ export const CollectionFilterBar = ({
                 </select>
             </div>
 
-            <Button type="submit" variant="secondary" size="md">
-                Apply
-            </Button>
             <Button
                 type="button"
                 variant="ghost"
@@ -116,6 +107,6 @@ export const CollectionFilterBar = ({
             >
                 Reset
             </Button>
-        </form>
+        </div>
     );
 };

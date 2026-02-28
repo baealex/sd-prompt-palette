@@ -115,34 +115,27 @@ export const CollectionViewLayout = () => {
         setDraftModel(model);
     }, [model]);
 
-    const applySearch = useCallback(() => {
-        const nextQuery = draftQuery.trim();
-        const nextModel = draftModel.trim();
-
-        void navigate({
-            to: currentPath,
-            replace: true,
-            resetScroll: false,
-            search: (previousSearch) => {
-                const nextSearch = {
-                    ...(previousSearch as Record<string, unknown>),
-                };
-
-                applyCollectionFilterSearch(nextSearch, {
-                    query: nextQuery,
-                    model: nextModel,
-                    sort,
-                });
-                delete nextSearch.page;
-                delete nextSearch.selected;
-
-                return nextSearch;
+    const applyFilters = useCallback(
+        (
+            next: {
+                query: string;
+                model: string;
+                sort: CollectionSort;
             },
-        });
-    }, [currentPath, draftModel, draftQuery, navigate, sort]);
+            options?: { force?: boolean },
+        ) => {
+            const nextQuery = next.query.trim();
+            const nextModel = next.model.trim();
+            const shouldApply =
+                options?.force ||
+                nextQuery !== query ||
+                nextModel !== model ||
+                next.sort !== sort;
 
-    const handleSortChange = useCallback(
-        (nextSort: CollectionSort) => {
+            if (!shouldApply) {
+                return;
+            }
+
             void navigate({
                 to: currentPath,
                 replace: true,
@@ -151,43 +144,88 @@ export const CollectionViewLayout = () => {
                     const nextSearch = {
                         ...(previousSearch as Record<string, unknown>),
                     };
+
                     applyCollectionFilterSearch(nextSearch, {
-                        query,
-                        model,
-                        sort: nextSort,
+                        query: nextQuery,
+                        model: nextModel,
+                        sort: next.sort,
                     });
                     delete nextSearch.page;
                     delete nextSearch.selected;
+
                     return nextSearch;
                 },
             });
         },
-        [currentPath, model, navigate, query],
+        [currentPath, model, navigate, query, sort],
+    );
+
+    const applySearch = useCallback(() => {
+        applyFilters(
+            {
+                query: draftQuery,
+                model: draftModel,
+                sort,
+            },
+            { force: true },
+        );
+    }, [applyFilters, draftModel, draftQuery, sort]);
+
+    useEffect(() => {
+        const normalizedDraftQuery = draftQuery.trim();
+        if (normalizedDraftQuery === query) {
+            return;
+        }
+
+        const timeoutId = window.setTimeout(() => {
+            applyFilters({
+                query: normalizedDraftQuery,
+                model: draftModel,
+                sort,
+            });
+        }, 300);
+
+        return () => {
+            window.clearTimeout(timeoutId);
+        };
+    }, [applyFilters, draftModel, draftQuery, query, sort]);
+
+    const handleSortChange = useCallback(
+        (nextSort: CollectionSort) => {
+            applyFilters({
+                query: draftQuery,
+                model: draftModel,
+                sort: nextSort,
+            });
+        },
+        [applyFilters, draftModel, draftQuery],
+    );
+
+    const handleModelChange = useCallback(
+        (nextModel: string) => {
+            setDraftModel(nextModel);
+            applyFilters({
+                query: draftQuery,
+                model: nextModel,
+                sort,
+            });
+        },
+        [applyFilters, draftQuery, sort],
     );
 
     const resetFilters = useCallback(() => {
         setDraftQuery('');
         setDraftModel('');
 
-        void navigate({
-            to: currentPath,
-            replace: true,
-            resetScroll: false,
-            search: (previousSearch) => {
-                const nextSearch = {
-                    ...(previousSearch as Record<string, unknown>),
-                };
-                applyCollectionFilterSearch(nextSearch, {
-                    query: '',
-                    model: '',
-                    sort: DEFAULT_COLLECTION_SORT,
-                });
-                delete nextSearch.page;
-                delete nextSearch.selected;
-                return nextSearch;
+        applyFilters(
+            {
+                query: '',
+                model: '',
+                sort: DEFAULT_COLLECTION_SORT,
             },
-        });
-    }, [currentPath, navigate]);
+            { force: true },
+        );
+    }, [applyFilters]);
 
     return (
         <PageFrame title={pageMeta.title} description={pageMeta.description}>
@@ -204,8 +242,7 @@ export const CollectionViewLayout = () => {
                     modelOptions={modelOptionsQuery.data ?? []}
                     loadingModelOptions={modelOptionsQuery.isPending}
                     onSortChange={handleSortChange}
-                    onModelChange={setDraftModel}
-                    onApply={applySearch}
+                    onModelChange={handleModelChange}
                     onReset={resetFilters}
                 />
                 <CollectionRealtimeControl />
