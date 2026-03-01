@@ -1,9 +1,3 @@
----
-name: conor-summary
-description: "메모리 chunks에서 summary.md를 자동 갱신합니다"
-trigger: "중요한 작업이 완료되어 메모리 갱신이 필요하면"
----
-
 메모리 chunks에서 summary.md를 자동 갱신합니다.
 
 다음 명령을 실행하세요:

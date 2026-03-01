@@ -1,51 +1,28 @@
 # Stable Diffusion Prompt Palette
 
+> A self-hosted personal workspace for your Stable Diffusion workflow
+
+Manage prompts like a color palette, browse your generated images, extract metadata, and sync your output folder — all in one place.
+
 ![](https://github.com/baealex/sd-prompt-palette/assets/35596687/e4310657-7520-4f0b-9645-6e8f754a6461)
 
 ![](https://github.com/baealex/sd-prompt-palette/assets/35596687/207c4996-a932-4216-b41d-c328a8397a0d)
 
 ![](https://github.com/baealex/sd-prompt-palette/assets/35596687/4e1242f3-e4d6-4265-9b46-18d2da6775f1)
 
-영어가 아직 부족해서 이미지를 자연스럽게 표현하는데 어려움을 겪고 있어서 만들었습니다. 팔레트의 물감처럼 단어를 다룰 수 있게 하는 것이 목표입니다.
+## Features
 
-<br>
+- **Prompt Palette** — Organize keywords by category, click to copy, drag to reorder. Treat words like paint on a palette.
+- **Image Metadata Reader** — Upload any SD-generated image to extract model, sampler, steps, CFG, seed, and upscale info.
+- **Collection Manager** — Save and browse your favorite generations in list, gallery, browse, or slideshow view.
+- **Live Sync** — Watch your output folder and auto-import new images as they're generated.
+- **Idea Generator** — Randomly combine keywords across categories to spark new prompt ideas.
 
-## Feature
+## Quick Start
 
-- [x] 키워드 클릭시 키워드가 복사됩니다. (https나 localhost 에서만 동작합니다)
-- [x] 카테고리와 키워드 오른쪽 클릭시 삭제 및 수정이 가능합니다.
-- [x] 카테고리와 키워드의 순서를 변경할 수 있습니다.
-- [x] 키워드를 호버하면 단어에 대한 샘플 이미지가 표기됩니다.
-- [x] 이미지의 프롬프트를 조회할 수 있습니다.
-- [x] 조회한 이미지 & 프롬프트를 저장/관리할 수 있습니다. (리스트 / 갤러리 / 탐색 / 슬라이드)
-- [x] 카테고리의 키워드를 랜덤 조합하여 새로운 아이디어를 얻을 수 있습니다.
-- [x] 실시간 수집 모드가 추가되어 폴더의 이미지를 자동으로 반영할 수 있습니다.
-- [x] 이미지에서 모델/해시, 샘플러/스케줄러, 스텝/CFG/시드, 업스케일 정보 등 생성 메타데이터를 확인할 수 있습니다.
+### Docker (Recommended)
 
-<br>
-
-## Demo site
-
-[demo-prompt-palette.baejino.com](https://demo-prompt-palette.baejino.com/)
-
-<br>
-
-## Self-host
-
-### use NodeJS
-
-```
-git clone https://github.com/baealex/sd-prompt-palette
-cd sd-prompt-palette
-pnpm i
-pnpm start
-```
-
-`http://localhost:3332`로 접속할 수 있습니다.
-
-### use Docker
-
-```
+```bash
 docker run \
     -v ./data:/data \
     -v ./assets:/assets \
@@ -53,4 +30,19 @@ docker run \
     baealex/sd-prompt-palette
 ```
 
-`http://localhost:3332`로 접속할 수 있습니다.
+Open `http://localhost:3332` and start organizing.
+
+### Node.js
+
+```bash
+git clone https://github.com/baealex/sd-prompt-palette
+cd sd-prompt-palette
+pnpm i
+pnpm start
+```
+
+Open `http://localhost:3332`.
+
+## License
+
+[MIT](./LICENSE)

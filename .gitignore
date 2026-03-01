@@ -5,3 +5,4 @@
 node_modules
 /docs/plan/
 .tmp*
+.claude/settings.local.json
