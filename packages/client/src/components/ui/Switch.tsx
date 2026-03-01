@@ -1,3 +1,5 @@
+import * as SwitchPrimitive from '@radix-ui/react-switch';
+
 import { cn } from './cn';
 
 interface SwitchProps {
@@ -16,36 +18,25 @@ export const Switch = ({
     className,
 }: SwitchProps) => {
     return (
-        <button
-            type="button"
-            role="switch"
-            aria-checked={checked}
+        <SwitchPrimitive.Root
+            checked={checked}
             aria-label={label}
             disabled={disabled}
-            onClick={() => {
-                onCheckedChange(!checked);
-            }}
+            onCheckedChange={onCheckedChange}
             className={cn(
-                'ui-focus-ring inline-flex h-11 w-11 items-center justify-center rounded-token-md border border-transparent bg-transparent disabled:cursor-not-allowed disabled:opacity-55',
+                'ui-focus-ring inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors disabled:cursor-not-allowed disabled:opacity-55',
+                checked
+                    ? 'border-success-700 bg-success-700'
+                    : 'border-line-strong bg-surface-muted',
                 className,
             )}
         >
-            <span
+            <SwitchPrimitive.Thumb
                 className={cn(
-                    'relative inline-flex h-4 w-8 items-center rounded-full border transition-colors',
-                    checked
-                        ? 'border-success-700 bg-success-700'
-                        : 'border-line-strong bg-surface-muted',
+                    'h-5 w-5 rounded-full bg-surface-raised shadow-surface transition-transform',
+                    checked ? 'translate-x-[20px]' : 'translate-x-[2px]',
                 )}
-                aria-hidden="true"
-            >
-                <span
-                    className={cn(
-                        'h-3 w-3 rounded-full bg-surface-raised shadow-surface transition-transform',
-                        checked ? 'translate-x-[16px]' : 'translate-x-[2px]',
-                    )}
-                />
-            </span>
-        </button>
+            />
+        </SwitchPrimitive.Root>
     );
 };

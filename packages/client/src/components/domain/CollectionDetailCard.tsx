@@ -1,5 +1,6 @@
 import type { Collection } from '~/models/types';
 import { Button } from '~/components/ui/Button';
+import { formatDateTime } from '~/modules/date-time';
 
 import { Image } from '~/components/ui/Image';
 
@@ -11,26 +12,6 @@ interface CollectionDetailCardProps {
     renaming?: boolean;
     removing?: boolean;
 }
-
-const formatDateTime = (value?: string) => {
-    if (!value) {
-        return null;
-    }
-
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) {
-        return value;
-    }
-
-    const pad = (input: number) => String(input).padStart(2, '0');
-    const year = parsed.getFullYear();
-    const month = pad(parsed.getMonth() + 1);
-    const day = pad(parsed.getDate());
-    const hour = pad(parsed.getHours());
-    const minute = pad(parsed.getMinutes());
-    const second = pad(parsed.getSeconds());
-    return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
-};
 
 export const CollectionDetailCard = ({
     collection,

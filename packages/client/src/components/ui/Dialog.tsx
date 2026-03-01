@@ -1,7 +1,82 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import type { ReactNode } from 'react';
+import { forwardRef } from 'react';
+import type {
+    ComponentPropsWithoutRef,
+    ElementRef,
+    ReactNode,
+} from 'react';
 
 import { Button } from './Button';
+import { cn } from './cn';
+
+export const DialogRoot = DialogPrimitive.Root;
+export const DialogTrigger = DialogPrimitive.Trigger;
+export const DialogPortal = DialogPrimitive.Portal;
+export const DialogClose = DialogPrimitive.Close;
+
+type DialogOverlayElement = ElementRef<typeof DialogPrimitive.Overlay>;
+type DialogOverlayProps = ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>;
+
+export const DialogOverlay = forwardRef<DialogOverlayElement, DialogOverlayProps>(
+    ({ className, ...props }, ref) => (
+        <DialogPrimitive.Overlay
+            ref={ref}
+            className={cn('fixed inset-0 z-40 bg-overlay/45', className)}
+            {...props}
+        />
+    ),
+);
+
+DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
+
+type DialogContentElement = ElementRef<typeof DialogPrimitive.Content>;
+type DialogContentProps = ComponentPropsWithoutRef<typeof DialogPrimitive.Content>;
+
+export const DialogContent = forwardRef<DialogContentElement, DialogContentProps>(
+    ({ className, ...props }, ref) => (
+        <DialogPrimitive.Content
+            ref={ref}
+            className={cn(
+                'fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-token-lg border border-line bg-surface-base p-5 shadow-overlay ui-focus-ring',
+                className,
+            )}
+            {...props}
+        />
+    ),
+);
+
+DialogContent.displayName = DialogPrimitive.Content.displayName;
+
+type DialogTitleElement = ElementRef<typeof DialogPrimitive.Title>;
+type DialogTitleProps = ComponentPropsWithoutRef<typeof DialogPrimitive.Title>;
+
+export const DialogTitle = forwardRef<DialogTitleElement, DialogTitleProps>(
+    ({ className, ...props }, ref) => (
+        <DialogPrimitive.Title
+            ref={ref}
+            className={cn('text-lg font-semibold text-ink', className)}
+            {...props}
+        />
+    ),
+);
+
+DialogTitle.displayName = DialogPrimitive.Title.displayName;
+
+type DialogDescriptionElement = ElementRef<typeof DialogPrimitive.Description>;
+type DialogDescriptionProps = ComponentPropsWithoutRef<typeof DialogPrimitive.Description>;
+
+export const DialogDescription = forwardRef<
+    DialogDescriptionElement,
+    DialogDescriptionProps
+>(({ className, ...props }, ref) => (
+    <DialogPrimitive.Description
+        ref={ref}
+        className={cn('mt-1 text-sm text-ink-muted', className)}
+        {...props}
+    />
+));
+
+DialogDescription.displayName = DialogPrimitive.Description.displayName;
 
 interface DialogProps {
     open: boolean;
@@ -21,27 +96,27 @@ export const Dialog = ({
     children,
 }: DialogProps) => {
     return (
-        <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
-            <DialogPrimitive.Trigger asChild>{trigger}</DialogPrimitive.Trigger>
-            <DialogPrimitive.Portal>
-                <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-overlay/45" />
-                <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-token-lg border border-line bg-surface-base p-5 shadow-overlay ui-focus-ring">
-                    <DialogPrimitive.Title className="text-lg font-semibold text-ink">
+        <DialogRoot open={open} onOpenChange={onOpenChange}>
+            <DialogTrigger asChild>{trigger}</DialogTrigger>
+            <DialogPortal>
+                <DialogOverlay />
+                <DialogContent className="max-w-lg">
+                    <DialogTitle>
                         {title}
-                    </DialogPrimitive.Title>
+                    </DialogTitle>
                     {description ? (
-                        <DialogPrimitive.Description className="mt-1 text-sm text-ink-muted">
+                        <DialogDescription>
                             {description}
-                        </DialogPrimitive.Description>
+                        </DialogDescription>
                     ) : null}
                     <div className="mt-4">{children}</div>
-                    <DialogPrimitive.Close asChild>
+                    <DialogClose asChild>
                         <Button className="mt-4" variant="secondary">
                             Close
                         </Button>
-                    </DialogPrimitive.Close>
-                </DialogPrimitive.Content>
-            </DialogPrimitive.Portal>
-        </DialogPrimitive.Root>
+                    </DialogClose>
+                </DialogContent>
+            </DialogPortal>
+        </DialogRoot>
     );
 };

@@ -1,7 +1,14 @@
-import * as DialogPrimitive from '@radix-ui/react-dialog';
 import type { ReactNode } from 'react';
 
 import { Button } from './Button';
+import {
+    DialogContent,
+    DialogDescription,
+    DialogOverlay,
+    DialogPortal,
+    DialogRoot,
+    DialogTitle,
+} from './Dialog';
 
 interface ConfirmDialogProps {
     open: boolean;
@@ -27,19 +34,19 @@ export const ConfirmDialog = ({
     onOpenChange,
 }: ConfirmDialogProps) => {
     return (
-        <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
-            <DialogPrimitive.Portal>
-                <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-overlay/45" />
-                <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 w-[92vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-token-lg border border-line bg-surface-base p-5 shadow-overlay ui-focus-ring">
-                    <DialogPrimitive.Title className="text-lg font-semibold text-ink">
+        <DialogRoot open={open} onOpenChange={onOpenChange}>
+            <DialogPortal>
+                <DialogOverlay />
+                <DialogContent className="max-w-md">
+                    <DialogTitle>
                         {title}
-                    </DialogPrimitive.Title>
+                    </DialogTitle>
                     {description ? (
-                        <DialogPrimitive.Description asChild>
+                        <DialogDescription asChild className="mt-2">
                             <div className="mt-2 text-sm text-ink-muted">
                                 {description}
                             </div>
-                        </DialogPrimitive.Description>
+                        </DialogDescription>
                     ) : null}
                     <div className="mt-5 flex justify-end gap-2">
                         <Button
@@ -57,8 +64,8 @@ export const ConfirmDialog = ({
                             {confirming ? 'Processing...' : confirmLabel}
                         </Button>
                     </div>
-                </DialogPrimitive.Content>
-            </DialogPrimitive.Portal>
-        </DialogPrimitive.Root>
+                </DialogContent>
+            </DialogPortal>
+        </DialogRoot>
     );
 };

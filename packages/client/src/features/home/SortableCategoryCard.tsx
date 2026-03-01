@@ -186,6 +186,8 @@ export const SortableCategoryCard = ({
                 </div>
             </header>
 
+            <hr className="-mx-3 mb-3 border-line sm:-mx-4 sm:mb-4" />
+
             <DndContext
                 sensors={keywordSensors}
                 collisionDetection={closestCenter}

@@ -5,7 +5,7 @@ import { cn } from './cn';
 
 type CardTone = 'default' | 'muted';
 type CardPadding = 'none' | 'sm' | 'md' | 'lg';
-type CardEmphasis = 'none' | 'brand' | 'brandGlow';
+type CardEmphasis = 'none' | 'flat' | 'brand' | 'brandGlow';
 
 interface CardProps extends HTMLAttributes<HTMLElement> {
     as?: 'article' | 'section' | 'div' | 'li';
@@ -29,6 +29,7 @@ const PADDING_CLASS: Record<CardPadding, string> = {
 
 const EMPHASIS_CLASS: Record<CardEmphasis, string> = {
     none: 'border border-line shadow-surface',
+    flat: 'border border-line',
     brand: 'border-2 border-brand-200 shadow-surface',
     brandGlow: 'border-2 border-brand-200 shadow-surface shadow-brand-300/50',
 };

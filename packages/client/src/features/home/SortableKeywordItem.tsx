@@ -1,7 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useEffect, useRef } from 'react';
-import type { SyntheticEvent } from 'react';
 
 import { Card } from '~/components/ui/Card';
 import { cn } from '~/components/ui/cn';
@@ -11,6 +10,11 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '~/components/ui/DropdownMenu';
+import {
+    HoverCard,
+    HoverCardContent,
+    HoverCardTrigger,
+} from '~/components/ui/HoverCard';
 import { MoreIcon } from '~/icons';
 import type { Keyword } from '~/models/types';
 
@@ -44,6 +48,7 @@ export const SortableKeywordItem = ({
         attributes,
         listeners,
         setNodeRef,
+        setActivatorNodeRef,
         transform,
         transition,
         isDragging,
@@ -55,7 +60,6 @@ export const SortableKeywordItem = ({
     const style = {
         transform: CSS.Translate.toString(transform),
         transition,
-        touchAction: 'none',
     };
 
     useEffect(() => {
@@ -64,10 +68,6 @@ export const SortableKeywordItem = ({
         }
     }, [isDragging]);
 
-    const stopDragFromMenu = (event: SyntheticEvent<HTMLElement>) => {
-        event.stopPropagation();
-    };
-
     const handleCopyClick = () => {
         if (wasDraggingRef.current) {
             wasDraggingRef.current = false;
@@ -75,6 +75,24 @@ export const SortableKeywordItem = ({
         }
         onCopyKeyword(keyword.name);
     };
+    const keywordButton = (
+        <button
+            ref={setActivatorNodeRef}
+            type="button"
+            className={cn(
+                'ui-focus-ring min-w-0 truncate rounded-sm text-left text-sm font-medium text-ink',
+                disabled
+                    ? 'cursor-default'
+                    : 'cursor-grab active:cursor-grabbing',
+            )}
+            style={{ touchAction: 'none' }}
+            onClick={handleCopyClick}
+            {...attributes}
+            {...listeners}
+        >
+            {keyword.name}
+        </button>
+    );
 
     return (
         <Card
@@ -82,39 +100,45 @@ export const SortableKeywordItem = ({
             padding="none"
             ref={setNodeRef}
             style={style}
+            emphasis="flat"
             className={cn(
-                'group relative min-h-11 list-none py-2 pl-3 pr-1 text-sm select-none',
+                'group relative list-none rounded-token-md py-1 pl-2.5 pr-0.5 text-sm select-none',
                 isDragging ? 'z-10 opacity-70' : '',
-                disabled
-                    ? 'cursor-default'
-                    : 'cursor-grab active:cursor-grabbing',
             )}
-            {...attributes}
-            {...listeners}
         >
             <div className="flex min-w-0 items-center gap-0.5">
-                <button
-                    type="button"
-                    className="ui-focus-ring min-w-0 truncate rounded-sm text-left text-sm font-medium text-ink"
-                    onClick={handleCopyClick}
-                >
-                    {keyword.name}
-                </button>
+                {keyword.image ? (
+                    <HoverCard openDelay={120} closeDelay={100}>
+                        <HoverCardTrigger asChild>
+                            {keywordButton}
+                        </HoverCardTrigger>
+                        <HoverCardContent
+                            side="right"
+                            align="start"
+                            className="w-28 p-0"
+                        >
+                            <img
+                                loading="lazy"
+                                src={keyword.image.url}
+                                alt={keyword.name}
+                                className="block h-auto w-full"
+                            />
+                        </HoverCardContent>
+                    </HoverCard>
+                ) : (
+                    keywordButton
+                )}
 
-                <div
-                    className="relative shrink-0"
-                    onPointerDown={stopDragFromMenu}
-                    onClick={stopDragFromMenu}
-                >
+                <div className="relative shrink-0">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <button
                                 type="button"
-                                className="ui-focus-ring inline-flex h-11 w-11 items-center justify-center rounded-token-sm text-ink-subtle transition-colors hover:bg-surface-muted hover:text-ink-muted"
+                                className="ui-focus-ring inline-flex h-8 w-8 items-center justify-center rounded-token-sm text-ink-subtle transition-colors hover:bg-surface-muted hover:text-ink-muted"
                                 disabled={disabled}
                                 aria-label={`${keyword.name} actions`}
                             >
-                                <MoreIcon width={14} height={14} />
+                                <MoreIcon width={12} height={12} />
                             </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" sideOffset={8}>
@@ -163,14 +187,6 @@ export const SortableKeywordItem = ({
                     </DropdownMenu>
                 </div>
             </div>
-            {keyword.image ? (
-                <img
-                    loading="lazy"
-                    src={keyword.image.url}
-                    alt={keyword.name}
-                    className="pointer-events-none absolute left-0 top-full z-20 mt-2 hidden w-28 rounded-token-md border border-line bg-surface-base shadow-raised group-focus-within:block md:-bottom-2 md:left-full md:top-auto md:mt-0 md:group-hover:block md:group-focus-within:block"
-                />
-            ) : null}
         </Card>
     );
 };

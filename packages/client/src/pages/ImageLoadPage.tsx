@@ -10,24 +10,7 @@ import { PromptDialog } from '~/components/ui/PromptDialog';
 import { useClipboardToast } from '~/components/ui/use-clipboard-toast';
 import { useImageLoad } from '~/features/image-load/use-image-load';
 import { HeartIcon } from '~/icons';
-
-const formatDateTime = (value?: string) => {
-    if (!value) {
-        return undefined;
-    }
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) {
-        return value;
-    }
-    const pad = (input: number) => String(input).padStart(2, '0');
-    const year = parsed.getFullYear();
-    const month = pad(parsed.getMonth() + 1);
-    const day = pad(parsed.getDate());
-    const hour = pad(parsed.getHours());
-    const minute = pad(parsed.getMinutes());
-    const second = pad(parsed.getSeconds());
-    return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
-};
+import { formatDateTime } from '~/modules/date-time';
 
 export const ImageLoadPage = () => {
     const [saveDialogOpen, setSaveDialogOpen] = useState(false);

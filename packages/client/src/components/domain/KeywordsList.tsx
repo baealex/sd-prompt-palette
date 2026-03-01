@@ -1,5 +1,10 @@
 import type { MouseEvent } from 'react';
 
+import {
+    HoverCard,
+    HoverCardContent,
+    HoverCardTrigger,
+} from '~/components/ui/HoverCard';
 import type { Keyword } from '~/models/types';
 
 interface KeywordsListProps {
@@ -13,22 +18,43 @@ export const KeywordsList = ({ keywords, onClick, onContextMenu }: KeywordsListP
         <ul className="mb-4 flex flex-wrap gap-2">
             {keywords.map((keyword) => (
                 <li key={keyword.id} className="list-none">
-                    <button
-                        type="button"
-                        onClick={() => onClick?.(keyword)}
-                        onContextMenu={(event) => onContextMenu?.(event, keyword)}
-                        className="ui-focus-ring group relative inline-flex min-h-11 items-center rounded-token-md border border-line bg-surface-base px-3 py-2 text-xs text-ink-muted shadow-surface transition-colors hover:bg-surface-muted"
-                    >
-                        {keyword.name}
-                        {keyword.image ? (
-                            <img
-                                loading="lazy"
-                                src={keyword.image.url}
-                                alt={keyword.name}
-                                className="pointer-events-none absolute -bottom-1 left-full z-20 hidden w-28 rounded-token-md border border-line bg-surface-base shadow-raised group-hover:block group-focus-visible:block"
-                            />
-                        ) : null}
-                    </button>
+                    {keyword.image ? (
+                        <HoverCard openDelay={120} closeDelay={100}>
+                            <HoverCardTrigger asChild>
+                                <button
+                                    type="button"
+                                    onClick={() => onClick?.(keyword)}
+                                    onContextMenu={(event) =>
+                                        onContextMenu?.(event, keyword)}
+                                    className="ui-focus-ring inline-flex items-center rounded-token-md border border-line bg-surface-base px-2.5 py-1.5 text-xs text-ink-muted transition-colors hover:bg-surface-muted"
+                                >
+                                    {keyword.name}
+                                </button>
+                            </HoverCardTrigger>
+                            <HoverCardContent
+                                side="right"
+                                align="start"
+                                className="w-28 p-0"
+                            >
+                                <img
+                                    loading="lazy"
+                                    src={keyword.image.url}
+                                    alt={keyword.name}
+                                    className="block h-auto w-full"
+                                />
+                            </HoverCardContent>
+                        </HoverCard>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={() => onClick?.(keyword)}
+                            onContextMenu={(event) =>
+                                onContextMenu?.(event, keyword)}
+                            className="ui-focus-ring inline-flex items-center rounded-token-md border border-line bg-surface-base px-2.5 py-1.5 text-xs text-ink-muted transition-colors hover:bg-surface-muted"
+                        >
+                            {keyword.name}
+                        </button>
+                    )}
                 </li>
             ))}
         </ul>
