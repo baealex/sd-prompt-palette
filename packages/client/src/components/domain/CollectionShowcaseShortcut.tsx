@@ -2,7 +2,9 @@ import { Link, useSearch } from '@tanstack/react-router';
 
 import { ImageIcon } from '~/icons';
 import {
+    DEFAULT_COLLECTION_SEARCH_BY,
     normalizeCollectionFilterText,
+    parseCollectionSearchBy,
     parseCollectionSort,
     DEFAULT_COLLECTION_SORT,
 } from '~/features/collection/view-filter';
@@ -14,10 +16,12 @@ export const CollectionShowcaseShortcut = () => {
             const queryValue = (search as Record<string, unknown>).query;
             const modelValue = (search as Record<string, unknown>).model;
             const sortValue = (search as Record<string, unknown>).sort;
+            const searchByValue = (search as Record<string, unknown>).searchBy;
             return {
                 query: normalizeCollectionFilterText(queryValue),
                 model: normalizeCollectionFilterText(modelValue),
                 sort: parseCollectionSort(sortValue),
+                searchBy: parseCollectionSearchBy(searchByValue),
             };
         },
     });
@@ -31,6 +35,9 @@ export const CollectionShowcaseShortcut = () => {
     }
     if (filters.sort !== DEFAULT_COLLECTION_SORT) {
         searchParams.sort = filters.sort;
+    }
+    if (filters.searchBy !== DEFAULT_COLLECTION_SEARCH_BY) {
+        searchParams.searchBy = filters.searchBy;
     }
 
     return (

@@ -16,16 +16,17 @@ const shuffle = <T,>(items: T[]): T[] => {
 };
 
 export const SlideshowTheme = () => {
-    const { query, model, sort } = useShowcaseFilters();
+    const { query, model, searchBy, sort } = useShowcaseFilters();
 
     const { data, isPending } = useQuery({
-        queryKey: ['collections', 'showcase-slideshow', query, model, sort],
+        queryKey: ['collections', 'showcase-slideshow', query, model, searchBy, sort],
         queryFn: async () => {
             const response = await getCollections({
                 page: 1,
                 limit: BATCH_SIZE,
                 query,
                 model,
+                searchBy,
                 ...resolveCollectionSortOrder(sort),
             });
             return response.data.allCollections.collections.map((item) => ({

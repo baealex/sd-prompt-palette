@@ -9,6 +9,55 @@ interface AllCollections {
     pagination: Pagination;
 }
 
+const resolveCollectionQueryFilter = (
+    query: string,
+    searchBy?: 'title' | 'prompt' | 'negative_prompt',
+): Prisma.CollectionWhereInput => {
+    if (searchBy === 'title') {
+        return {
+            title: {
+                contains: query,
+            },
+        };
+    }
+
+    if (searchBy === 'prompt') {
+        return {
+            prompt: {
+                contains: query,
+            },
+        };
+    }
+
+    if (searchBy === 'negative_prompt') {
+        return {
+            negativePrompt: {
+                contains: query,
+            },
+        };
+    }
+
+    return {
+        OR: [
+            {
+                title: {
+                    contains: query,
+                },
+            },
+            {
+                prompt: {
+                    contains: query,
+                },
+            },
+            {
+                negativePrompt: {
+                    contains: query,
+                },
+            },
+        ],
+    };
+};
+
 function resolveCollectionOrderBy(
     orderBy?: string,
     order: 'asc' | 'desc' = 'desc',
@@ -93,7 +142,7 @@ export const CollectionType = gql`
 export const CollectionQuery = gql`
     type Query {
         collectionModelOptions: [String!]!
-        allCollections(orderBy: String, order: String, query: String, model: String, limit: Int, offset: Int): AllCollections!
+        allCollections(orderBy: String, order: String, query: String, model: String, searchBy: String, limit: Int, offset: Int): AllCollections!
         collection(id: ID!): Collection!
     }
 `;
@@ -142,6 +191,7 @@ export const CollectionResolvers: IResolvers = {
                     order,
                     query,
                     model,
+                    searchBy,
                     limit,
                     offset,
                 }: Order & Pagination & Search,
@@ -152,25 +202,12 @@ export const CollectionResolvers: IResolvers = {
                 const filters: Prisma.CollectionWhereInput[] = [];
 
                 if (normalizedQuery) {
-                    filters.push({
-                        OR: [
-                            {
-                                title: {
-                                    contains: normalizedQuery,
-                                },
-                            },
-                            {
-                                prompt: {
-                                    contains: normalizedQuery,
-                                },
-                            },
-                            {
-                                negativePrompt: {
-                                    contains: normalizedQuery,
-                                },
-                            },
-                        ],
-                    });
+                    filters.push(
+                        resolveCollectionQueryFilter(
+                            normalizedQuery,
+                            searchBy,
+                        ),
+                    );
                 }
 
                 if (normalizedModel) {

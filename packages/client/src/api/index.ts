@@ -21,7 +21,10 @@ export interface OrderRequest {
 export interface SearchRequest {
     query?: string;
     model?: string;
+    searchBy?: CollectionSearchBy;
 }
+
+export type CollectionSearchBy = 'title' | 'prompt' | 'negative_prompt';
 
 export interface PaginationRequest {
     offset?: number;
@@ -262,6 +265,7 @@ export function getCollections(data: GetCollectionsRequestData = {}) {
         limit = 10,
         query = '',
         model = '',
+        searchBy = 'title',
         order = 'desc',
         orderBy = 'createdAt',
     } = data;
@@ -269,12 +273,13 @@ export function getCollections(data: GetCollectionsRequestData = {}) {
 
     return graphQLRequest<'allCollections', GetCollectionsResponse>(
         `
-        query($limit: Int!, $offset: Int!, $query: String!, $model: String, $order: String!, $orderBy: String!) {
+        query($limit: Int!, $offset: Int!, $query: String!, $model: String, $searchBy: String, $order: String!, $orderBy: String!) {
             allCollections(
                 limit: $limit,
                 offset: $offset,
                 query: $query,
                 model: $model,
+                searchBy: $searchBy,
                 order: $order,
                 orderBy: $orderBy
             ) {
@@ -303,6 +308,7 @@ export function getCollections(data: GetCollectionsRequestData = {}) {
             offset,
             query,
             model,
+            searchBy,
             order,
             orderBy,
         },

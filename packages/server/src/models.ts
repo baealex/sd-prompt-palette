@@ -10,6 +10,7 @@ export interface Order {
 export interface Search {
 	query: string;
 	model?: string;
+	searchBy?: "title" | "prompt" | "negative_prompt";
 }
 
 export interface Pagination {

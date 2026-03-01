@@ -24,6 +24,7 @@ import {
     applyCollectionFilterSearch,
     applyCollectionViewSearch,
     normalizeCollectionFilterText,
+    parseCollectionSearchBy,
     parseCollectionSort,
     resolveCollectionSortOrder,
 } from '~/features/collection/view-filter';
@@ -99,12 +100,14 @@ export const CollectionBrowsePage = () => {
             const queryValue = (search as Record<string, unknown>).query;
             const modelValue = (search as Record<string, unknown>).model;
             const sortValue = (search as Record<string, unknown>).sort;
+            const searchByValue = (search as Record<string, unknown>).searchBy;
             const pageValue = (search as Record<string, unknown>).page;
             const selectedValue = (search as Record<string, unknown>).selected;
             return {
                 query: normalizeCollectionFilterText(queryValue),
                 model: normalizeCollectionFilterText(modelValue),
                 sort: parseCollectionSort(sortValue),
+                searchBy: parseCollectionSearchBy(searchByValue),
                 page: parsePage(pageValue),
                 selected: parseSelectedId(selectedValue),
             };
@@ -113,6 +116,7 @@ export const CollectionBrowsePage = () => {
     const query = browseSearch.query;
     const model = browseSearch.model;
     const sort = browseSearch.sort;
+    const searchBy = browseSearch.searchBy;
     const currentPage = browseSearch.page;
     const selectedId = browseSearch.selected;
     const [renameDialogOpen, setRenameDialogOpen] = useState(false);
@@ -124,13 +128,14 @@ export const CollectionBrowsePage = () => {
     const { pushToast } = useToast();
 
     const collectionsQuery = useQuery({
-        queryKey: ['collections', 'browse', query, model, sort, currentPage] as const,
+        queryKey: ['collections', 'browse', query, model, searchBy, sort, currentPage] as const,
         queryFn: async () => {
             const response = await getCollections({
                 page: currentPage,
                 limit: LIMIT,
                 query,
                 model,
+                searchBy,
                 ...resolveCollectionSortOrder(sort),
             });
 
@@ -177,6 +182,7 @@ export const CollectionBrowsePage = () => {
                     applyCollectionFilterSearch(nextSearch, {
                         query,
                         model,
+                        searchBy,
                         sort,
                     });
                     applyCollectionViewSearch(nextSearch, 'browse');
@@ -190,7 +196,7 @@ export const CollectionBrowsePage = () => {
                 },
             });
         },
-        [currentPage, model, navigate, query, sort],
+        [currentPage, model, navigate, query, searchBy, sort],
     );
 
     useEffect(() => {
@@ -266,6 +272,7 @@ export const CollectionBrowsePage = () => {
                         applyCollectionFilterSearch(nextSearch, {
                             query,
                             model,
+                            searchBy,
                             sort,
                         });
                         applyCollectionViewSearch(nextSearch, 'browse');
@@ -298,6 +305,7 @@ export const CollectionBrowsePage = () => {
                 applyCollectionFilterSearch(nextSearch, {
                     query,
                     model,
+                    searchBy,
                     sort,
                 });
                 applyCollectionViewSearch(nextSearch, 'browse');
@@ -310,7 +318,7 @@ export const CollectionBrowsePage = () => {
                 return nextSearch;
             },
         });
-    }, [currentPage, items, model, navigate, query, selectedId, sort]);
+    }, [currentPage, items, model, navigate, query, searchBy, selectedId, sort]);
 
     const selectedItem = useMemo(() => {
         if (!selectedId) {
@@ -354,6 +362,7 @@ export const CollectionBrowsePage = () => {
                     applyCollectionFilterSearch(nextSearch, {
                         query,
                         model,
+                        searchBy,
                         sort,
                     });
                     applyCollectionViewSearch(nextSearch, 'browse');
@@ -369,7 +378,7 @@ export const CollectionBrowsePage = () => {
                 },
             });
         },
-        [model, navigate, query, sort],
+        [model, navigate, query, searchBy, sort],
     );
 
     const openDetail = (collectionId: number) => {

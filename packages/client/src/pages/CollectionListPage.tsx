@@ -13,6 +13,7 @@ import {
     applyCollectionFilterSearch,
     applyCollectionViewSearch,
     normalizeCollectionFilterText,
+    parseCollectionSearchBy,
     parseCollectionSort,
     resolveCollectionSortOrder,
 } from '~/features/collection/view-filter';
@@ -69,11 +70,13 @@ export const CollectionListPage = () => {
             const queryValue = (search as Record<string, unknown>).query;
             const modelValue = (search as Record<string, unknown>).model;
             const sortValue = (search as Record<string, unknown>).sort;
+            const searchByValue = (search as Record<string, unknown>).searchBy;
             const pageValue = (search as Record<string, unknown>).page;
             return {
                 query: normalizeCollectionFilterText(queryValue),
                 model: normalizeCollectionFilterText(modelValue),
                 sort: parseCollectionSort(sortValue),
+                searchBy: parseCollectionSearchBy(searchByValue),
                 page: parsePage(pageValue),
             };
         },
@@ -82,6 +85,7 @@ export const CollectionListPage = () => {
     const query = listSearch.query;
     const model = listSearch.model;
     const sort = listSearch.sort;
+    const searchBy = listSearch.searchBy;
     const currentPage = listSearch.page;
     const [mutationError, setMutationError] = useState<string | null>(null);
     const [renamingId, setRenamingId] = useState<number | null>(null);
@@ -95,16 +99,17 @@ export const CollectionListPage = () => {
 
     useEffect(() => {
         setMutationError(null);
-    }, [currentPage, model, query, sort]);
+    }, [currentPage, model, query, searchBy, sort]);
 
     const collectionsQuery = useQuery({
-        queryKey: ['collections', 'list', query, model, sort, currentPage] as const,
+        queryKey: ['collections', 'list', query, model, searchBy, sort, currentPage] as const,
         queryFn: async () => {
             const response = await getCollections({
                 page: currentPage,
                 limit: LIMIT,
                 query,
                 model,
+                searchBy,
                 ...resolveCollectionSortOrder(sort),
             });
 
@@ -157,7 +162,7 @@ export const CollectionListPage = () => {
                 const nextSearch = {
                     ...(previousSearch as Record<string, unknown>),
                 };
-                applyCollectionFilterSearch(nextSearch, { query, model, sort });
+                applyCollectionFilterSearch(nextSearch, { query, model, searchBy, sort });
                 applyCollectionViewSearch(nextSearch, 'list');
 
                 if (safePage > 1) {
@@ -168,7 +173,7 @@ export const CollectionListPage = () => {
                 return nextSearch;
             },
         });
-    }, [collectionsQuery.data, currentPage, model, navigate, query, sort]);
+    }, [collectionsQuery.data, currentPage, model, navigate, query, searchBy, sort]);
 
     const handlePageChange = useCallback(
         (nextPage: number) => {
@@ -179,7 +184,7 @@ export const CollectionListPage = () => {
                     const nextSearch = {
                         ...(previousSearch as Record<string, unknown>),
                     };
-                    applyCollectionFilterSearch(nextSearch, { query, model, sort });
+                    applyCollectionFilterSearch(nextSearch, { query, model, searchBy, sort });
                     applyCollectionViewSearch(nextSearch, 'list');
 
                 if (nextPage > 1) {
@@ -191,7 +196,7 @@ export const CollectionListPage = () => {
                 },
             });
         },
-        [model, navigate, query, sort],
+        [model, navigate, query, searchBy, sort],
     );
 
     const handleOpenDetail = useCallback(

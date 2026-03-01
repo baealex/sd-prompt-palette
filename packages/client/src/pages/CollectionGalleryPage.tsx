@@ -11,6 +11,7 @@ import {
     applyCollectionFilterSearch,
     applyCollectionViewSearch,
     normalizeCollectionFilterText,
+    parseCollectionSearchBy,
     parseCollectionSort,
     resolveCollectionSortOrder,
 } from '~/features/collection/view-filter';
@@ -63,11 +64,13 @@ export const CollectionGalleryPage = () => {
             const queryValue = (search as Record<string, unknown>).query;
             const modelValue = (search as Record<string, unknown>).model;
             const sortValue = (search as Record<string, unknown>).sort;
+            const searchByValue = (search as Record<string, unknown>).searchBy;
             const pageValue = (search as Record<string, unknown>).page;
             return {
                 query: normalizeCollectionFilterText(queryValue),
                 model: normalizeCollectionFilterText(modelValue),
                 sort: parseCollectionSort(sortValue),
+                searchBy: parseCollectionSearchBy(searchByValue),
                 page: parsePage(pageValue),
             };
         },
@@ -75,6 +78,7 @@ export const CollectionGalleryPage = () => {
     const query = gallerySearch.query;
     const model = gallerySearch.model;
     const sort = gallerySearch.sort;
+    const searchBy = gallerySearch.searchBy;
     const currentPage = gallerySearch.page;
 
     const collectionsQuery = useQuery({
@@ -83,6 +87,7 @@ export const CollectionGalleryPage = () => {
             'gallery',
             query,
             model,
+            searchBy,
             sort,
             currentPage,
         ] as const,
@@ -92,6 +97,7 @@ export const CollectionGalleryPage = () => {
                 limit: LIMIT,
                 query,
                 model,
+                searchBy,
                 ...resolveCollectionSortOrder(sort),
             });
 
@@ -139,7 +145,7 @@ export const CollectionGalleryPage = () => {
                 const nextSearch = {
                     ...(previousSearch as Record<string, unknown>),
                 };
-                applyCollectionFilterSearch(nextSearch, { query, model, sort });
+                applyCollectionFilterSearch(nextSearch, { query, model, searchBy, sort });
                 applyCollectionViewSearch(nextSearch, 'gallery');
 
                 if (safePage > 1) {
@@ -150,7 +156,7 @@ export const CollectionGalleryPage = () => {
                 return nextSearch;
             },
         });
-    }, [collectionsQuery.data, currentPage, model, navigate, query, sort]);
+    }, [collectionsQuery.data, currentPage, model, navigate, query, searchBy, sort]);
 
     const handlePageChange = useCallback(
         (nextPage: number) => {
@@ -164,6 +170,7 @@ export const CollectionGalleryPage = () => {
                     applyCollectionFilterSearch(nextSearch, {
                         query,
                         model,
+                        searchBy,
                         sort,
                     });
                     applyCollectionViewSearch(nextSearch, 'gallery');
@@ -177,7 +184,7 @@ export const CollectionGalleryPage = () => {
                 },
             });
         },
-        [model, navigate, query, sort],
+        [model, navigate, query, searchBy, sort],
     );
 
     const placeholderText = loading

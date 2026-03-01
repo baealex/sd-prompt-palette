@@ -18,6 +18,12 @@ export const ArrowDownIcon = (props: IconProps) => (
     </svg>
 );
 
+export const ChevronDownIcon = (props: IconProps) => (
+    <svg viewBox="0 0 24 24" width={DEFAULT_SIZE} height={DEFAULT_SIZE} {...defaultProps} {...props}>
+        <path d="m6 9 6 6 6-6" />
+    </svg>
+);
+
 export const ArrowUpIcon = (props: IconProps) => (
     <svg viewBox="0 0 24 24" width={DEFAULT_SIZE} height={DEFAULT_SIZE} {...defaultProps} {...props}>
         <path d="M12 19V5M5 12l7-7 7 7" />

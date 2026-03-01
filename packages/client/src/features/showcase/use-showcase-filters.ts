@@ -2,6 +2,7 @@ import { useSearch } from '@tanstack/react-router';
 
 import {
     normalizeCollectionFilterText,
+    parseCollectionSearchBy,
     parseCollectionSort,
 } from '~/features/collection/view-filter';
 
@@ -14,6 +15,7 @@ export const useShowcaseFilters = () => {
                 query: normalizeCollectionFilterText(s.query),
                 model: normalizeCollectionFilterText(s.model),
                 sort: parseCollectionSort(s.sort),
+                searchBy: parseCollectionSearchBy(s.searchBy),
             };
         },
     });

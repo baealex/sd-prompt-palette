@@ -1,4 +1,4 @@
-import type { OrderRequest } from '~/api';
+import type { CollectionSearchBy, OrderRequest } from '~/api';
 
 export type CollectionView = 'list' | 'gallery' | 'browse';
 export type CollectionSort =
@@ -14,6 +14,7 @@ export interface CollectionSortOption {
 
 export const DEFAULT_COLLECTION_SORT: CollectionSort = 'collection_added_desc';
 export const DEFAULT_COLLECTION_VIEW: CollectionView = 'list';
+export const DEFAULT_COLLECTION_SEARCH_BY: CollectionSearchBy = 'title';
 
 export const COLLECTION_SORT_OPTIONS: CollectionSortOption[] = [
     { value: 'collection_added_desc', label: 'Added to collection (newest)' },
@@ -30,6 +31,11 @@ const COLLECTION_VIEW_VALUES = new Set<CollectionView>([
     'gallery',
     'browse',
 ]);
+const COLLECTION_SEARCH_BY_VALUES = new Set<CollectionSearchBy>([
+    'title',
+    'prompt',
+    'negative_prompt',
+]);
 
 export const parseCollectionView = (input: unknown): CollectionView => {
     if (
@@ -40,6 +46,17 @@ export const parseCollectionView = (input: unknown): CollectionView => {
     }
 
     return DEFAULT_COLLECTION_VIEW;
+};
+
+export const parseCollectionSearchBy = (input: unknown): CollectionSearchBy => {
+    if (
+        typeof input === 'string' &&
+        COLLECTION_SEARCH_BY_VALUES.has(input as CollectionSearchBy)
+    ) {
+        return input as CollectionSearchBy;
+    }
+
+    return DEFAULT_COLLECTION_SEARCH_BY;
 };
 
 export const parseCollectionSort = (input: unknown): CollectionSort => {
@@ -94,6 +111,7 @@ export const applyCollectionFilterSearch = (
     filters: {
         query: string;
         model: string;
+        searchBy: CollectionSearchBy;
         sort: CollectionSort;
     },
 ) => {
@@ -107,6 +125,12 @@ export const applyCollectionFilterSearch = (
         target.model = filters.model;
     } else {
         delete target.model;
+    }
+
+    if (filters.searchBy !== DEFAULT_COLLECTION_SEARCH_BY) {
+        target.searchBy = filters.searchBy;
+    } else {
+        delete target.searchBy;
     }
 
     if (filters.sort !== DEFAULT_COLLECTION_SORT) {
@@ -136,6 +160,7 @@ export const buildCollectionPath = (
         view: CollectionView;
         query: string;
         model: string;
+        searchBy: CollectionSearchBy;
         sort: CollectionSort;
         page: number;
         selected?: number | null;
@@ -147,6 +172,9 @@ export const buildCollectionPath = (
     }
     if (next.model) {
         params.set('model', next.model);
+    }
+    if (next.searchBy !== DEFAULT_COLLECTION_SEARCH_BY) {
+        params.set('searchBy', next.searchBy);
     }
     if (next.sort !== DEFAULT_COLLECTION_SORT) {
         params.set('sort', next.sort);

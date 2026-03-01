@@ -1,6 +1,6 @@
 import * as SelectPrimitive from '@radix-ui/react-select';
 
-import { ArrowDownIcon } from '~/icons';
+import { ChevronDownIcon } from '~/icons';
 
 import { cn } from './cn';
 
@@ -49,7 +49,7 @@ export const Select = ({
             >
                 <SelectPrimitive.Value placeholder={placeholder} />
                 <SelectPrimitive.Icon asChild>
-                    <ArrowDownIcon
+                    <ChevronDownIcon
                         width={14}
                         height={14}
                         className="shrink-0 text-ink-subtle"

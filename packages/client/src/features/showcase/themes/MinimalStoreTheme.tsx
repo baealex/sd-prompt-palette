@@ -36,7 +36,7 @@ const parsePageParam = (value: unknown): number => {
 
 export const MinimalStoreTheme = () => {
     const navigate = useNavigate();
-    const { query, model, sort } = useShowcaseFilters();
+    const { query, model, searchBy, sort } = useShowcaseFilters();
     const page = useSearch({
         strict: false,
         select: (search) =>
@@ -44,13 +44,14 @@ export const MinimalStoreTheme = () => {
     });
 
     const { data, isPending } = useQuery({
-        queryKey: ['collections', 'showcase-store', query, model, sort, page],
+        queryKey: ['collections', 'showcase-store', query, model, searchBy, sort, page],
         queryFn: async () => {
             const response = await getCollections({
                 page,
                 limit: PAGE_SIZE,
                 query,
                 model,
+                searchBy,
                 ...resolveCollectionSortOrder(sort),
             });
             return {

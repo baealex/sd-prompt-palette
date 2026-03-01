@@ -8,16 +8,17 @@ import { useShowcaseFilters } from './use-showcase-filters';
 const PAGE_SIZE = 20;
 
 export const useShowcaseInfinite = (themeKey: string) => {
-    const { query, model, sort } = useShowcaseFilters();
+    const { query, model, searchBy, sort } = useShowcaseFilters();
 
     const result = useInfiniteQuery({
-        queryKey: ['collections', `showcase-${themeKey}`, query, model, sort],
+        queryKey: ['collections', `showcase-${themeKey}`, query, model, searchBy, sort],
         queryFn: async ({ pageParam }) => {
             const response = await getCollections({
                 page: pageParam,
                 limit: PAGE_SIZE,
                 query,
                 model,
+                searchBy,
                 ...resolveCollectionSortOrder(sort),
             });
             return response.data.allCollections.collections.map((item) => ({

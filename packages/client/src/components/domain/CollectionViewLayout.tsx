@@ -14,15 +14,18 @@ import { CollectionBrowsePage } from '~/pages/CollectionBrowsePage';
 import { CollectionGalleryPage } from '~/pages/CollectionGalleryPage';
 import { CollectionListPage } from '~/pages/CollectionListPage';
 import {
+    DEFAULT_COLLECTION_SEARCH_BY,
     DEFAULT_COLLECTION_SORT,
     applyCollectionFilterSearch,
     applyCollectionViewSearch,
     normalizeCollectionFilterText,
+    parseCollectionSearchBy,
     parseCollectionSort,
     parseCollectionView,
     type CollectionSort,
     type CollectionView,
 } from '~/features/collection/view-filter';
+import type { CollectionSearchBy } from '~/api';
 
 const COLLECTION_PAGE_META = {
     title: 'Collection',
@@ -39,11 +42,13 @@ export const CollectionViewLayout = () => {
             const modelValue = (search as Record<string, unknown>).model;
             const sortValue = (search as Record<string, unknown>).sort;
             const viewValue = (search as Record<string, unknown>).view;
+            const searchByValue = (search as Record<string, unknown>).searchBy;
             return {
                 query: normalizeCollectionFilterText(queryValue),
                 model: normalizeCollectionFilterText(modelValue),
                 sort: parseCollectionSort(sortValue),
                 view: parseCollectionView(viewValue),
+                searchBy: parseCollectionSearchBy(searchByValue),
             };
         },
     });
@@ -51,6 +56,7 @@ export const CollectionViewLayout = () => {
     const model = filters.model;
     const sort = filters.sort;
     const view = filters.view;
+    const searchBy = filters.searchBy;
     const modelOptionsQuery = useQuery({
         queryKey: ['collections', 'model-options'] as const,
         queryFn: async () => {
@@ -82,6 +88,7 @@ export const CollectionViewLayout = () => {
                 view: CollectionView;
                 query: string;
                 model: string;
+                searchBy: CollectionSearchBy;
                 sort: CollectionSort;
             },
             options?: { force?: boolean },
@@ -92,6 +99,7 @@ export const CollectionViewLayout = () => {
                 options?.force ||
                 nextQuery !== query ||
                 nextModel !== model ||
+                next.searchBy !== searchBy ||
                 next.sort !== sort ||
                 next.view !== view;
 
@@ -111,6 +119,7 @@ export const CollectionViewLayout = () => {
                     applyCollectionFilterSearch(nextSearch, {
                         query: nextQuery,
                         model: nextModel,
+                        searchBy: next.searchBy,
                         sort: next.sort,
                     });
                     applyCollectionViewSearch(nextSearch, next.view);
@@ -124,7 +133,7 @@ export const CollectionViewLayout = () => {
                 },
             });
         },
-        [model, navigate, query, sort, view],
+        [model, navigate, query, searchBy, sort, view],
     );
 
     const applySearch = useCallback(() => {
@@ -133,11 +142,12 @@ export const CollectionViewLayout = () => {
                 view,
                 query: draftQuery,
                 model: draftModel,
+                searchBy,
                 sort,
             },
             { force: true },
         );
-    }, [applyFilters, draftModel, draftQuery, sort, view]);
+    }, [applyFilters, draftModel, draftQuery, searchBy, sort, view]);
 
     useEffect(() => {
         const normalizedDraftQuery = draftQuery.trim();
@@ -150,6 +160,7 @@ export const CollectionViewLayout = () => {
                 view,
                 query: normalizedDraftQuery,
                 model: draftModel,
+                searchBy,
                 sort,
             });
         }, 300);
@@ -157,7 +168,7 @@ export const CollectionViewLayout = () => {
         return () => {
             window.clearTimeout(timeoutId);
         };
-    }, [applyFilters, draftModel, draftQuery, query, sort, view]);
+    }, [applyFilters, draftModel, draftQuery, query, searchBy, sort, view]);
 
     const handleSortChange = useCallback(
         (nextSort: CollectionSort) => {
@@ -165,10 +176,11 @@ export const CollectionViewLayout = () => {
                 view,
                 query: draftQuery,
                 model: draftModel,
+                searchBy,
                 sort: nextSort,
             });
         },
-        [applyFilters, draftModel, draftQuery, view],
+        [applyFilters, draftModel, draftQuery, searchBy, view],
     );
 
     const handleModelChange = useCallback(
@@ -178,10 +190,24 @@ export const CollectionViewLayout = () => {
                 view,
                 query: draftQuery,
                 model: nextModel,
+                searchBy,
                 sort,
             });
         },
-        [applyFilters, draftQuery, sort, view],
+        [applyFilters, draftQuery, searchBy, sort, view],
+    );
+
+    const handleSearchByChange = useCallback(
+        (nextSearchBy: CollectionSearchBy) => {
+            applyFilters({
+                view,
+                query: draftQuery,
+                model: draftModel,
+                searchBy: nextSearchBy,
+                sort,
+            });
+        },
+        [applyFilters, draftModel, draftQuery, sort, view],
     );
 
     const handleViewChange = useCallback(
@@ -190,10 +216,11 @@ export const CollectionViewLayout = () => {
                 view: nextView,
                 query: draftQuery,
                 model: draftModel,
+                searchBy,
                 sort,
             });
         },
-        [applyFilters, draftModel, draftQuery, sort],
+        [applyFilters, draftModel, draftQuery, searchBy, sort],
     );
 
     const resetFilters = useCallback(() => {
@@ -205,6 +232,7 @@ export const CollectionViewLayout = () => {
                 view,
                 query: '',
                 model: '',
+                searchBy: DEFAULT_COLLECTION_SEARCH_BY,
                 sort: DEFAULT_COLLECTION_SORT,
             },
             { force: true },
@@ -234,7 +262,9 @@ export const CollectionViewLayout = () => {
             >
                 <CollectionSearchBar
                     value={draftQuery}
+                    searchBy={searchBy}
                     onChange={setDraftQuery}
+                    onSearchByChange={handleSearchByChange}
                     onSubmit={applySearch}
                     placeholder={COLLECTION_PAGE_META.searchPlaceholder}
                     embedded
