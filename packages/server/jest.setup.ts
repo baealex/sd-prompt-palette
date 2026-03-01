@@ -8,7 +8,13 @@ const mockPrisma = new PrismaClient({
     },
 });
 
-jest.mock('~/models', () => mockPrisma);
+jest.mock('~/models', () => {
+    const actual = jest.requireActual('~/models') as Record<string, unknown>;
+    return {
+        ...actual,
+        models: mockPrisma,
+    };
+});
 
 beforeAll(async () => {
     await mockPrisma.$connect();
