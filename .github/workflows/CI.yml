@@ -52,6 +52,9 @@ jobs:
     - name: Typecheck (Client React)
       run: npx pnpm --filter @ocean-palette/client run typecheck
 
+    - name: React Compiler Healthcheck (Client React)
+      run: npx pnpm --filter @ocean-palette/client run react-compiler:check
+
     - name: Test (Client React)
       run: npx pnpm --filter @ocean-palette/client run test
 

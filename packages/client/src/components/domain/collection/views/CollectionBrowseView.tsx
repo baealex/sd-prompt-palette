@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 
 import { deleteCollection, updateCollection } from '~/api';
 import { Badge } from '~/components/ui/Badge';
@@ -46,7 +46,7 @@ interface CollectionBrowseViewProps {
     onRefresh: () => Promise<unknown>;
 }
 
-export const CollectionBrowseView = ({
+const CollectionBrowseViewComponent = ({
     items,
     loading,
     currentPage,
@@ -377,3 +377,6 @@ export const CollectionBrowseView = ({
         </>
     );
 };
+
+export const CollectionBrowseView = memo(CollectionBrowseViewComponent);
+CollectionBrowseView.displayName = 'CollectionBrowseView';

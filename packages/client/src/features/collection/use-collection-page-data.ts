@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useMemo } from 'react';
 
 import { getCollectionModelOptions, getCollections } from '~/api';
 import { resolveCollectionSortOrder, type CollectionFilterState } from './view-filter';
@@ -11,6 +12,9 @@ export type CollectionPageItem = Pick<
     Collection,
     'id' | 'title' | 'prompt' | 'negativePrompt' | 'image'
 >;
+
+const EMPTY_COLLECTION_ITEMS: CollectionPageItem[] = [];
+const EMPTY_MODEL_OPTIONS: string[] = [];
 
 const getLastPage = (total: number, limit: number) => {
     return Math.max(1, Math.ceil(total / limit));
@@ -30,6 +34,32 @@ export const useCollectionPageData = ({
     sort,
     currentPage,
 }: UseCollectionPageDataInput) => {
+    const queryClient = useQueryClient();
+    const collectionsQueryKey = useMemo(
+        () =>
+            [
+                'collections',
+                query,
+                model,
+                searchBy,
+                dateField,
+                dateFrom,
+                dateTo,
+                sort,
+                currentPage,
+            ] as const,
+        [
+            currentPage,
+            dateField,
+            dateFrom,
+            dateTo,
+            model,
+            query,
+            searchBy,
+            sort,
+        ],
+    );
+
     const modelOptionsQuery = useQuery({
         queryKey: ['collections', 'model-options'] as const,
         queryFn: async () => {
@@ -41,17 +71,7 @@ export const useCollectionPageData = ({
     });
 
     const collectionsQuery = useQuery({
-        queryKey: [
-            'collections',
-            query,
-            model,
-            searchBy,
-            dateField,
-            dateFrom,
-            dateTo,
-            sort,
-            currentPage,
-        ] as const,
+        queryKey: collectionsQueryKey,
         queryFn: async () => {
             const response = await getCollections({
                 page: currentPage,
@@ -86,7 +106,14 @@ export const useCollectionPageData = ({
         placeholderData: (previousData) => previousData,
     });
 
-    const items: CollectionPageItem[] = collectionsQuery.data?.items ?? [];
+    const refreshCollections = useCallback(async () => {
+        await queryClient.refetchQueries({
+            queryKey: collectionsQueryKey,
+            exact: true,
+        });
+    }, [collectionsQueryKey, queryClient]);
+
+    const items = collectionsQuery.data?.items ?? EMPTY_COLLECTION_ITEMS;
     const loading = collectionsQuery.isPending;
     const totalPages = collectionsQuery.data?.lastPage ?? 1;
     const totalItems = collectionsQuery.data?.total ?? 0;
@@ -101,7 +128,7 @@ export const useCollectionPageData = ({
 
     return {
         modelOptionsQuery,
-        modelOptions: modelOptionsQuery.data ?? [],
+        modelOptions: modelOptionsQuery.data ?? EMPTY_MODEL_OPTIONS,
         modelOptionsError,
         collectionsQuery,
         items,
@@ -109,5 +136,6 @@ export const useCollectionPageData = ({
         totalPages,
         totalItems,
         queryErrorMessage,
+        refreshCollections,
     };
 };

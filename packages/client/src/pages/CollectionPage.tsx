@@ -1,5 +1,3 @@
-import { useCallback } from 'react';
-
 import { CollectionFilterBar } from '~/components/domain/CollectionFilterBar';
 import { CollectionNav } from '~/components/domain/CollectionNav';
 import { CollectionRealtimeControl } from '~/components/domain/CollectionRealtimeControl';
@@ -62,6 +60,7 @@ export const CollectionPage = () => {
         totalPages,
         totalItems,
         queryErrorMessage,
+        refreshCollections,
     } = useCollectionPageData({
         query,
         model,
@@ -79,10 +78,6 @@ export const CollectionPage = () => {
         onPageChange: handlePageChange,
     });
 
-    const handleRefresh = useCallback(async () => {
-        await collectionsQuery.refetch();
-    }, [collectionsQuery]);
-
     const content = useCollectionPageContent({
         view,
         items,
@@ -94,7 +89,7 @@ export const CollectionPage = () => {
         queryErrorMessage,
         onPageChange: handlePageChange,
         onSelectedChange: handleBrowseSelectedChange,
-        onRefresh: handleRefresh,
+        onRefresh: refreshCollections,
     });
 
     return (

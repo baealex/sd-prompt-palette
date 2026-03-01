@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { memo, useState } from 'react';
 
 import { deleteCollection, updateCollection } from '~/api';
 import { CollectionCard } from '~/components/domain/CollectionCard';
@@ -26,7 +26,7 @@ interface CollectionListViewProps {
     onRefresh: () => Promise<unknown>;
 }
 
-export const CollectionListView = ({
+const CollectionListViewComponent = ({
     items,
     loading,
     currentPage,
@@ -217,3 +217,6 @@ export const CollectionListView = ({
         </>
     );
 };
+
+export const CollectionListView = memo(CollectionListViewComponent);
+CollectionListView.displayName = 'CollectionListView';

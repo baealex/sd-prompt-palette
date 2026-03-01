@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router';
+import { memo } from 'react';
 
 import { Image } from '~/components/ui/Image';
 import { MasonryColumns } from '~/components/ui/MasonryColumns';
@@ -18,7 +19,7 @@ interface CollectionGalleryViewProps {
     onPageChange: (nextPage: number) => void;
 }
 
-export const CollectionGalleryView = ({
+const CollectionGalleryViewComponent = ({
     items,
     loading,
     currentPage,
@@ -86,3 +87,6 @@ export const CollectionGalleryView = ({
         </>
     );
 };
+
+export const CollectionGalleryView = memo(CollectionGalleryViewComponent);
+CollectionGalleryView.displayName = 'CollectionGalleryView';
