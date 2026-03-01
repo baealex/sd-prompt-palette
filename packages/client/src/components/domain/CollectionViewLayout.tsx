@@ -229,12 +229,13 @@ export const CollectionViewLayout = () => {
 
     return (
         <PageFrame title={pageMeta.title} description={pageMeta.description}>
-            <div className="mb-6 space-y-4">
+            <div className="mb-4 overflow-hidden rounded-token-lg border-2 border-brand-200 bg-surface-base shadow-surface">
                 <CollectionSearchBar
                     value={draftQuery}
                     onChange={setDraftQuery}
                     onSubmit={applySearch}
                     placeholder={pageMeta.searchPlaceholder}
+                    embedded
                 />
                 <CollectionFilterBar
                     sort={sort}
@@ -244,7 +245,10 @@ export const CollectionViewLayout = () => {
                     onSortChange={handleSortChange}
                     onModelChange={handleModelChange}
                     onReset={resetFilters}
+                    embedded
                 />
+            </div>
+            <div className="mb-4">
                 <CollectionRealtimeControl />
             </div>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">

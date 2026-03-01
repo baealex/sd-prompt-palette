@@ -67,7 +67,7 @@ export const CollectionCard = ({
 
     return (
         <Card as="article" padding="none" className="mb-4 overflow-hidden">
-            <header className="col-span-full flex flex-wrap items-center justify-between gap-2 border-b border-line p-4">
+            <header className="col-span-full flex flex-wrap items-center justify-between gap-2 border-b border-line p-3 sm:p-4">
                 {onClickOpenDetail ? (
                     <button
                         type="button"
@@ -149,7 +149,7 @@ export const CollectionCard = ({
                 </div>
             </header>
 
-            <div className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="grid grid-cols-1 gap-3 p-3 sm:gap-4 sm:p-4 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_320px]">
                 <div>
                     <CategoryHeader
                         title="Prompt"

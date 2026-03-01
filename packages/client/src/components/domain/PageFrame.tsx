@@ -19,8 +19,8 @@ export const PageFrame = ({
 }: PageFrameProps) => {
     const content = (
         <>
-            <header className="mb-4">
-                <h1 className="text-2xl font-semibold tracking-tight text-ink">{title}</h1>
+            <header className="mb-3 sm:mb-4">
+                <h1 className="text-xl font-semibold tracking-tight text-ink sm:text-2xl">{title}</h1>
                 {description ? (
                     <p className="mt-2 text-sm text-ink-muted">{description}</p>
                 ) : null}
@@ -34,7 +34,11 @@ export const PageFrame = ({
     }
 
     return (
-        <Card as="section" padding="lg" className="bg-surface-base/95">
+        <Card
+            as="section"
+            padding="lg"
+            className="bg-surface-base/95 -mx-3 rounded-none border-x-0 sm:mx-0 sm:rounded-token-lg sm:border-x"
+        >
             {content}
         </Card>
     );

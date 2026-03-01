@@ -45,7 +45,7 @@ export const MoodBoardTheme = () => {
     }
 
     return (
-        <div className="min-h-screen bg-neutral-950 px-4 pb-24 pt-20">
+        <div className="min-h-screen bg-neutral-950 px-3 pb-20 pt-14 sm:px-4 sm:pb-24 sm:pt-20">
             <div className="mx-auto grid max-w-7xl auto-rows-[180px] grid-cols-2 gap-3 sm:auto-rows-[220px] sm:grid-cols-3 md:grid-cols-4 lg:auto-rows-[260px]">
                 {collections.map((item, i) => (
                     <Link

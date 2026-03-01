@@ -143,9 +143,9 @@ export const SortableCategoryCard = ({
         <article
             ref={setNodeRef}
             style={style}
-            className={`rounded-token-lg border border-line bg-surface-base p-4 shadow-surface ${isDragging ? 'z-10 opacity-80' : ''}`}
+            className={`rounded-token-lg border border-line bg-surface-base p-3 shadow-surface sm:p-4 ${isDragging ? 'z-10 opacity-80' : ''}`}
         >
-            <header className="mb-4 flex items-center justify-between gap-3">
+            <header className="mb-3 flex items-center justify-between gap-3 sm:mb-4">
                 <div className="flex min-w-0 items-center gap-2">
                     <IconButton
                         ref={setActivatorNodeRef}

@@ -9,6 +9,7 @@ interface CollectionSearchBarProps {
     value: string;
     placeholder?: string;
     className?: string;
+    embedded?: boolean;
     onChange: (value: string) => void;
     onSubmit: () => void;
 }
@@ -17,6 +18,7 @@ export const CollectionSearchBar = ({
     value,
     placeholder = 'Search',
     className,
+    embedded = false,
     onChange,
     onSubmit,
 }: CollectionSearchBarProps) => {
@@ -34,7 +36,7 @@ export const CollectionSearchBar = ({
             <label htmlFor={inputId} className="sr-only">
                 Collection search
             </label>
-            <div className="relative rounded-token-lg border-2 border-brand-200 bg-surface-base p-1.5 shadow-surface">
+            <div className={cn('relative p-1.5', !embedded && 'rounded-token-lg border-2 border-brand-200 bg-surface-base shadow-surface')}>
                 <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-500" />
                 <Input
                     id={inputId}
