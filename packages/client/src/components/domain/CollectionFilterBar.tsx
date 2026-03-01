@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 
 import { Button } from '~/components/ui/Button';
+import { Select, type SelectOption } from '~/components/ui/Select';
 import { cn } from '~/components/ui/cn';
 import {
     COLLECTION_SORT_OPTIONS,
@@ -8,6 +9,8 @@ import {
     parseCollectionSort,
     type CollectionSort,
 } from '~/features/collection/view-filter';
+
+const MODEL_ALL_VALUE = '__collection_model_all__';
 
 interface CollectionFilterBarProps {
     sort: CollectionSort;
@@ -46,6 +49,24 @@ export const CollectionFilterBar = ({
 
         return normalized;
     }, [model, modelOptions]);
+    const modelSelectOptions = useMemo<SelectOption[]>(
+        () => [
+            { value: MODEL_ALL_VALUE, label: 'All models' },
+            ...resolvedModelOptions.map((option) => ({
+                value: option,
+                label: option,
+            })),
+        ],
+        [resolvedModelOptions],
+    );
+    const sortSelectOptions = useMemo<SelectOption[]>(
+        () =>
+            COLLECTION_SORT_OPTIONS.map((option) => ({
+                value: option.value,
+                label: option.label,
+            })),
+        [],
+    );
 
     return (
         <div
@@ -59,27 +80,23 @@ export const CollectionFilterBar = ({
         >
             <div>
                 <label
-                    htmlFor="collection-model-filter"
+                    id="collection-model-filter-label"
                     className="mb-1 block text-xs font-semibold text-ink-muted"
                 >
                     Model
                 </label>
-                <select
+                <Select
                     id="collection-model-filter"
-                    value={model}
-                    onChange={(event) => {
-                        onModelChange(event.target.value);
+                    ariaLabelledBy="collection-model-filter-label"
+                    value={model || MODEL_ALL_VALUE}
+                    options={modelSelectOptions}
+                    onValueChange={(nextValue) => {
+                        onModelChange(
+                            nextValue === MODEL_ALL_VALUE ? '' : nextValue,
+                        );
                     }}
-                    className="ui-focus-ring h-11 w-full rounded-token-md border border-line-strong bg-surface-base px-3 text-sm text-ink"
                     disabled={loadingModelOptions && resolvedModelOptions.length === 0}
-                >
-                    <option value="">All models</option>
-                    {resolvedModelOptions.map((option) => (
-                        <option key={option} value={option}>
-                            {option}
-                        </option>
-                    ))}
-                </select>
+                />
                 {modelOptionsError ? (
                     <p className="mt-1 text-xs font-medium text-warning-700">
                         Model options could not be loaded. You can still browse all models.
@@ -89,25 +106,20 @@ export const CollectionFilterBar = ({
 
             <div>
                 <label
-                    htmlFor="collection-sort-filter"
+                    id="collection-sort-filter-label"
                     className="mb-1 block text-xs font-semibold text-ink-muted"
                 >
                     Sort
                 </label>
-                <select
+                <Select
                     id="collection-sort-filter"
+                    ariaLabelledBy="collection-sort-filter-label"
                     value={sort}
-                    onChange={(event) => {
-                        onSortChange(parseCollectionSort(event.target.value));
+                    options={sortSelectOptions}
+                    onValueChange={(nextValue) => {
+                        onSortChange(parseCollectionSort(nextValue));
                     }}
-                    className="ui-focus-ring h-11 w-full rounded-token-md border border-line-strong bg-surface-base px-3 text-sm text-ink"
-                >
-                    {COLLECTION_SORT_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                            {option.label}
-                        </option>
-                    ))}
-                </select>
+                />
             </div>
 
             <Button

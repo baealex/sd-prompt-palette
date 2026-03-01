@@ -14,11 +14,17 @@ import {
     useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import type { FormEvent, SyntheticEvent } from 'react';
 
 import { Button } from '~/components/ui/Button';
 import { Card } from '~/components/ui/Card';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '~/components/ui/DropdownMenu';
 import { IconButton } from '~/components/ui/IconButton';
 import { Input } from '~/components/ui/Input';
 import { DragHandleIcon, MoreIcon } from '~/icons';
@@ -59,8 +65,6 @@ export const SortableCategoryCard = ({
     onRemoveKeywordSampleImage,
 }: SortableCategoryCardProps) => {
     const [keywordInput, setKeywordInput] = useState('');
-    const [menuOpen, setMenuOpen] = useState(false);
-    const menuRef = useRef<HTMLDivElement | null>(null);
 
     const sortableId = makeCategorySortableId(category.id);
     const {
@@ -88,38 +92,6 @@ export const SortableCategoryCard = ({
     const style = {
         transform: CSS.Translate.toString(transform),
         transition,
-    };
-
-    useEffect(() => {
-        if (!menuOpen) {
-            return;
-        }
-
-        const closeMenuOnOutsideClick = (event: globalThis.MouseEvent) => {
-            if (!menuRef.current) {
-                return;
-            }
-            if (!menuRef.current.contains(event.target as Node)) {
-                setMenuOpen(false);
-            }
-        };
-        const closeMenuOnEscape = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                setMenuOpen(false);
-            }
-        };
-
-        window.addEventListener('mousedown', closeMenuOnOutsideClick);
-        window.addEventListener('keydown', closeMenuOnEscape);
-
-        return () => {
-            window.removeEventListener('mousedown', closeMenuOnOutsideClick);
-            window.removeEventListener('keydown', closeMenuOnEscape);
-        };
-    }, [menuOpen]);
-
-    const closeMenu = () => {
-        setMenuOpen(false);
     };
 
     const stopMenuEvent = (event: SyntheticEvent<HTMLElement>) => {
@@ -174,54 +146,43 @@ export const SortableCategoryCard = ({
                 </div>
 
                 <div
-                    ref={menuRef}
                     className="relative shrink-0"
                     onPointerDown={stopMenuEvent}
                     onClick={stopMenuEvent}
                 >
-                    <IconButton
-                        label={`${category.name} actions`}
-                        icon={<MoreIcon width={14} height={14} />}
-                        onClick={() => setMenuOpen((prev) => !prev)}
-                        disabled={saving}
-                    />
-                    {menuOpen ? (
-                        <div className="absolute right-0 top-12 z-30 min-w-[152px] rounded-token-md border border-line bg-surface-base p-1 shadow-raised">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="w-full justify-start"
-                                onClick={() => {
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <IconButton
+                                label={`${category.name} actions`}
+                                icon={<MoreIcon width={14} height={14} />}
+                                disabled={saving}
+                            />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" sideOffset={8}>
+                            <DropdownMenuItem
+                                onSelect={() => {
                                     onCopyAllKeywords(category);
-                                    closeMenu();
                                 }}
                             >
                                 Copy All
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="w-full justify-start"
-                                onClick={() => {
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onSelect={() => {
                                     onRenameCategory(category);
-                                    closeMenu();
                                 }}
                             >
                                 Rename
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="w-full justify-start text-danger-700 hover:bg-danger-50"
-                                onClick={() => {
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                className="text-danger-700 data-[highlighted]:bg-danger-50 data-[highlighted]:text-danger-700"
+                                onSelect={() => {
                                     onRemoveCategory(category.id);
-                                    closeMenu();
                                 }}
                             >
                                 Remove
-                            </Button>
-                        </div>
-                    ) : null}
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </header>
 

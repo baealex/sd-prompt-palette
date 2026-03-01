@@ -10,6 +10,12 @@ import { Badge } from '~/components/ui/Badge';
 import { Button } from '~/components/ui/Button';
 import { Card } from '~/components/ui/Card';
 import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '~/components/ui/DropdownMenu';
 import { IconButton } from '~/components/ui/IconButton';
 import { Notice } from '~/components/ui/Notice';
 import { PromptDialog } from '~/components/ui/PromptDialog';
@@ -111,12 +117,10 @@ export const CollectionBrowsePage = () => {
     const sort = browseSearch.sort;
     const currentPage = browseSearch.page;
     const selectedId = browseSearch.selected;
-    const [actionMenuOpen, setActionMenuOpen] = useState(false);
     const [renameDialogOpen, setRenameDialogOpen] = useState(false);
     const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
     const [renaming, setRenaming] = useState(false);
     const [removing, setRemoving] = useState(false);
-    const actionMenuRef = useRef<HTMLDivElement | null>(null);
     const galleryScrollRef = useRef<HTMLDivElement | null>(null);
     const queryErrorToastRef = useRef<string | null>(null);
     const { pushToast } = useToast();
@@ -230,35 +234,6 @@ export const CollectionBrowsePage = () => {
             message: queryErrorMessage,
         });
     }, [pushToast, queryErrorMessage]);
-
-    useEffect(() => {
-        if (!actionMenuOpen) {
-            return;
-        }
-
-        const handlePointerDown = (event: MouseEvent) => {
-            const target = event.target;
-            if (!(target instanceof Node)) {
-                return;
-            }
-
-            if (
-                actionMenuRef.current &&
-                !actionMenuRef.current.contains(target)
-            ) {
-                setActionMenuOpen(false);
-            }
-        };
-
-        window.addEventListener('mousedown', handlePointerDown);
-        return () => {
-            window.removeEventListener('mousedown', handlePointerDown);
-        };
-    }, [actionMenuOpen]);
-
-    useEffect(() => {
-        setActionMenuOpen(false);
-    }, [selectedId]);
 
     useEffect(() => {
         galleryScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' });
@@ -596,61 +571,38 @@ export const CollectionBrowsePage = () => {
                                         Open detail
                                     </Button>
 
-                                    <div
-                                        ref={actionMenuRef}
-                                        className="relative"
-                                    >
-                                        <IconButton
-                                            icon={
-                                                <MoreIcon
-                                                    width={16}
-                                                    height={16}
-                                                />
-                                            }
-                                            label="Browse actions"
-                                            variant="secondary"
-                                            size="md"
-                                            onClick={() => {
-                                                setActionMenuOpen(
-                                                    (prev) => !prev,
-                                                );
-                                            }}
-                                        />
-                                        {actionMenuOpen ? (
-                                            <div className="absolute right-0 top-12 z-20 w-36 rounded-token-md border border-line bg-surface-base p-1 shadow-raised">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="w-full !justify-start !text-left"
-                                                    onClick={() => {
-                                                        setActionMenuOpen(
-                                                            false,
-                                                        );
-                                                        setRenameDialogOpen(
-                                                            true,
-                                                        );
-                                                    }}
-                                                >
-                                                    Rename
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="w-full !justify-start !text-left text-danger-700 hover:bg-danger-50"
-                                                    onClick={() => {
-                                                        setActionMenuOpen(
-                                                            false,
-                                                        );
-                                                        setRemoveDialogOpen(
-                                                            true,
-                                                        );
-                                                    }}
-                                                >
-                                                    Delete
-                                                </Button>
-                                            </div>
-                                        ) : null}
-                                    </div>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <IconButton
+                                                icon={
+                                                    <MoreIcon
+                                                        width={16}
+                                                        height={16}
+                                                    />
+                                                }
+                                                label="Browse actions"
+                                                variant="secondary"
+                                                size="md"
+                                            />
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" sideOffset={8}>
+                                            <DropdownMenuItem
+                                                onSelect={() => {
+                                                    setRenameDialogOpen(true);
+                                                }}
+                                            >
+                                                Rename
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                className="text-danger-700 data-[highlighted]:bg-danger-50 data-[highlighted]:text-danger-700"
+                                                onSelect={() => {
+                                                    setRemoveDialogOpen(true);
+                                                }}
+                                            >
+                                                Delete
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </div>
                             </div>
                             {items.length > 1 ? (

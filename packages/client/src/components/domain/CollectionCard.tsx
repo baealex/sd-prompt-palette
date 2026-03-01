@@ -1,9 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
-
 import { ArrowRightIcon, MoreIcon } from '~/icons';
 import type { Collection } from '~/models/types';
-import { Button } from '~/components/ui/Button';
 import { Card } from '~/components/ui/Card';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '~/components/ui/DropdownMenu';
 import { IconButton } from '~/components/ui/IconButton';
 
 import { CategoryHeader } from './CategoryHeader';
@@ -31,39 +34,6 @@ export const CollectionCard = ({
     const displayTitle = collection.title || '(untitled)';
     const promptPreview = collection.prompt || '-';
     const negativePromptPreview = collection.negativePrompt || '-';
-    const [actionMenuOpen, setActionMenuOpen] = useState(false);
-    const actionMenuRef = useRef<HTMLDivElement | null>(null);
-
-    useEffect(() => {
-        if (!actionMenuOpen) {
-            return;
-        }
-
-        const handlePointerDown = (event: MouseEvent) => {
-            const target = event.target;
-            if (!(target instanceof Node)) {
-                return;
-            }
-
-            if (
-                actionMenuRef.current &&
-                !actionMenuRef.current.contains(target)
-            ) {
-                setActionMenuOpen(false);
-            }
-        };
-
-        window.addEventListener('mousedown', handlePointerDown);
-        return () => {
-            window.removeEventListener('mousedown', handlePointerDown);
-        };
-    }, [actionMenuOpen]);
-
-    useEffect(() => {
-        if (renaming || removing) {
-            setActionMenuOpen(false);
-        }
-    }, [renaming, removing]);
 
     return (
         <Card as="article" padding="none" className="mb-4 overflow-hidden">
@@ -96,56 +66,43 @@ export const CollectionCard = ({
                             onClick={onClickOpenDetail}
                         />
                     ) : null}
-                    <div
-                        ref={actionMenuRef}
-                        className="relative"
-                    >
-                        <IconButton
-                            icon={
-                                <MoreIcon
-                                    width={16}
-                                    height={16}
-                                />
-                            }
-                            label="Collection actions"
-                            variant="secondary"
-                            size="md"
-                            onClick={() => {
-                                setActionMenuOpen((prev) => !prev);
-                            }}
-                            disabled={renaming || removing}
-                        />
-                        {actionMenuOpen ? (
-                            <div className="absolute right-0 top-12 z-20 w-36 rounded-token-md border border-line bg-surface-base p-1 shadow-raised">
-                                {onClickRename ? (
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="w-full !justify-start !text-left"
-                                        onClick={() => {
-                                            setActionMenuOpen(false);
-                                            onClickRename();
-                                        }}
-                                        disabled={renaming || removing}
-                                    >
-                                        {renaming ? 'Renaming...' : 'Rename'}
-                                    </Button>
-                                ) : null}
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="w-full !justify-start !text-left text-danger-700 hover:bg-danger-50"
-                                    onClick={() => {
-                                        setActionMenuOpen(false);
-                                        onClickDelete();
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <IconButton
+                                icon={
+                                    <MoreIcon
+                                        width={16}
+                                        height={16}
+                                    />
+                                }
+                                label="Collection actions"
+                                variant="secondary"
+                                size="md"
+                                disabled={renaming || removing}
+                            />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" sideOffset={8}>
+                            {onClickRename ? (
+                                <DropdownMenuItem
+                                    onSelect={() => {
+                                        onClickRename();
                                     }}
-                                    disabled={removing || renaming}
+                                    disabled={renaming || removing}
                                 >
-                                    {removing ? 'Removing...' : 'Delete'}
-                                </Button>
-                            </div>
-                        ) : null}
-                    </div>
+                                    {renaming ? 'Renaming...' : 'Rename'}
+                                </DropdownMenuItem>
+                            ) : null}
+                            <DropdownMenuItem
+                                className="text-danger-700 data-[highlighted]:bg-danger-50 data-[highlighted]:text-danger-700"
+                                onSelect={() => {
+                                    onClickDelete();
+                                }}
+                                disabled={removing || renaming}
+                            >
+                                {removing ? 'Removing...' : 'Delete'}
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </header>
 
