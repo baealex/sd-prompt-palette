@@ -12,7 +12,7 @@ import { CollectionFilterBar } from '~/components/domain/CollectionFilterBar';
 import { CollectionNav } from '~/components/domain/CollectionNav';
 import { CollectionRealtimeControl } from '~/components/domain/CollectionRealtimeControl';
 import { CollectionSearchBar } from '~/components/domain/CollectionSearchBar';
-import { CollectionSlideShowShortcut } from '~/components/domain/CollectionSlideShowShortcut';
+import { CollectionShowcaseShortcut } from '~/components/domain/CollectionShowcaseShortcut';
 import { PageFrame } from '~/components/domain/PageFrame';
 import {
     DEFAULT_COLLECTION_SORT,
@@ -249,7 +249,7 @@ export const CollectionViewLayout = () => {
             </div>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                 <CollectionNav />
-                <CollectionSlideShowShortcut />
+                <CollectionShowcaseShortcut />
             </div>
 
             <Outlet />

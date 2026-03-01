@@ -239,6 +239,67 @@ export const CollectionBrowsePage = () => {
 
     useEffect(() => {
         if (items.length === 0) {
+            return;
+        }
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
+                return;
+            }
+
+            const target = event.target;
+            if (
+                target instanceof HTMLInputElement ||
+                target instanceof HTMLTextAreaElement
+            ) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const currentIndex = items.findIndex((item) => item.id === selectedId);
+            const nextIndex =
+                event.key === 'ArrowLeft'
+                    ? Math.max(0, currentIndex - 1)
+                    : Math.min(items.length - 1, currentIndex + 1);
+            const nextItem = items[nextIndex];
+
+            if (!nextItem || nextItem.id === selectedId) {
+                return;
+            }
+
+            void navigate({
+                to: '/collection/browse',
+                replace: true,
+                resetScroll: false,
+                search: (previousSearch) => {
+                    const nextSearch = {
+                        ...(previousSearch as Record<string, unknown>),
+                    };
+                    applyCollectionFilterSearch(nextSearch, {
+                        query,
+                        model,
+                        sort,
+                    });
+                    if (currentPage > 1) {
+                        nextSearch.page = currentPage;
+                    } else {
+                        delete nextSearch.page;
+                    }
+                    nextSearch.selected = nextItem.id;
+                    return nextSearch;
+                },
+            });
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [items, selectedId, navigate, query, model, sort, currentPage]);
+
+    useEffect(() => {
+        if (items.length === 0) {
             if (selectedId !== null) {
                 void navigate({
                     to: '/collection/browse',

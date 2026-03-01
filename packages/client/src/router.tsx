@@ -12,7 +12,7 @@ import { CollectionBrowsePage } from '~/pages/CollectionBrowsePage';
 import { CollectionDetailPage } from '~/pages/CollectionDetailPage';
 import { CollectionGalleryPage } from '~/pages/CollectionGalleryPage';
 import { CollectionListPage } from '~/pages/CollectionListPage';
-import { CollectionSlideShowPage } from '~/pages/CollectionSlideShowPage';
+import { ShowcasePage } from '~/pages/ShowcasePage';
 import { CollectionViewLayout } from '~/components/domain/CollectionViewLayout';
 import { HomePage } from '~/pages/HomePage';
 import { IdeaPage } from '~/pages/IdeaPage';
@@ -39,10 +39,10 @@ const appLayoutRoute = createRoute({
     component: SiteLayout,
 });
 
-const slideShowRoute = createRoute({
+const showcaseRoute = createRoute({
     getParentRoute: () => rootRoute,
-    path: '/collection/slide-show',
-    component: CollectionSlideShowPage,
+    path: '/collection/showcase',
+    component: ShowcasePage,
 });
 
 const homeRoute = createRoute({
@@ -99,7 +99,7 @@ const imageLoadRoute = createRoute({
 });
 
 export const routeTree = rootRoute.addChildren([
-    slideShowRoute,
+    showcaseRoute,
     appLayoutRoute.addChildren([
         homeRoute,
         ideaRoute,

@@ -225,7 +225,7 @@ export const SortableCategoryCard = ({
             <DndContext
                 sensors={keywordSensors}
                 collisionDetection={closestCenter}
-                onDragEnd={(event) => onKeywordDragEnd(category.id, event)}
+                onDragEnd={(event: DragEndEvent) => onKeywordDragEnd(category.id, event)}
             >
                 <SortableContext
                     items={category.keywords.map((keyword) =>
