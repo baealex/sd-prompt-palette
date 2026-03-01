@@ -171,7 +171,7 @@ Steps: 25, Sampler: Euler a
         let tempDirPath = '';
 
         beforeEach(async () => {
-            tempDirPath = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'sdpp-live-images-'));
+            tempDirPath = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'ocean-palette-live-images-'));
         });
 
         afterEach(async () => {

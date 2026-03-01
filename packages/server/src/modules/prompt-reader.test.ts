@@ -53,7 +53,7 @@ function createPngBuffer(chunks: Buffer[]): Buffer {
 }
 
 async function writeTempPng(chunks: Buffer[]): Promise<{ filePath: string; dirPath: string }> {
-    const dirPath = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'sdpp-prompt-reader-'));
+    const dirPath = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'ocean-palette-prompt-reader-'));
     const filePath = path.resolve(dirPath, 'sample.png');
     const pngBuffer = createPngBuffer(chunks);
 

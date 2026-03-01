@@ -2,7 +2,7 @@ version: "2.1"
 
 services:
   app:
-    image: baealex/sd-prompt-palette
+    image: baealex/ocean-palette
     ports:
       - 3000:3332
     volumes:

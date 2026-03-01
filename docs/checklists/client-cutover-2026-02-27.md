@@ -13,11 +13,11 @@
   - `/image-load`
 
 ## 2) Automated Checks
-- [x] `pnpm --filter @sdpp/client run typecheck`
-- [x] `pnpm --filter @sdpp/client run test`
-- [x] `pnpm --filter @sdpp/client run build`
-- [x] `pnpm --filter @sdpp/server exec tsc --noEmit`
-- [ ] `pnpm --filter @sdpp/server run build` (blocked: Prisma engine file rename EPERM on Windows host)
+- [x] `pnpm --filter @ocean-palette/client run typecheck`
+- [x] `pnpm --filter @ocean-palette/client run test`
+- [x] `pnpm --filter @ocean-palette/client run build`
+- [x] `pnpm --filter @ocean-palette/server exec tsc --noEmit`
+- [ ] `pnpm --filter @ocean-palette/server run build` (blocked: Prisma engine file rename EPERM on Windows host)
 
 ## 3) Route Parity (Manual)
 - [ ] `/` Home: category/keyword create-rename-delete, DnD reorder, copy/view/remove action parity

@@ -23,7 +23,7 @@ export const SiteHeader = () => {
             <header className="sticky top-0 z-20 border-b border-line bg-surface-base/95 backdrop-blur">
                 <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4">
                     <Link to="/" className="ui-focus-ring rounded-token-md px-1 text-lg font-semibold tracking-tight text-ink">
-                        Prompt Palette
+                        Ocean Palette
                     </Link>
 
                     <nav className="hidden items-center gap-2 md:flex">

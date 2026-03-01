@@ -38,22 +38,22 @@ jobs:
       run: npx pnpm i
     
     - name: Lint (Server)
-      run: npx pnpm --filter @sdpp/server run lint
+      run: npx pnpm --filter @ocean-palette/server run lint
     
     - name: Test (Server)
-      run: npx pnpm --filter @sdpp/server run test
+      run: npx pnpm --filter @ocean-palette/server run test
     
     - name: Build (Server)
-      run: npx pnpm --filter @sdpp/server run build
+      run: npx pnpm --filter @ocean-palette/server run build
 
     - name: Lint (Client React)
-      run: npx pnpm --filter @sdpp/client run lint
+      run: npx pnpm --filter @ocean-palette/client run lint
 
     - name: Typecheck (Client React)
-      run: npx pnpm --filter @sdpp/client run typecheck
+      run: npx pnpm --filter @ocean-palette/client run typecheck
 
     - name: Test (Client React)
-      run: npx pnpm --filter @sdpp/client run test
+      run: npx pnpm --filter @ocean-palette/client run test
 
     - name: Build (Client React)
-      run: npx pnpm --filter @sdpp/client run build
+      run: npx pnpm --filter @ocean-palette/client run build

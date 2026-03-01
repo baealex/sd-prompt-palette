@@ -1,4 +1,4 @@
-# @sdpp/client
+# @ocean-palette/client
 
 React migration target app.
 

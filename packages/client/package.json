@@ -1,5 +1,5 @@
 {
-	"name": "@sdpp/client",
+	"name": "@ocean-palette/client",
 	"version": "0.0.0",
 	"private": true,
 	"type": "module",
