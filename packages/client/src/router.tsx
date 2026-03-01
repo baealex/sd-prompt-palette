@@ -9,10 +9,11 @@ import {
 import { SiteLayout } from '~/components/domain/SiteLayout';
 import { CollectionDetailPage } from '~/pages/CollectionDetailPage';
 import { ShowcasePage } from '~/pages/ShowcasePage';
-import { CollectionViewLayout } from '~/components/domain/CollectionViewLayout';
+import { CollectionPage } from '~/pages/CollectionPage';
 import { HomePage } from '~/pages/HomePage';
 import { IdeaPage } from '~/pages/IdeaPage';
 import { ImageLoadPage } from '~/pages/ImageLoadPage';
+import { parseCollectionSearchParams } from '~/features/collection/view-filter';
 
 const RootRouteComponent = () => {
     return (
@@ -53,7 +54,9 @@ const ideaRoute = createRoute({
 const collectionRoute = createRoute({
     getParentRoute: () => appLayoutRoute,
     path: '/collection',
-    component: CollectionViewLayout,
+    validateSearch: (search) =>
+        parseCollectionSearchParams(search as Record<string, unknown>),
+    component: CollectionPage,
 });
 
 const CollectionDetailRouteComponent = () => {

@@ -22,9 +22,13 @@ export interface SearchRequest {
     query?: string;
     model?: string;
     searchBy?: CollectionSearchBy;
+    dateField?: CollectionDateField;
+    dateFrom?: string;
+    dateTo?: string;
 }
 
 export type CollectionSearchBy = 'title' | 'prompt' | 'negative_prompt';
+export type CollectionDateField = 'collection_added' | 'generated_at';
 
 export interface PaginationRequest {
     offset?: number;
@@ -266,6 +270,9 @@ export function getCollections(data: GetCollectionsRequestData = {}) {
         query = '',
         model = '',
         searchBy = 'title',
+        dateField = 'collection_added',
+        dateFrom = '',
+        dateTo = '',
         order = 'desc',
         orderBy = 'createdAt',
     } = data;
@@ -273,13 +280,27 @@ export function getCollections(data: GetCollectionsRequestData = {}) {
 
     return graphQLRequest<'allCollections', GetCollectionsResponse>(
         `
-        query($limit: Int!, $offset: Int!, $query: String!, $model: String, $searchBy: String, $order: String!, $orderBy: String!) {
+        query(
+            $limit: Int!
+            $offset: Int!
+            $query: String!
+            $model: String
+            $searchBy: String
+            $dateField: String
+            $dateFrom: String
+            $dateTo: String
+            $order: String!
+            $orderBy: String!
+        ) {
             allCollections(
                 limit: $limit,
                 offset: $offset,
                 query: $query,
                 model: $model,
                 searchBy: $searchBy,
+                dateField: $dateField,
+                dateFrom: $dateFrom,
+                dateTo: $dateTo,
                 order: $order,
                 orderBy: $orderBy
             ) {
@@ -309,6 +330,9 @@ export function getCollections(data: GetCollectionsRequestData = {}) {
             query,
             model,
             searchBy,
+            dateField,
+            dateFrom,
+            dateTo,
             order,
             orderBy,
         },

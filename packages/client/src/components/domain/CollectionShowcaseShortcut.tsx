@@ -2,28 +2,17 @@ import { Link, useSearch } from '@tanstack/react-router';
 
 import { ImageIcon } from '~/icons';
 import {
+    DEFAULT_COLLECTION_DATE_FIELD,
     DEFAULT_COLLECTION_SEARCH_BY,
-    normalizeCollectionFilterText,
-    parseCollectionSearchBy,
-    parseCollectionSort,
     DEFAULT_COLLECTION_SORT,
+    parseCollectionFilterState,
 } from '~/features/collection/view-filter';
 
 export const CollectionShowcaseShortcut = () => {
     const filters = useSearch({
         strict: false,
-        select: (search) => {
-            const queryValue = (search as Record<string, unknown>).query;
-            const modelValue = (search as Record<string, unknown>).model;
-            const sortValue = (search as Record<string, unknown>).sort;
-            const searchByValue = (search as Record<string, unknown>).searchBy;
-            return {
-                query: normalizeCollectionFilterText(queryValue),
-                model: normalizeCollectionFilterText(modelValue),
-                sort: parseCollectionSort(sortValue),
-                searchBy: parseCollectionSearchBy(searchByValue),
-            };
-        },
+        select: (search) =>
+            parseCollectionFilterState(search as Record<string, unknown>),
     });
 
     const searchParams: Record<string, string> = {};
@@ -38,6 +27,18 @@ export const CollectionShowcaseShortcut = () => {
     }
     if (filters.searchBy !== DEFAULT_COLLECTION_SEARCH_BY) {
         searchParams.searchBy = filters.searchBy;
+    }
+    if (
+        (filters.dateFrom || filters.dateTo) &&
+        filters.dateField !== DEFAULT_COLLECTION_DATE_FIELD
+    ) {
+        searchParams.dateField = filters.dateField;
+    }
+    if (filters.dateFrom) {
+        searchParams.dateFrom = filters.dateFrom;
+    }
+    if (filters.dateTo) {
+        searchParams.dateTo = filters.dateTo;
     }
 
     return (

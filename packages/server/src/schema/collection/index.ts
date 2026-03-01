@@ -1,4 +1,5 @@
 import { IResolvers } from '@graphql-tools/utils';
+import dayjs from 'dayjs';
 
 import { Collection, Prisma, models, Order, Pagination, Search } from '~/models';
 import { gql } from '~/modules/graphql';
@@ -55,6 +56,61 @@ const resolveCollectionQueryFilter = (
                 },
             },
         ],
+    };
+};
+
+const parseCollectionDateValue = (input?: string) => {
+    if (!input) {
+        return null;
+    }
+
+    const normalized = input.trim();
+    if (!normalized) {
+        return null;
+    }
+
+    const parsed = dayjs(normalized);
+    if (!parsed.isValid()) {
+        return null;
+    }
+
+    return parsed.toDate();
+};
+
+const resolveCollectionDateFilter = (
+    dateField?: 'collection_added' | 'generated_at',
+    dateFrom?: string,
+    dateTo?: string,
+): Prisma.CollectionWhereInput | null => {
+    let parsedFrom = parseCollectionDateValue(dateFrom);
+    let parsedTo = parseCollectionDateValue(dateTo);
+
+    if (!parsedFrom && !parsedTo) {
+        return null;
+    }
+
+    if (parsedFrom && parsedTo && parsedFrom.getTime() > parsedTo.getTime()) {
+        [parsedFrom, parsedTo] = [parsedTo, parsedFrom];
+    }
+
+    const range: Prisma.DateTimeFilter = {};
+    if (parsedFrom) {
+        range.gte = parsedFrom;
+    }
+    if (parsedTo) {
+        range.lte = parsedTo;
+    }
+
+    if (dateField === 'generated_at') {
+        return {
+            image: {
+                generatedAt: range,
+            },
+        };
+    }
+
+    return {
+        createdAt: range,
     };
 };
 
@@ -142,7 +198,7 @@ export const CollectionType = gql`
 export const CollectionQuery = gql`
     type Query {
         collectionModelOptions: [String!]!
-        allCollections(orderBy: String, order: String, query: String, model: String, searchBy: String, limit: Int, offset: Int): AllCollections!
+        allCollections(orderBy: String, order: String, query: String, model: String, searchBy: String, dateField: String, dateFrom: String, dateTo: String, limit: Int, offset: Int): AllCollections!
         collection(id: ID!): Collection!
     }
 `;
@@ -192,6 +248,9 @@ export const CollectionResolvers: IResolvers = {
                     query,
                     model,
                     searchBy,
+                    dateField,
+                    dateFrom,
+                    dateTo,
                     limit,
                     offset,
                 }: Order & Pagination & Search,
@@ -222,6 +281,15 @@ export const CollectionResolvers: IResolvers = {
                             },
                         },
                     });
+                }
+
+                const dateFilter = resolveCollectionDateFilter(
+                    dateField,
+                    dateFrom,
+                    dateTo,
+                );
+                if (dateFilter) {
+                    filters.push(dateFilter);
                 }
 
                 const where =

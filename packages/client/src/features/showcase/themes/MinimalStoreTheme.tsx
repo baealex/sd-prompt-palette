@@ -36,7 +36,8 @@ const parsePageParam = (value: unknown): number => {
 
 export const MinimalStoreTheme = () => {
     const navigate = useNavigate();
-    const { query, model, searchBy, sort } = useShowcaseFilters();
+    const { query, model, searchBy, dateField, dateFrom, dateTo, sort } =
+        useShowcaseFilters();
     const page = useSearch({
         strict: false,
         select: (search) =>
@@ -44,7 +45,18 @@ export const MinimalStoreTheme = () => {
     });
 
     const { data, isPending } = useQuery({
-        queryKey: ['collections', 'showcase-store', query, model, searchBy, sort, page],
+        queryKey: [
+            'collections',
+            'showcase-store',
+            query,
+            model,
+            searchBy,
+            dateField,
+            dateFrom,
+            dateTo,
+            sort,
+            page,
+        ],
         queryFn: async () => {
             const response = await getCollections({
                 page,
@@ -52,6 +64,9 @@ export const MinimalStoreTheme = () => {
                 query,
                 model,
                 searchBy,
+                dateField,
+                dateFrom,
+                dateTo,
                 ...resolveCollectionSortOrder(sort),
             });
             return {

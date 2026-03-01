@@ -11,6 +11,9 @@ export interface Search {
 	query: string;
 	model?: string;
 	searchBy?: "title" | "prompt" | "negative_prompt";
+	dateField?: "collection_added" | "generated_at";
+	dateFrom?: string;
+	dateTo?: string;
 }
 
 export interface Pagination {

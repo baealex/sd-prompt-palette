@@ -1,11 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
-import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { deleteCollection, getCollections, updateCollection } from '~/api';
-import { Image } from '~/components/ui/Image';
-import { MasonryColumns } from '~/components/ui/MasonryColumns';
-import { Pagination } from '~/components/ui/Pagination';
+import { deleteCollection, updateCollection } from '~/api';
 import { Badge } from '~/components/ui/Badge';
 import { Button } from '~/components/ui/Button';
 import { Card } from '~/components/ui/Card';
@@ -17,21 +13,15 @@ import {
     DropdownMenuTrigger,
 } from '~/components/ui/DropdownMenu';
 import { IconButton } from '~/components/ui/IconButton';
+import { Image } from '~/components/ui/Image';
+import { MasonryColumns } from '~/components/ui/MasonryColumns';
 import { Notice } from '~/components/ui/Notice';
+import { Pagination } from '~/components/ui/Pagination';
 import { PromptDialog } from '~/components/ui/PromptDialog';
 import { useToast } from '~/components/ui/ToastProvider';
-import {
-    applyCollectionFilterSearch,
-    applyCollectionViewSearch,
-    normalizeCollectionFilterText,
-    parseCollectionSearchBy,
-    parseCollectionSort,
-    resolveCollectionSortOrder,
-} from '~/features/collection/view-filter';
 import { MoreIcon } from '~/icons';
 import type { Collection } from '~/models/types';
 
-const LIMIT = 20;
 const BROWSE_GALLERY_BREAKPOINTS = [
     { minWidth: 360, columns: 3 },
     { minWidth: 240, columns: 2 },
@@ -42,249 +32,64 @@ type CollectionBrowseItem = Pick<
     Collection,
     'id' | 'title' | 'prompt' | 'negativePrompt' | 'image'
 >;
-interface CollectionBrowsePayload {
+
+interface CollectionBrowseViewProps {
     items: CollectionBrowseItem[];
-    page: number;
-    lastPage: number;
-    total: number;
+    loading: boolean;
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    selectedId: number | null;
+    errorMessage: string | null;
+    onPageChange: (nextPage: number) => void;
+    onSelectedChange: (nextSelectedId: number | null) => void;
+    onRefresh: () => Promise<unknown>;
 }
 
-const getLastPage = (total: number, limit: number) => {
-    return Math.max(1, Math.ceil(total / limit));
-};
-
-const normalizeNumericParam = (input: unknown): number | null => {
-    if (typeof input === 'number') {
-        return Number.isFinite(input) ? input : null;
-    }
-
-    if (typeof input === 'string') {
-        const trimmed = input.trim();
-        if (!trimmed) {
-            return null;
-        }
-
-        const unquoted =
-            (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
-            (trimmed.startsWith("'") && trimmed.endsWith("'"))
-                ? trimmed.slice(1, -1)
-                : trimmed;
-        const parsed = Number(unquoted);
-        return Number.isFinite(parsed) ? parsed : null;
-    }
-
-    return null;
-};
-
-const parsePage = (input: unknown) => {
-    const parsed = normalizeNumericParam(input);
-    if (!parsed || parsed <= 0) {
-        return 1;
-    }
-    return Math.max(1, Math.trunc(parsed));
-};
-
-const parseSelectedId = (input: unknown) => {
-    const parsed = normalizeNumericParam(input);
-    if (!parsed || parsed <= 0) {
-        return null;
-    }
-    return Math.trunc(parsed);
-};
-
-export const CollectionBrowsePage = () => {
+export const CollectionBrowseView = ({
+    items,
+    loading,
+    currentPage,
+    totalPages,
+    totalItems,
+    selectedId,
+    errorMessage,
+    onPageChange,
+    onSelectedChange,
+    onRefresh,
+}: CollectionBrowseViewProps) => {
     const navigate = useNavigate();
-    const browseSearch = useSearch({
-        strict: false,
-        select: (search) => {
-            const queryValue = (search as Record<string, unknown>).query;
-            const modelValue = (search as Record<string, unknown>).model;
-            const sortValue = (search as Record<string, unknown>).sort;
-            const searchByValue = (search as Record<string, unknown>).searchBy;
-            const pageValue = (search as Record<string, unknown>).page;
-            const selectedValue = (search as Record<string, unknown>).selected;
-            return {
-                query: normalizeCollectionFilterText(queryValue),
-                model: normalizeCollectionFilterText(modelValue),
-                sort: parseCollectionSort(sortValue),
-                searchBy: parseCollectionSearchBy(searchByValue),
-                page: parsePage(pageValue),
-                selected: parseSelectedId(selectedValue),
-            };
-        },
-    });
-    const query = browseSearch.query;
-    const model = browseSearch.model;
-    const sort = browseSearch.sort;
-    const searchBy = browseSearch.searchBy;
-    const currentPage = browseSearch.page;
-    const selectedId = browseSearch.selected;
+    const { pushToast } = useToast();
     const [renameDialogOpen, setRenameDialogOpen] = useState(false);
     const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
     const [renaming, setRenaming] = useState(false);
     const [removing, setRemoving] = useState(false);
     const galleryScrollRef = useRef<HTMLDivElement | null>(null);
     const queryErrorToastRef = useRef<string | null>(null);
-    const { pushToast } = useToast();
-
-    const collectionsQuery = useQuery({
-        queryKey: ['collections', 'browse', query, model, searchBy, sort, currentPage] as const,
-        queryFn: async () => {
-            const response = await getCollections({
-                page: currentPage,
-                limit: LIMIT,
-                query,
-                model,
-                searchBy,
-                ...resolveCollectionSortOrder(sort),
-            });
-
-            const responseItems = response.data.allCollections.collections
-                .map((item) => ({
-                    id: Number(item.id),
-                    title: item.title,
-                    prompt: item.prompt,
-                    negativePrompt: item.negativePrompt,
-                    image: item.image,
-                }))
-                .filter((item) => Number.isFinite(item.id) && item.id > 0);
-            const total = response.data.allCollections.pagination.total;
-            const responseLastPage = getLastPage(total, LIMIT);
-
-            return {
-                items: responseItems,
-                page: currentPage,
-                lastPage: responseLastPage,
-                total,
-            } satisfies CollectionBrowsePayload;
-        },
-        placeholderData: (previousData) => previousData,
-    });
-
-    const items = collectionsQuery.data?.items ?? [];
-    const loading = collectionsQuery.isPending;
-    const totalPages = collectionsQuery.data?.lastPage ?? 1;
-    const totalItems = collectionsQuery.data?.total ?? 0;
-    const queryErrorMessage =
-        collectionsQuery.error instanceof Error
-            ? collectionsQuery.error.message
-            : null;
-    const selectItemById = useCallback(
-        (nextSelectedId: number) => {
-            void navigate({
-                to: '/collection',
-                replace: true,
-                resetScroll: false,
-                search: (previousSearch) => {
-                    const nextSearch = {
-                        ...(previousSearch as Record<string, unknown>),
-                    };
-                    applyCollectionFilterSearch(nextSearch, {
-                        query,
-                        model,
-                        searchBy,
-                        sort,
-                    });
-                    applyCollectionViewSearch(nextSearch, 'browse');
-                    if (currentPage > 1) {
-                        nextSearch.page = currentPage;
-                    } else {
-                        delete nextSearch.page;
-                    }
-                    nextSearch.selected = nextSelectedId;
-                    return nextSearch;
-                },
-            });
-        },
-        [currentPage, model, navigate, query, searchBy, sort],
-    );
 
     useEffect(() => {
-        if (!queryErrorMessage) {
+        if (!errorMessage) {
             queryErrorToastRef.current = null;
             return;
         }
-        if (queryErrorToastRef.current === queryErrorMessage) {
+        if (queryErrorToastRef.current === errorMessage) {
             return;
         }
-        queryErrorToastRef.current = queryErrorMessage;
+        queryErrorToastRef.current = errorMessage;
         pushToast({
             variant: 'error',
-            message: queryErrorMessage,
+            message: errorMessage,
         });
-    }, [pushToast, queryErrorMessage]);
+    }, [errorMessage, pushToast]);
 
     useEffect(() => {
         galleryScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' });
-    }, [currentPage, model, query, sort]);
-
-    useEffect(() => {
-        if (items.length === 0) {
-            return;
-        }
-
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
-                return;
-            }
-
-            const target = event.target;
-            if (
-                target instanceof HTMLInputElement ||
-                target instanceof HTMLTextAreaElement
-            ) {
-                return;
-            }
-
-            event.preventDefault();
-
-            const currentIndex = items.findIndex((item) => item.id === selectedId);
-            const nextIndex =
-                event.key === 'ArrowLeft'
-                    ? Math.max(0, currentIndex - 1)
-                    : Math.min(items.length - 1, currentIndex + 1);
-            const nextItem = items[nextIndex];
-
-            if (!nextItem || nextItem.id === selectedId) {
-                return;
-            }
-
-            selectItemById(nextItem.id);
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [items, selectedId, selectItemById]);
+    }, [currentPage]);
 
     useEffect(() => {
         if (items.length === 0) {
             if (selectedId !== null) {
-                void navigate({
-                    to: '/collection',
-                    replace: true,
-                    resetScroll: false,
-                    search: (previousSearch) => {
-                        const nextSearch = {
-                            ...(previousSearch as Record<string, unknown>),
-                        };
-                        applyCollectionFilterSearch(nextSearch, {
-                            query,
-                            model,
-                            searchBy,
-                            sort,
-                        });
-                        applyCollectionViewSearch(nextSearch, 'browse');
-                        if (currentPage > 1) {
-                            nextSearch.page = currentPage;
-                        } else {
-                            delete nextSearch.page;
-                        }
-                        delete nextSearch.selected;
-                        return nextSearch;
-                    },
-                });
+                onSelectedChange(null);
             }
             return;
         }
@@ -293,32 +98,8 @@ export const CollectionBrowsePage = () => {
             return;
         }
 
-        const fallbackId = items[0].id;
-        void navigate({
-            to: '/collection',
-            replace: true,
-            resetScroll: false,
-            search: (previousSearch) => {
-                const nextSearch = {
-                    ...(previousSearch as Record<string, unknown>),
-                };
-                applyCollectionFilterSearch(nextSearch, {
-                    query,
-                    model,
-                    searchBy,
-                    sort,
-                });
-                applyCollectionViewSearch(nextSearch, 'browse');
-                if (currentPage > 1) {
-                    nextSearch.page = currentPage;
-                } else {
-                    delete nextSearch.page;
-                }
-                nextSearch.selected = fallbackId;
-                return nextSearch;
-            },
-        });
-    }, [currentPage, items, model, navigate, query, searchBy, selectedId, sort]);
+        onSelectedChange(items[0].id);
+    }, [items, onSelectedChange, selectedId]);
 
     const selectedItem = useMemo(() => {
         if (!selectedId) {
@@ -326,60 +107,6 @@ export const CollectionBrowsePage = () => {
         }
         return items.find((item) => item.id === selectedId) ?? null;
     }, [items, selectedId]);
-    const selectedIndex = useMemo(
-        () => items.findIndex((item) => item.id === selectedId),
-        [items, selectedId],
-    );
-    const hasPrevSelection = selectedIndex > 0;
-    const hasNextSelection =
-        selectedIndex >= 0 && selectedIndex < items.length - 1;
-    const handleMoveSelection = useCallback(
-        (direction: 'prev' | 'next') => {
-            if (selectedIndex < 0) {
-                return;
-            }
-            const nextIndex =
-                direction === 'prev' ? selectedIndex - 1 : selectedIndex + 1;
-            const nextItem = items[nextIndex];
-            if (!nextItem) {
-                return;
-            }
-            selectItemById(nextItem.id);
-        },
-        [items, selectedIndex, selectItemById],
-    );
-
-    const handlePageChange = useCallback(
-        (nextPage: number) => {
-            void navigate({
-                to: '/collection',
-                replace: true,
-                resetScroll: false,
-                search: (previousSearch) => {
-                    const nextSearch = {
-                        ...(previousSearch as Record<string, unknown>),
-                    };
-                    applyCollectionFilterSearch(nextSearch, {
-                        query,
-                        model,
-                        searchBy,
-                        sort,
-                    });
-                    applyCollectionViewSearch(nextSearch, 'browse');
-
-                    if (nextPage > 1) {
-                        nextSearch.page = nextPage;
-                    } else {
-                        delete nextSearch.page;
-                    }
-                    delete nextSearch.selected;
-
-                    return nextSearch;
-                },
-            });
-        },
-        [model, navigate, query, searchBy, sort],
-    );
 
     const openDetail = (collectionId: number) => {
         void navigate({
@@ -409,7 +136,7 @@ export const CollectionBrowsePage = () => {
                 variant: 'success',
                 message: 'Collection renamed.',
             });
-            await collectionsQuery.refetch();
+            await onRefresh();
         } catch (nextError) {
             pushToast({
                 variant: 'error',
@@ -436,7 +163,7 @@ export const CollectionBrowsePage = () => {
                 variant: 'success',
                 message: 'Collection deleted.',
             });
-            await collectionsQuery.refetch();
+            await onRefresh();
         } catch (nextError) {
             pushToast({
                 variant: 'error',
@@ -496,7 +223,7 @@ export const CollectionBrowsePage = () => {
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => {
-                                            selectItemById(item.id);
+                                            onSelectedChange(item.id);
                                         }}
                                         className={`!h-auto w-full !justify-start gap-0 border p-1.5 text-left transition-colors ${
                                             selectedId === item.id
@@ -525,8 +252,8 @@ export const CollectionBrowsePage = () => {
                             totalPages={totalPages}
                             variant="compact"
                             totalItems={totalItems}
-                            itemsPerPage={LIMIT}
-                            onPageChange={handlePageChange}
+                            itemsPerPage={20}
+                            onPageChange={onPageChange}
                         />
                     ) : null}
 
@@ -594,30 +321,6 @@ export const CollectionBrowsePage = () => {
                                     </DropdownMenu>
                                 </div>
                             </div>
-                            {items.length > 1 ? (
-                                <div className="mb-3 grid grid-cols-2 gap-2 xl:hidden">
-                                    <Button
-                                        variant="secondary"
-                                        size="sm"
-                                        disabled={!hasPrevSelection}
-                                        onClick={() => {
-                                            handleMoveSelection('prev');
-                                        }}
-                                    >
-                                        Previous
-                                    </Button>
-                                    <Button
-                                        variant="secondary"
-                                        size="sm"
-                                        disabled={!hasNextSelection}
-                                        onClick={() => {
-                                            handleMoveSelection('next');
-                                        }}
-                                    >
-                                        Next
-                                    </Button>
-                                </div>
-                            ) : null}
 
                             <div className="overflow-hidden rounded-token-lg border border-line bg-surface-muted">
                                 <Image
