@@ -9,13 +9,12 @@ import { Pagination } from '~/components/ui/Pagination';
 import { Notice } from '~/components/ui/Notice';
 import {
     applyCollectionFilterSearch,
-    buildCollectionViewPath,
+    applyCollectionViewSearch,
     normalizeCollectionFilterText,
     parseCollectionSort,
     resolveCollectionSortOrder,
 } from '~/features/collection/view-filter';
 import type { Collection } from '~/models/types';
-import { usePathStore } from '~/state/path-store';
 
 const LIMIT = 20;
 
@@ -56,18 +55,8 @@ const parsePage = (input: unknown) => {
     return Math.max(1, Math.trunc(parsed));
 };
 
-const buildCollectionGalleryPath = (next: {
-    query: string;
-    model: string;
-    sort: ReturnType<typeof parseCollectionSort>;
-    page: number;
-}) => {
-    return buildCollectionViewPath('/collection/gallery', next);
-};
-
 export const CollectionGalleryPage = () => {
     const navigate = useNavigate();
-    const { setPath } = usePathStore();
     const gallerySearch = useSearch({
         strict: false,
         select: (search) => {
@@ -87,18 +76,6 @@ export const CollectionGalleryPage = () => {
     const model = gallerySearch.model;
     const sort = gallerySearch.sort;
     const currentPage = gallerySearch.page;
-
-    useEffect(() => {
-        setPath(
-            'collection',
-            buildCollectionGalleryPath({
-                query,
-                model,
-                sort,
-                page: currentPage,
-            }),
-        );
-    }, [currentPage, model, query, setPath, sort]);
 
     const collectionsQuery = useQuery({
         queryKey: [
@@ -156,13 +133,14 @@ export const CollectionGalleryPage = () => {
 
         const safePage = collectionsQuery.data.lastPage;
         void navigate({
-            to: '/collection/gallery',
+            to: '/collection',
             replace: true,
             search: (previousSearch) => {
                 const nextSearch = {
                     ...(previousSearch as Record<string, unknown>),
                 };
                 applyCollectionFilterSearch(nextSearch, { query, model, sort });
+                applyCollectionViewSearch(nextSearch, 'gallery');
 
                 if (safePage > 1) {
                     nextSearch.page = safePage;
@@ -177,7 +155,7 @@ export const CollectionGalleryPage = () => {
     const handlePageChange = useCallback(
         (nextPage: number) => {
             void navigate({
-                to: '/collection/gallery',
+                to: '/collection',
                 replace: true,
                 search: (previousSearch) => {
                     const nextSearch = {
@@ -188,6 +166,7 @@ export const CollectionGalleryPage = () => {
                         model,
                         sort,
                     });
+                    applyCollectionViewSearch(nextSearch, 'gallery');
 
                     if (nextPage > 1) {
                         nextSearch.page = nextPage;

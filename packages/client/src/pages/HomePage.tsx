@@ -32,7 +32,6 @@ import {
 import { SortableCategoryCard } from '~/features/home/SortableCategoryCard';
 import type { HomeCategory } from '~/features/home/types';
 import { useHomeBoard } from '~/features/home/use-home-board';
-import { usePathStore } from '~/state/path-store';
 
 interface KeywordRemoveTarget {
     categoryId: number;
@@ -40,7 +39,6 @@ interface KeywordRemoveTarget {
 }
 
 export const HomePage = () => {
-    const { paths } = usePathStore();
     const navigate = useNavigate();
     const { pushToast } = useToast();
     const { copyToClipboard } = useClipboardToast();
@@ -285,11 +283,11 @@ export const HomePage = () => {
     const handleViewCollection = useCallback(
         (keywordName: string) => {
             void navigate({
-                to: paths.collection,
+                to: '/collection',
                 search: { query: keywordName },
             });
         },
-        [navigate, paths.collection],
+        [navigate],
     );
 
     const handleRemoveKeywordRequest = useCallback(

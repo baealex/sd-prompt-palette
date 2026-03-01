@@ -1,5 +1,6 @@
 import type { OrderRequest } from '~/api';
 
+export type CollectionView = 'list' | 'gallery' | 'browse';
 export type CollectionSort =
     | 'collection_added_desc'
     | 'collection_added_asc'
@@ -12,6 +13,7 @@ export interface CollectionSortOption {
 }
 
 export const DEFAULT_COLLECTION_SORT: CollectionSort = 'collection_added_desc';
+export const DEFAULT_COLLECTION_VIEW: CollectionView = 'list';
 
 export const COLLECTION_SORT_OPTIONS: CollectionSortOption[] = [
     { value: 'collection_added_desc', label: 'Added to collection (newest)' },
@@ -23,6 +25,22 @@ export const COLLECTION_SORT_OPTIONS: CollectionSortOption[] = [
 const COLLECTION_SORT_VALUES = new Set<CollectionSort>(
     COLLECTION_SORT_OPTIONS.map((option) => option.value),
 );
+const COLLECTION_VIEW_VALUES = new Set<CollectionView>([
+    'list',
+    'gallery',
+    'browse',
+]);
+
+export const parseCollectionView = (input: unknown): CollectionView => {
+    if (
+        typeof input === 'string' &&
+        COLLECTION_VIEW_VALUES.has(input as CollectionView)
+    ) {
+        return input as CollectionView;
+    }
+
+    return DEFAULT_COLLECTION_VIEW;
+};
 
 export const parseCollectionSort = (input: unknown): CollectionSort => {
     if (
@@ -98,9 +116,24 @@ export const applyCollectionFilterSearch = (
     }
 };
 
-export const buildCollectionViewPath = (
-    basePath: string,
+export const applyCollectionViewSearch = (
+    target: Record<string, unknown>,
+    view: CollectionView,
+) => {
+    if (view !== DEFAULT_COLLECTION_VIEW) {
+        target.view = view;
+    } else {
+        delete target.view;
+    }
+
+    if (view !== 'browse') {
+        delete target.selected;
+    }
+};
+
+export const buildCollectionPath = (
     next: {
+        view: CollectionView;
         query: string;
         model: string;
         sort: CollectionSort;
@@ -118,13 +151,16 @@ export const buildCollectionViewPath = (
     if (next.sort !== DEFAULT_COLLECTION_SORT) {
         params.set('sort', next.sort);
     }
+    if (next.view !== DEFAULT_COLLECTION_VIEW) {
+        params.set('view', next.view);
+    }
     if (next.page > 1) {
         params.set('page', String(next.page));
     }
-    if (next.selected && next.selected > 0) {
+    if (next.view === 'browse' && next.selected && next.selected > 0) {
         params.set('selected', String(next.selected));
     }
 
     const queryString = params.toString();
-    return queryString ? `${basePath}?${queryString}` : basePath;
+    return queryString ? `/collection?${queryString}` : '/collection';
 };

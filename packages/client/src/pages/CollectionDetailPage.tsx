@@ -8,7 +8,6 @@ import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 import { Notice } from '~/components/ui/Notice';
 import { PromptDialog } from '~/components/ui/PromptDialog';
 import { useClipboardToast } from '~/components/ui/use-clipboard-toast';
-import { usePathStore } from '~/state/path-store';
 
 interface CollectionDetailPageProps {
     id: string;
@@ -17,7 +16,6 @@ interface CollectionDetailPageProps {
 export const CollectionDetailPage = ({ id }: CollectionDetailPageProps) => {
     const navigate = useNavigate();
     const { copyToClipboard } = useClipboardToast();
-    const { paths } = usePathStore();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [titleSaving, setTitleSaving] = useState(false);
@@ -89,9 +87,7 @@ export const CollectionDetailPage = ({ id }: CollectionDetailPageProps) => {
         setRemoving(true);
         try {
             await deleteCollection({ id: collection.id });
-            const fallbackPath = '/collection';
-            const nextPath = paths.collection.startsWith('/collection') ? paths.collection : fallbackPath;
-            await navigate({ to: nextPath });
+            await navigate({ to: '/collection' });
         } catch (nextError) {
             setError(nextError instanceof Error ? nextError.message : 'Failed to delete collection');
         } finally {

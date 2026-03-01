@@ -7,10 +7,7 @@ import {
 } from '@tanstack/react-router';
 
 import { SiteLayout } from '~/components/domain/SiteLayout';
-import { CollectionBrowsePage } from '~/pages/CollectionBrowsePage';
 import { CollectionDetailPage } from '~/pages/CollectionDetailPage';
-import { CollectionGalleryPage } from '~/pages/CollectionGalleryPage';
-import { CollectionListPage } from '~/pages/CollectionListPage';
 import { ShowcasePage } from '~/pages/ShowcasePage';
 import { CollectionViewLayout } from '~/components/domain/CollectionViewLayout';
 import { HomePage } from '~/pages/HomePage';
@@ -53,28 +50,10 @@ const ideaRoute = createRoute({
     component: IdeaPage,
 });
 
-const collectionViewLayoutRoute = createRoute({
+const collectionRoute = createRoute({
     getParentRoute: () => appLayoutRoute,
-    id: 'collection-view-layout',
-    component: CollectionViewLayout,
-});
-
-const collectionListRoute = createRoute({
-    getParentRoute: () => collectionViewLayoutRoute,
     path: '/collection',
-    component: CollectionListPage,
-});
-
-const collectionGalleryRoute = createRoute({
-    getParentRoute: () => collectionViewLayoutRoute,
-    path: '/collection/gallery',
-    component: CollectionGalleryPage,
-});
-
-const collectionBrowseRoute = createRoute({
-    getParentRoute: () => collectionViewLayoutRoute,
-    path: '/collection/browse',
-    component: CollectionBrowsePage,
+    component: CollectionViewLayout,
 });
 
 const CollectionDetailRouteComponent = () => {
@@ -99,11 +78,7 @@ export const routeTree = rootRoute.addChildren([
     appLayoutRoute.addChildren([
         homeRoute,
         ideaRoute,
-        collectionViewLayoutRoute.addChildren([
-            collectionListRoute,
-            collectionGalleryRoute,
-            collectionBrowseRoute,
-        ]),
+        collectionRoute,
         collectionDetailRoute,
         imageLoadRoute,
     ]),

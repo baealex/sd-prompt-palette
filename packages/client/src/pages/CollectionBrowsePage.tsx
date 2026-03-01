@@ -22,14 +22,13 @@ import { PromptDialog } from '~/components/ui/PromptDialog';
 import { useToast } from '~/components/ui/ToastProvider';
 import {
     applyCollectionFilterSearch,
-    buildCollectionViewPath,
+    applyCollectionViewSearch,
     normalizeCollectionFilterText,
     parseCollectionSort,
     resolveCollectionSortOrder,
 } from '~/features/collection/view-filter';
 import { MoreIcon } from '~/icons';
 import type { Collection } from '~/models/types';
-import { usePathStore } from '~/state/path-store';
 
 const LIMIT = 20;
 const BROWSE_GALLERY_BREAKPOINTS = [
@@ -94,7 +93,6 @@ const parseSelectedId = (input: unknown) => {
 
 export const CollectionBrowsePage = () => {
     const navigate = useNavigate();
-    const { setPath } = usePathStore();
     const browseSearch = useSearch({
         strict: false,
         select: (search) => {
@@ -124,32 +122,6 @@ export const CollectionBrowsePage = () => {
     const galleryScrollRef = useRef<HTMLDivElement | null>(null);
     const queryErrorToastRef = useRef<string | null>(null);
     const { pushToast } = useToast();
-
-    const buildBrowsePath = useCallback(
-        (next: {
-            query: string;
-            model: string;
-            sort: ReturnType<typeof parseCollectionSort>;
-            page: number;
-            selected: number | null;
-        }) => {
-            return buildCollectionViewPath('/collection/browse', next);
-        },
-        [],
-    );
-
-    useEffect(() => {
-        setPath(
-            'collection',
-            buildBrowsePath({
-                query,
-                model,
-                sort,
-                page: currentPage,
-                selected: null,
-            }),
-        );
-    }, [buildBrowsePath, currentPage, model, query, setPath, sort]);
 
     const collectionsQuery = useQuery({
         queryKey: ['collections', 'browse', query, model, sort, currentPage] as const,
@@ -195,7 +167,7 @@ export const CollectionBrowsePage = () => {
     const selectItemById = useCallback(
         (nextSelectedId: number) => {
             void navigate({
-                to: '/collection/browse',
+                to: '/collection',
                 replace: true,
                 resetScroll: false,
                 search: (previousSearch) => {
@@ -207,6 +179,7 @@ export const CollectionBrowsePage = () => {
                         model,
                         sort,
                     });
+                    applyCollectionViewSearch(nextSearch, 'browse');
                     if (currentPage > 1) {
                         nextSearch.page = currentPage;
                     } else {
@@ -283,7 +256,7 @@ export const CollectionBrowsePage = () => {
         if (items.length === 0) {
             if (selectedId !== null) {
                 void navigate({
-                    to: '/collection/browse',
+                    to: '/collection',
                     replace: true,
                     resetScroll: false,
                     search: (previousSearch) => {
@@ -295,6 +268,7 @@ export const CollectionBrowsePage = () => {
                             model,
                             sort,
                         });
+                        applyCollectionViewSearch(nextSearch, 'browse');
                         if (currentPage > 1) {
                             nextSearch.page = currentPage;
                         } else {
@@ -314,7 +288,7 @@ export const CollectionBrowsePage = () => {
 
         const fallbackId = items[0].id;
         void navigate({
-            to: '/collection/browse',
+            to: '/collection',
             replace: true,
             resetScroll: false,
             search: (previousSearch) => {
@@ -326,6 +300,7 @@ export const CollectionBrowsePage = () => {
                     model,
                     sort,
                 });
+                applyCollectionViewSearch(nextSearch, 'browse');
                 if (currentPage > 1) {
                     nextSearch.page = currentPage;
                 } else {
@@ -369,14 +344,19 @@ export const CollectionBrowsePage = () => {
     const handlePageChange = useCallback(
         (nextPage: number) => {
             void navigate({
-                to: '/collection/browse',
+                to: '/collection',
                 replace: true,
                 resetScroll: false,
                 search: (previousSearch) => {
                     const nextSearch = {
                         ...(previousSearch as Record<string, unknown>),
                     };
-                    applyCollectionFilterSearch(nextSearch, { query, model, sort });
+                    applyCollectionFilterSearch(nextSearch, {
+                        query,
+                        model,
+                        sort,
+                    });
+                    applyCollectionViewSearch(nextSearch, 'browse');
 
                     if (nextPage > 1) {
                         nextSearch.page = nextPage;

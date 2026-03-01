@@ -11,13 +11,12 @@ import { PromptDialog } from '~/components/ui/PromptDialog';
 import { useClipboardToast } from '~/components/ui/use-clipboard-toast';
 import {
     applyCollectionFilterSearch,
-    buildCollectionViewPath,
+    applyCollectionViewSearch,
     normalizeCollectionFilterText,
     parseCollectionSort,
     resolveCollectionSortOrder,
 } from '~/features/collection/view-filter';
 import type { Collection } from '~/models/types';
-import { usePathStore } from '~/state/path-store';
 
 const LIMIT = 20;
 
@@ -61,19 +60,9 @@ const parsePage = (input: unknown) => {
     return Math.max(1, Math.trunc(parsed));
 };
 
-const buildCollectionListPath = (next: {
-    query: string;
-    model: string;
-    sort: ReturnType<typeof parseCollectionSort>;
-    page: number;
-}) => {
-    return buildCollectionViewPath('/collection', next);
-};
-
 export const CollectionListPage = () => {
     const navigate = useNavigate();
     const { copyToClipboard } = useClipboardToast();
-    const { setPath } = usePathStore();
     const listSearch = useSearch({
         strict: false,
         select: (search) => {
@@ -103,13 +92,6 @@ export const CollectionListPage = () => {
     const [removeTarget, setRemoveTarget] = useState<CollectionListItem | null>(
         null,
     );
-
-    useEffect(() => {
-        setPath(
-            'collection',
-            buildCollectionListPath({ query, model, sort, page: currentPage }),
-        );
-    }, [currentPage, model, query, setPath, sort]);
 
     useEffect(() => {
         setMutationError(null);
@@ -176,6 +158,7 @@ export const CollectionListPage = () => {
                     ...(previousSearch as Record<string, unknown>),
                 };
                 applyCollectionFilterSearch(nextSearch, { query, model, sort });
+                applyCollectionViewSearch(nextSearch, 'list');
 
                 if (safePage > 1) {
                     nextSearch.page = safePage;
@@ -197,10 +180,11 @@ export const CollectionListPage = () => {
                         ...(previousSearch as Record<string, unknown>),
                     };
                     applyCollectionFilterSearch(nextSearch, { query, model, sort });
+                    applyCollectionViewSearch(nextSearch, 'list');
 
-                    if (nextPage > 1) {
-                        nextSearch.page = nextPage;
-                    } else {
+                if (nextPage > 1) {
+                    nextSearch.page = nextPage;
+                } else {
                         delete nextSearch.page;
                     }
                     return nextSearch;
