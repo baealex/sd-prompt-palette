@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from '@tanstack/react-router';
+import { useEffect, useMemo } from 'react';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 
 import { getCollections } from '~/api';
@@ -8,10 +8,9 @@ import { Image } from '~/components/domain/Image';
 import { ArrowLeftIcon, ArrowRightIcon, HeartIcon, SearchIcon } from '~/icons';
 import { useShowcaseFilters } from '../use-showcase-filters';
 
-const HERO_COUNT = 5;
 const GRID_CHUNK_SIZE = 8;
 const SECTION_COUNT = 6;
-const PAGE_SIZE = HERO_COUNT + GRID_CHUNK_SIZE * SECTION_COUNT; // 53
+const PAGE_SIZE = GRID_CHUNK_SIZE * SECTION_COUNT; // 48
 
 const SECTION_TITLES = [
     'New Arrivals',
@@ -22,101 +21,27 @@ const SECTION_TITLES = [
     "Editor's Choice",
 ];
 
-const shuffle = <T,>(items: T[]): T[] => {
-    const copied = [...items];
-    copied.sort(() => Math.random() - 0.5);
-    return copied;
-};
-
-const HeroCarousel = ({
-    items,
-}: {
-    items: {
-        id: number;
-        image: { url: string };
-        title: string;
-        prompt: string;
-    }[];
-}) => {
-    const [active, setActive] = useState(0);
-
-    useEffect(() => {
-        if (items.length < 2) {
-            return;
-        }
-
-        const timer = window.setInterval(() => {
-            setActive((prev) => (prev + 1) % items.length);
-        }, 4000);
-
-        return () => {
-            window.clearInterval(timer);
-        };
-    }, [items.length]);
-
-    if (!items[active]) {
-        return null;
+const parsePageParam = (value: unknown): number => {
+    if (typeof value === 'number' && Number.isInteger(value) && value > 0) {
+        return value;
     }
-
-    return (
-        <div className="relative aspect-[2/1] w-full overflow-hidden">
-            {items.map((slide, i) => (
-                <div
-                    key={slide.id}
-                    className={`absolute inset-0 transition-opacity duration-700 ${
-                        i === active
-                            ? 'opacity-100'
-                            : 'pointer-events-none opacity-0'
-                    }`}
-                >
-                    <img
-                        src={slide.image.url}
-                        alt={slide.title}
-                        className="h-full w-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-                    <div className="absolute bottom-16 left-0 right-0 text-center">
-                        <p className="text-xs uppercase tracking-[0.3em] text-white/60">
-                            Spring 2026 Collection
-                        </p>
-                        <h2 className="mt-3 text-3xl font-light tracking-wide text-white md:text-4xl">
-                            {slide.title || '(untitled)'}
-                        </h2>
-                        <Link
-                            to="/collection/$id"
-                            params={{ id: String(slide.id) }}
-                            className="mt-5 inline-block border border-white px-8 py-2.5 text-xs font-medium uppercase tracking-[0.2em] text-white transition-colors hover:bg-white hover:text-black"
-                        >
-                            Shop Now
-                        </Link>
-                    </div>
-                </div>
-            ))}
-
-            <div className="absolute bottom-5 left-1/2 z-10 flex -translate-x-1/2 gap-2">
-                {items.map((_, i) => (
-                    <button
-                        key={i}
-                        onClick={() => setActive(i)}
-                        className={`h-1.5 rounded-full transition-all ${
-                            i === active
-                                ? 'w-6 bg-white'
-                                : 'w-1.5 bg-white/40 hover:bg-white/60'
-                        }`}
-                    />
-                ))}
-            </div>
-        </div>
-    );
+    if (typeof value === 'string') {
+        const parsed = Number.parseInt(value, 10);
+        if (Number.isInteger(parsed) && parsed > 0) {
+            return parsed;
+        }
+    }
+    return 1;
 };
 
 export const MinimalStoreTheme = () => {
+    const navigate = useNavigate();
     const { query, model, sort } = useShowcaseFilters();
-    const [page, setPage] = useState(1);
-
-    useEffect(() => {
-        setPage(1);
-    }, [query, model, sort]);
+    const page = useSearch({
+        strict: false,
+        select: (search) =>
+            parsePageParam((search as Record<string, unknown>).page),
+    });
 
     const { data, isPending } = useQuery({
         queryKey: ['collections', 'showcase-store', query, model, sort, page],
@@ -147,14 +72,21 @@ export const MinimalStoreTheme = () => {
     const collections = data?.collections ?? [];
     const total = data?.total ?? 0;
     const totalPages = Math.ceil(total / PAGE_SIZE);
+    const gridItems = collections;
 
-    const heroItems = useMemo(
-        () => shuffle(collections.slice(0, Math.min(HERO_COUNT, collections.length))),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [page, collections.length],
-    );
-
-    const gridItems = collections.slice(HERO_COUNT);
+    useEffect(() => {
+        if (totalPages > 0 && page > totalPages) {
+            void navigate({
+                to: '/collection/showcase',
+                replace: true,
+                resetScroll: false,
+                search: (prev) => ({
+                    ...(prev as Record<string, unknown>),
+                    page: totalPages > 1 ? totalPages : undefined,
+                }),
+            });
+        }
+    }, [navigate, page, totalPages]);
 
     const sections = useMemo(() => {
         const result: { title: string; items: typeof gridItems }[] = [];
@@ -173,7 +105,18 @@ export const MinimalStoreTheme = () => {
     }, [gridItems]);
 
     const handlePageChange = (nextPage: number) => {
-        setPage(nextPage);
+        if (nextPage === page) {
+            return;
+        }
+        void navigate({
+            to: '/collection/showcase',
+            replace: true,
+            resetScroll: false,
+            search: (prev) => ({
+                ...(prev as Record<string, unknown>),
+                page: nextPage > 1 ? nextPage : undefined,
+            }),
+        });
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -238,8 +181,6 @@ export const MinimalStoreTheme = () => {
                     </div>
                 </div>
             </header>
-
-            {heroItems.length > 0 && <HeroCarousel items={heroItems} />}
 
             <main className="mx-auto max-w-7xl px-4">
                 {sections.map((section, si) => (

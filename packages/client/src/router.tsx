@@ -1,4 +1,3 @@
-import { TanStackRouterDevtools } from '@tanstack/router-devtools';
 import {
     Outlet,
     createRootRoute,
@@ -22,9 +21,6 @@ const RootRouteComponent = () => {
     return (
         <>
             <Outlet />
-            {import.meta.env.DEV ? (
-                <TanStackRouterDevtools position="bottom-right" />
-            ) : null}
         </>
     );
 };

@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 
 import { getCollections } from '~/api';
 import { resolveCollectionSortOrder } from '~/features/collection/view-filter';
-import { Button } from '~/components/ui/Button';
 import { PauseIcon, PlayIcon } from '~/icons';
 import { useShowcaseFilters } from '../use-showcase-filters';
 
@@ -84,7 +83,7 @@ export const SlideshowTheme = () => {
                     alt={activeSlide.title}
                     className="absolute inset-0 h-full w-full object-contain"
                 />
-                <div className="absolute left-6 top-20 z-20 rounded bg-black/45 px-3 py-2 text-sm font-semibold tracking-wide">
+                <div className="absolute left-3 top-3 z-20 rounded bg-black/45 px-2.5 py-1.5 text-xs font-semibold tracking-wide md:left-6 md:top-6 md:px-3 md:py-2 md:text-sm">
                     <Link
                         to="/collection/$id"
                         params={{ id: String(activeSlide.id) }}
@@ -95,10 +94,10 @@ export const SlideshowTheme = () => {
                 </div>
             </section>
 
-            <Button
-                variant="soft"
+            <button
+                type="button"
                 onClick={() => setPlay((prev) => !prev)}
-                className="fixed bottom-8 right-8 z-30 rounded-full border border-brand-300 bg-brand-100/90 text-brand-900 backdrop-blur"
+                className="fixed bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] right-3 z-30 inline-flex h-11 items-center gap-2 rounded-full bg-black/60 px-4 text-sm font-semibold text-white shadow-lg backdrop-blur transition-colors hover:bg-black/75 md:bottom-8 md:right-8"
             >
                 {play ? (
                     <PauseIcon width={16} height={16} />
@@ -106,7 +105,7 @@ export const SlideshowTheme = () => {
                     <PlayIcon width={16} height={16} />
                 )}
                 {play ? 'Pause' : 'Play'}
-            </Button>
+            </button>
         </>
     );
 };
