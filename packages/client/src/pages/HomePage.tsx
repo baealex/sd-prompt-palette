@@ -284,7 +284,7 @@ export const HomePage = () => {
         (keywordName: string) => {
             void navigate({
                 to: '/collection',
-                search: { query: keywordName },
+                search: { query: keywordName, searchBy: 'prompt' },
             });
         },
         [navigate],
