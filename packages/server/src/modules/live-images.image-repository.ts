@@ -118,25 +118,27 @@ export class LiveImagesImageRepository {
     }
 
     async deleteImageAndRelations(imageId: number): Promise<void> {
-        await models.collection.deleteMany({
-            where: { imageId },
-        });
+        await models.$transaction(async (tx) => {
+            await tx.collection.deleteMany({
+                where: { imageId },
+            });
 
-        await models.keyword.updateMany({
-            where: { imageId },
-            data: { imageId: null },
-        });
+            await tx.keyword.updateMany({
+                where: { imageId },
+                data: { imageId: null },
+            });
 
-        await models.liveSyncSourceLink.deleteMany({
-            where: { imageId },
-        });
+            await tx.liveSyncSourceLink.deleteMany({
+                where: { imageId },
+            });
 
-        await models.imageMeta.deleteMany({
-            where: { imageId },
-        });
+            await tx.imageMeta.deleteMany({
+                where: { imageId },
+            });
 
-        await models.image.delete({
-            where: { id: imageId },
+            await tx.image.delete({
+                where: { id: imageId },
+            });
         });
     }
 

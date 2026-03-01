@@ -70,26 +70,30 @@ export const categoryResolvers: IResolvers = {
     },
     Mutation: {
         createCategory: async (_, { name }: Category) => {
-            const categories = await models.category.findMany({
-                orderBy: {
-                    order: 'desc',
-                },
-            });
-            for (const category of categories) {
-                await models.category.update({
-                    where: {
-                        id: category.id,
-                    },
-                    data: {
-                        order: category.order + 1,
+            return models.$transaction(async (tx) => {
+                const categories = await tx.category.findMany({
+                    orderBy: {
+                        order: 'desc',
                     },
                 });
-            }
-            return models.category.create({
-                data: {
-                    name,
-                    order: 1,
-                },
+
+                for (const category of categories) {
+                    await tx.category.update({
+                        where: {
+                            id: category.id,
+                        },
+                        data: {
+                            order: category.order + 1,
+                        },
+                    });
+                }
+
+                return tx.category.create({
+                    data: {
+                        name,
+                        order: 1,
+                    },
+                });
             });
         },
         updateCategory: async (_, { id, name }: Category) =>
@@ -143,40 +147,45 @@ export const categoryResolvers: IResolvers = {
             return true;
         },
         deleteCategory: async (_, { id }: Category) => {
-            await models.keywordToCategory.deleteMany({
-                where: {
-                    category: {
+            await models.$transaction(async (tx) => {
+                await tx.keywordToCategory.deleteMany({
+                    where: {
+                        category: {
+                            id: Number(id),
+                        },
+                    },
+                });
+
+                await tx.keyword.deleteMany({
+                    where: {
+                        categories: {
+                            none: {},
+                        },
+                    },
+                });
+
+                await tx.category.delete({
+                    where: {
                         id: Number(id),
                     },
-                },
-            });
-            await models.keyword.deleteMany({
-                where: {
-                    categories: {
-                        none: {},
-                    },
-                },
-            });
-            await models.category.delete({
-                where: {
-                    id: Number(id),
-                },
-            });
-            const categories = await models.category.findMany({
-                orderBy: { order: 'asc' },
-            });
-            await models.$transaction(
-                categories.map((category, index) =>
-                    models.category.update({
+                });
+
+                const categories = await tx.category.findMany({
+                    orderBy: { order: 'asc' },
+                });
+
+                for (let index = 0; index < categories.length; index += 1) {
+                    const category = categories[index];
+                    await tx.category.update({
                         where: {
                             id: category.id,
                         },
                         data: {
                             order: index + 1,
                         },
-                    }),
-                ),
-            );
+                    });
+                }
+            });
 
             return true;
         },

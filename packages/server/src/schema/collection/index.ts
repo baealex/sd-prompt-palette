@@ -1,18 +1,55 @@
 import { IResolvers } from '@graphql-tools/utils';
 import dayjs from 'dayjs';
 
-import { Collection, Prisma, models, Order, Pagination, Search } from '~/models';
+import { Collection, ImageMeta, Prisma, models } from '~/models';
 import { gql } from '~/modules/graphql';
 import { liveImagesService } from '~/modules/live-images';
+import { toParsedMetadata } from '~/modules/live-images.metadata';
 
-interface AllCollections {
-    collections: Collection[];
-    pagination: Pagination;
+type AllCollectionsOrder = 'asc' | 'desc';
+type AllCollectionsSearchBy = 'title' | 'prompt' | 'negative_prompt';
+type AllCollectionsDateField = 'collection_added' | 'generated_at';
+
+const DEFAULT_COLLECTION_LIMIT = 60;
+const MAX_COLLECTION_LIMIT = 200;
+
+type CollectionWithImageMeta = Prisma.CollectionGetPayload<{
+    include: {
+        image: {
+            include: {
+                meta: true;
+            };
+        };
+    };
+}>;
+
+interface CollectionPaginationPayload {
+    limit: number;
+    offset: number;
+    total: number;
+}
+
+interface AllCollectionsPayload {
+    collections: CollectionWithImageMeta[];
+    pagination: CollectionPaginationPayload;
+}
+
+interface AllCollectionsQueryArgs {
+    orderBy?: string;
+    order?: string;
+    query?: string;
+    model?: string;
+    searchBy?: string;
+    dateField?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    limit?: number;
+    offset?: number;
 }
 
 const resolveCollectionQueryFilter = (
     query: string,
-    searchBy?: 'title' | 'prompt' | 'negative_prompt',
+    searchBy?: AllCollectionsSearchBy,
 ): Prisma.CollectionWhereInput => {
     if (searchBy === 'title') {
         return {
@@ -78,7 +115,7 @@ const parseCollectionDateValue = (input?: string) => {
 };
 
 const resolveCollectionDateFilter = (
-    dateField?: 'collection_added' | 'generated_at',
+    dateField?: AllCollectionsDateField,
     dateFrom?: string,
     dateTo?: string,
 ): Prisma.CollectionWhereInput | null => {
@@ -116,7 +153,7 @@ const resolveCollectionDateFilter = (
 
 function resolveCollectionOrderBy(
     orderBy?: string,
-    order: 'asc' | 'desc' = 'desc',
+    order: AllCollectionsOrder = 'desc',
 ) {
     const normalizedOrder = order === 'asc' ? 'asc' : 'desc';
     if (
@@ -133,6 +170,85 @@ function resolveCollectionOrderBy(
     return {
         [orderBy || 'createdAt']: normalizedOrder,
     } as const;
+}
+
+function normalizeOrder(input: string | undefined): AllCollectionsOrder {
+    return input === 'asc' ? 'asc' : 'desc';
+}
+
+function normalizeSearchBy(
+    input: string | undefined,
+): AllCollectionsSearchBy | undefined {
+    if (input === 'title' || input === 'prompt' || input === 'negative_prompt') {
+        return input;
+    }
+    return undefined;
+}
+
+function normalizeDateField(
+    input: string | undefined,
+): AllCollectionsDateField | undefined {
+    if (input === 'collection_added' || input === 'generated_at') {
+        return input;
+    }
+    return undefined;
+}
+
+function normalizeLimit(input: number | undefined): number {
+    if (!Number.isFinite(input) || !input || input <= 0) {
+        return DEFAULT_COLLECTION_LIMIT;
+    }
+    return Math.min(Math.trunc(input), MAX_COLLECTION_LIMIT);
+}
+
+function normalizeOffset(input: number | undefined): number {
+    if (!Number.isFinite(input) || input === undefined || input < 0) {
+        return 0;
+    }
+    return Math.trunc(input);
+}
+
+function resolveLoadedImage(
+    collection: Collection | CollectionWithImageMeta,
+): CollectionWithImageMeta['image'] | null {
+    if ('image' in collection) {
+        return collection.image;
+    }
+    return null;
+}
+
+function toGeneratedMetadataPayload(metadata: ImageMeta | null) {
+    if (!metadata) {
+        return null;
+    }
+
+    const parsed = toParsedMetadata(metadata);
+    return {
+        sourceType: parsed.sourceType || 'unknown',
+        prompt: parsed.prompt || '',
+        negativePrompt: parsed.negativePrompt || '',
+        model: parsed.model,
+        modelHash: parsed.modelHash,
+        baseSampler: parsed.baseSampler,
+        baseScheduler: parsed.baseScheduler,
+        baseSteps: parsed.baseSteps,
+        baseCfgScale: parsed.baseCfgScale,
+        baseSeed: parsed.baseSeed,
+        upscaleSampler: parsed.upscaleSampler,
+        upscaleScheduler: parsed.upscaleScheduler,
+        upscaleSteps: parsed.upscaleSteps,
+        upscaleCfgScale: parsed.upscaleCfgScale,
+        upscaleSeed: parsed.upscaleSeed,
+        upscaleFactor: parsed.upscaleFactor,
+        upscaler: parsed.upscaler,
+        sizeWidth: parsed.sizeWidth,
+        sizeHeight: parsed.sizeHeight,
+        clipSkip: parsed.clipSkip,
+        vae: parsed.vae,
+        denoiseStrength: parsed.denoiseStrength,
+        parseWarnings: parsed.parseWarnings,
+        parseVersion: parsed.parseVersion || '',
+    };
 }
 
 export const CollectionType = gql`
@@ -239,88 +355,108 @@ export const CollectionResolvers: IResolvers = {
                 .map((meta) => meta.model?.trim())
                 .filter((model): model is string => Boolean(model));
         },
-        allCollections:
-            (
-                _,
-                {
-                    orderBy,
-                    order,
-                    query,
-                    model,
-                    searchBy,
-                    dateField,
-                    dateFrom,
-                    dateTo,
-                    limit,
-                    offset,
-                }: Order & Pagination & Search,
-            ) =>
-            async () => {
-                const normalizedQuery = query?.trim() || '';
-                const normalizedModel = model?.trim() || '';
-                const filters: Prisma.CollectionWhereInput[] = [];
+        allCollections: async (
+            _,
+            {
+                orderBy,
+                order,
+                query,
+                model,
+                searchBy,
+                dateField,
+                dateFrom,
+                dateTo,
+                limit,
+                offset,
+            }: AllCollectionsQueryArgs,
+        ): Promise<AllCollectionsPayload> => {
+            const normalizedQuery = query?.trim() || '';
+            const normalizedModel = model?.trim() || '';
+            const normalizedLimit = normalizeLimit(limit);
+            const normalizedOffset = normalizeOffset(offset);
+            const filters: Prisma.CollectionWhereInput[] = [];
 
-                if (normalizedQuery) {
-                    filters.push(
-                        resolveCollectionQueryFilter(
-                            normalizedQuery,
-                            searchBy,
-                        ),
-                    );
-                }
+            if (normalizedQuery) {
+                filters.push(
+                    resolveCollectionQueryFilter(
+                        normalizedQuery,
+                        normalizeSearchBy(searchBy),
+                    ),
+                );
+            }
 
-                if (normalizedModel) {
-                    filters.push({
-                        image: {
-                            meta: {
-                                is: {
-                                    model: {
-                                        contains: normalizedModel,
-                                    },
+            if (normalizedModel) {
+                filters.push({
+                    image: {
+                        meta: {
+                            is: {
+                                model: {
+                                    contains: normalizedModel,
                                 },
                             },
                         },
-                    });
-                }
-
-                const dateFilter = resolveCollectionDateFilter(
-                    dateField,
-                    dateFrom,
-                    dateTo,
-                );
-                if (dateFilter) {
-                    filters.push(dateFilter);
-                }
-
-                const where =
-                    filters.length === 0
-                        ? undefined
-                        : filters.length === 1
-                          ? filters[0]
-                          : {
-                                AND: filters,
-                            };
-
-                const collections = await models.collection.findMany({
-                    orderBy: resolveCollectionOrderBy(orderBy, order || 'desc'),
-                    where,
-                    take: limit,
-                    skip: offset,
+                    },
                 });
-                const pagination = {
-                    limit,
-                    offset,
-                    total: await models.collection.count({ where }),
-                };
-                return {
-                    collections,
-                    pagination,
-                };
-            },
+            }
+
+            const dateFilter = resolveCollectionDateFilter(
+                normalizeDateField(dateField),
+                dateFrom,
+                dateTo,
+            );
+            if (dateFilter) {
+                filters.push(dateFilter);
+            }
+
+            const where =
+                filters.length === 0
+                    ? undefined
+                    : filters.length === 1
+                      ? filters[0]
+                      : {
+                            AND: filters,
+                        };
+
+            const [collections, total] = await Promise.all([
+                models.collection.findMany({
+                    orderBy: resolveCollectionOrderBy(
+                        orderBy,
+                        normalizeOrder(order),
+                    ),
+                    where,
+                    take: normalizedLimit,
+                    skip: normalizedOffset,
+                    include: {
+                        image: {
+                            include: {
+                                meta: true,
+                            },
+                        },
+                    },
+                }),
+                models.collection.count({ where }),
+            ]);
+
+            return {
+                collections,
+                pagination: {
+                    limit: normalizedLimit,
+                    offset: normalizedOffset,
+                    total,
+                },
+            };
+        },
         collection: (_, { id }: Collection) =>
             models.collection.findUnique({
                 where: {
                     id: Number(id),
+                },
+                include: {
+                    image: {
+                        include: {
+                            meta: true,
+                        },
+                    },
                 },
             }),
     },
@@ -416,78 +552,43 @@ export const CollectionResolvers: IResolvers = {
         },
     },
     Collection: {
-        image: (collection: Collection) =>
-            models.image.findUnique({
+        image: async (collection: Collection | CollectionWithImageMeta) => {
+            const loadedImage = resolveLoadedImage(collection);
+            if (loadedImage) {
+                return loadedImage;
+            }
+            return models.image.findUnique({
                 where: {
                     id: collection.imageId,
                 },
-            }),
-        generatedAt: async (collection: Collection) => {
+            });
+        },
+        generatedAt: async (collection: Collection | CollectionWithImageMeta) => {
+            const loadedImage = resolveLoadedImage(collection);
+            if (loadedImage) {
+                return loadedImage.generatedAt?.toISOString?.() || null;
+            }
+
             const image = await models.image.findUnique({
                 where: { id: collection.imageId },
                 select: { generatedAt: true },
             });
             return image?.generatedAt?.toISOString?.() || null;
         },
-        generatedMetadata: async (collection: Collection) => {
+        generatedMetadata: async (
+            collection: Collection | CollectionWithImageMeta,
+        ) => {
+            const loadedImage = resolveLoadedImage(collection);
+            if (loadedImage) {
+                return toGeneratedMetadataPayload(loadedImage.meta || null);
+            }
+
             const metadata = await models.imageMeta.findUnique({
                 where: {
                     imageId: collection.imageId,
                 },
             });
-
-            if (!metadata) {
-                return null;
-            }
-
-            let parseWarnings: string[] = [];
-            try {
-                const parsed = JSON.parse(metadata.parseWarningsJson || '[]');
-                if (Array.isArray(parsed)) {
-                    parseWarnings = parsed.filter(
-                        (item) => typeof item === 'string',
-                    );
-                }
-            } catch {
-                parseWarnings = [];
-            }
-
-            return {
-                sourceType: metadata.sourceType || 'unknown',
-                prompt: metadata.prompt || '',
-                negativePrompt: metadata.negativePrompt || '',
-                model: metadata.model,
-                modelHash: metadata.modelHash,
-                baseSampler: metadata.baseSampler,
-                baseScheduler: metadata.baseScheduler,
-                baseSteps: metadata.baseSteps,
-                baseCfgScale: metadata.baseCfgScale,
-                baseSeed: metadata.baseSeed,
-                upscaleSampler: metadata.upscaleSampler,
-                upscaleScheduler: metadata.upscaleScheduler,
-                upscaleSteps: metadata.upscaleSteps,
-                upscaleCfgScale: metadata.upscaleCfgScale,
-                upscaleSeed: metadata.upscaleSeed,
-                upscaleFactor: metadata.upscaleFactor,
-                upscaler: metadata.upscaler,
-                sizeWidth: metadata.sizeWidth,
-                sizeHeight: metadata.sizeHeight,
-                clipSkip: metadata.clipSkip,
-                vae: metadata.vae,
-                denoiseStrength: metadata.denoiseStrength,
-                parseWarnings,
-                parseVersion: metadata.parseVersion || '',
-            };
-        },
-    },
-    AllCollections: {
-        collections: async (allCollections: () => Promise<AllCollections>) => {
-            const { collections } = await allCollections();
-            return collections;
-        },
-        pagination: async (allCollections: () => Promise<AllCollections>) => {
-            const { pagination } = await allCollections();
-            return pagination;
+            return toGeneratedMetadataPayload(metadata);
         },
     },
 };
