@@ -3,9 +3,9 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { deleteCollection, getCollections, updateCollection } from '~/api';
-import { MasonryColumns } from '~/components/domain/MasonryColumns';
-import { Pagination } from '~/components/domain/Pagination';
-import { Image } from '~/components/domain/Image';
+import { Image } from '~/components/ui/Image';
+import { MasonryColumns } from '~/components/ui/MasonryColumns';
+import { Pagination } from '~/components/ui/Pagination';
 import { Badge } from '~/components/ui/Badge';
 import { Button } from '~/components/ui/Button';
 import { Card } from '~/components/ui/Card';
@@ -27,8 +27,8 @@ import { usePathStore } from '~/state/path-store';
 
 const LIMIT = 20;
 const BROWSE_GALLERY_BREAKPOINTS = [
-    { minWidth: 300, columns: 3 },
-    { minWidth: 200, columns: 2 },
+    { minWidth: 360, columns: 3 },
+    { minWidth: 240, columns: 2 },
     { minWidth: 0, columns: 1 },
 ];
 
@@ -188,6 +188,33 @@ export const CollectionBrowsePage = () => {
         collectionsQuery.error instanceof Error
             ? collectionsQuery.error.message
             : null;
+    const selectItemById = useCallback(
+        (nextSelectedId: number) => {
+            void navigate({
+                to: '/collection/browse',
+                replace: true,
+                resetScroll: false,
+                search: (previousSearch) => {
+                    const nextSearch = {
+                        ...(previousSearch as Record<string, unknown>),
+                    };
+                    applyCollectionFilterSearch(nextSearch, {
+                        query,
+                        model,
+                        sort,
+                    });
+                    if (currentPage > 1) {
+                        nextSearch.page = currentPage;
+                    } else {
+                        delete nextSearch.page;
+                    }
+                    nextSearch.selected = nextSelectedId;
+                    return nextSearch;
+                },
+            });
+        },
+        [currentPage, model, navigate, query, sort],
+    );
 
     useEffect(() => {
         if (!queryErrorMessage) {
@@ -268,35 +295,14 @@ export const CollectionBrowsePage = () => {
                 return;
             }
 
-            void navigate({
-                to: '/collection/browse',
-                replace: true,
-                resetScroll: false,
-                search: (previousSearch) => {
-                    const nextSearch = {
-                        ...(previousSearch as Record<string, unknown>),
-                    };
-                    applyCollectionFilterSearch(nextSearch, {
-                        query,
-                        model,
-                        sort,
-                    });
-                    if (currentPage > 1) {
-                        nextSearch.page = currentPage;
-                    } else {
-                        delete nextSearch.page;
-                    }
-                    nextSearch.selected = nextItem.id;
-                    return nextSearch;
-                },
-            });
+            selectItemById(nextItem.id);
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, [items, selectedId, navigate, query, model, sort, currentPage]);
+    }, [items, selectedId, selectItemById]);
 
     useEffect(() => {
         if (items.length === 0) {
@@ -362,6 +368,28 @@ export const CollectionBrowsePage = () => {
         }
         return items.find((item) => item.id === selectedId) ?? null;
     }, [items, selectedId]);
+    const selectedIndex = useMemo(
+        () => items.findIndex((item) => item.id === selectedId),
+        [items, selectedId],
+    );
+    const hasPrevSelection = selectedIndex > 0;
+    const hasNextSelection =
+        selectedIndex >= 0 && selectedIndex < items.length - 1;
+    const handleMoveSelection = useCallback(
+        (direction: 'prev' | 'next') => {
+            if (selectedIndex < 0) {
+                return;
+            }
+            const nextIndex =
+                direction === 'prev' ? selectedIndex - 1 : selectedIndex + 1;
+            const nextItem = items[nextIndex];
+            if (!nextItem) {
+                return;
+            }
+            selectItemById(nextItem.id);
+        },
+        [items, selectedIndex, selectItemById],
+    );
 
     const handlePageChange = useCallback(
         (nextPage: number) => {
@@ -460,8 +488,8 @@ export const CollectionBrowsePage = () => {
 
     return (
         <>
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(300px,360px)_minmax(0,1fr)]">
-                <Card className="h-fit xl:sticky xl:top-20 xl:self-start">
+            <div className="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-[minmax(300px,360px)_minmax(0,1fr)]">
+                <Card className="order-2 h-fit xl:order-1 xl:sticky xl:top-20 xl:self-start">
                     <div className="mb-3 flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                             <h2 className="text-base font-semibold text-ink">
@@ -472,6 +500,9 @@ export const CollectionBrowsePage = () => {
                             </Badge>
                         </div>
                     </div>
+                    <p className="mb-3 text-xs text-ink-muted xl:hidden">
+                        Tap a thumbnail to update the preview card above.
+                    </p>
 
                     {loading && items.length === 0 ? (
                         <Notice variant="neutral">
@@ -501,38 +532,12 @@ export const CollectionBrowsePage = () => {
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => {
-                                            void navigate({
-                                                to: '/collection/browse',
-                                                replace: true,
-                                                resetScroll: false,
-                                                search: (previousSearch) => {
-                                                    const nextSearch = {
-                                                        ...(previousSearch as Record<
-                                                            string,
-                                                            unknown
-                                                        >),
-                                                    };
-                                                    applyCollectionFilterSearch(nextSearch, {
-                                                        query,
-                                                        model,
-                                                        sort,
-                                                    });
-                                                    if (currentPage > 1) {
-                                                        nextSearch.page =
-                                                            currentPage;
-                                                    } else {
-                                                        delete nextSearch.page;
-                                                    }
-                                                    nextSearch.selected =
-                                                        item.id;
-                                                    return nextSearch;
-                                                },
-                                            });
+                                            selectItemById(item.id);
                                         }}
                                         className={`!h-auto w-full !justify-start gap-0 border p-1.5 text-left transition-colors ${
                                             selectedId === item.id
                                                 ? 'border-brand-400 bg-brand-50 shadow-surface'
-                                                : 'border-line bg-surface-base hover:border-brand-200 hover:bg-surface-muted'
+                                                : 'border-line bg-surface-raised hover:border-brand-200 hover:bg-surface-muted'
                                         }`}
                                     >
                                         <div className="w-full overflow-hidden rounded-token-sm border border-line bg-surface-muted">
@@ -568,7 +573,7 @@ export const CollectionBrowsePage = () => {
                     ) : null}
                 </Card>
 
-                <Card className="h-fit xl:sticky xl:top-20 xl:self-start xl:min-h-[68vh]">
+                <Card className="order-1 h-fit xl:order-2 xl:sticky xl:top-20 xl:self-start xl:min-h-[68vh]">
                     {selectedItem ? (
                         <>
                             <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
@@ -648,6 +653,30 @@ export const CollectionBrowsePage = () => {
                                     </div>
                                 </div>
                             </div>
+                            {items.length > 1 ? (
+                                <div className="mb-3 grid grid-cols-2 gap-2 xl:hidden">
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        disabled={!hasPrevSelection}
+                                        onClick={() => {
+                                            handleMoveSelection('prev');
+                                        }}
+                                    >
+                                        Previous
+                                    </Button>
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        disabled={!hasNextSelection}
+                                        onClick={() => {
+                                            handleMoveSelection('next');
+                                        }}
+                                    >
+                                        Next
+                                    </Button>
+                                </div>
+                            ) : null}
 
                             <div className="overflow-hidden rounded-token-lg border border-line bg-surface-muted">
                                 <Image
@@ -655,7 +684,7 @@ export const CollectionBrowsePage = () => {
                                     alt={selectedItem.title || '(untitled)'}
                                     width={selectedItem.image.width}
                                     height={selectedItem.image.height}
-                                    className="block max-h-[70vh] w-full object-contain"
+                                    className="block max-h-[52vh] w-full object-contain sm:max-h-[62vh] xl:max-h-[70vh]"
                                 />
                             </div>
                         </>

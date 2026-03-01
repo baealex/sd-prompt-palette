@@ -18,6 +18,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormEvent, SyntheticEvent } from 'react';
 
 import { Button } from '~/components/ui/Button';
+import { Card } from '~/components/ui/Card';
 import { IconButton } from '~/components/ui/IconButton';
 import { Input } from '~/components/ui/Input';
 import { DragHandleIcon, MoreIcon } from '~/icons';
@@ -140,10 +141,12 @@ export const SortableCategoryCard = ({
     };
 
     return (
-        <article
+        <Card
+            as="article"
+            padding="md"
             ref={setNodeRef}
             style={style}
-            className={`rounded-token-lg border border-line bg-surface-base p-3 shadow-surface sm:p-4 ${isDragging ? 'z-10 opacity-80' : ''}`}
+            className={isDragging ? 'z-10 opacity-80' : ''}
         >
             <header className="mb-3 flex items-center justify-between gap-3 sm:mb-4">
                 <div className="flex min-w-0 items-center gap-2">
@@ -273,6 +276,6 @@ export const SortableCategoryCard = ({
                     Add Keyword
                 </Button>
             </form>
-        </article>
+        </Card>
     );
 };

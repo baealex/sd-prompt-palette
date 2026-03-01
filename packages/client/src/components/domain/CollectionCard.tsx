@@ -7,7 +7,7 @@ import { Card } from '~/components/ui/Card';
 import { IconButton } from '~/components/ui/IconButton';
 
 import { CategoryHeader } from './CategoryHeader';
-import { Image } from './Image';
+import { Image } from '~/components/ui/Image';
 
 interface CollectionCardProps {
     collection: Collection;

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { deleteCollection, getCollections, updateCollection } from '~/api';
 import { CollectionCard } from '~/components/domain/CollectionCard';
-import { Pagination } from '~/components/domain/Pagination';
+import { Pagination } from '~/components/ui/Pagination';
 import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 import { Notice } from '~/components/ui/Notice';
 import { PromptDialog } from '~/components/ui/PromptDialog';

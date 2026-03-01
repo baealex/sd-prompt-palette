@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 
 import { getCategories } from '~/api';
 import { CategoryHeader } from '~/components/domain/CategoryHeader';
-import { Checkbox } from '~/components/domain/Checkbox';
+import { Checkbox } from '~/components/ui/Checkbox';
 import { KeywordsList } from '~/components/domain/KeywordsList';
 import { PageFrame } from '~/components/domain/PageFrame';
 import { Badge } from '~/components/ui/Badge';

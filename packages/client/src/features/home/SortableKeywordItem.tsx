@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { SyntheticEvent } from 'react';
 
 import { Button } from '~/components/ui/Button';
+import { Card } from '~/components/ui/Card';
 import { cn } from '~/components/ui/cn';
 import { MoreIcon } from '~/icons';
 import type { Keyword } from '~/models/types';
@@ -105,11 +106,13 @@ export const SortableKeywordItem = ({
     };
 
     return (
-        <li
+        <Card
+            as="li"
+            padding="none"
             ref={setNodeRef}
             style={style}
             className={cn(
-                'group relative min-h-11 list-none rounded-token-md border border-line bg-surface-base py-2 pl-3 pr-1 text-sm shadow-surface select-none',
+                'group relative min-h-11 list-none py-2 pl-3 pr-1 text-sm select-none',
                 isDragging ? 'z-10 opacity-70' : '',
                 disabled
                     ? 'cursor-default'
@@ -135,15 +138,15 @@ export const SortableKeywordItem = ({
                 >
                     <button
                         type="button"
-                        className="ui-focus-ring inline-flex h-7 w-7 items-center justify-center rounded-token-sm text-ink-subtle transition-colors hover:bg-surface-muted hover:text-ink-muted"
+                        className="ui-focus-ring inline-flex h-11 w-11 items-center justify-center rounded-token-sm text-ink-subtle transition-colors hover:bg-surface-muted hover:text-ink-muted"
                         onClick={() => setMenuOpen((prev) => !prev)}
                         disabled={disabled}
                         aria-label={`${keyword.name} actions`}
                     >
-                        <MoreIcon width={12} height={12} />
+                        <MoreIcon width={14} height={14} />
                     </button>
                     {menuOpen ? (
-                        <div className="absolute right-0 top-8 z-30 min-w-[152px] rounded-token-md border border-line bg-surface-base p-1 shadow-raised">
+                        <div className="absolute right-0 top-12 z-30 min-w-[152px] rounded-token-md border border-line bg-surface-base p-1 shadow-raised">
                             <Button
                                 variant="ghost"
                                 size="sm"
@@ -214,6 +217,6 @@ export const SortableKeywordItem = ({
                     className="pointer-events-none absolute left-0 top-full z-20 mt-2 hidden w-28 rounded-token-md border border-line bg-surface-base shadow-raised group-focus-within:block md:-bottom-2 md:left-full md:top-auto md:mt-0 md:group-hover:block md:group-focus-within:block"
                 />
             ) : null}
-        </li>
+        </Card>
     );
 };

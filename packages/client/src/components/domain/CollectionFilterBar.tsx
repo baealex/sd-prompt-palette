@@ -14,6 +14,7 @@ interface CollectionFilterBarProps {
     model: string;
     modelOptions: string[];
     loadingModelOptions?: boolean;
+    modelOptionsError?: string | null;
     className?: string;
     embedded?: boolean;
     onSortChange: (sort: CollectionSort) => void;
@@ -26,6 +27,7 @@ export const CollectionFilterBar = ({
     model,
     modelOptions,
     loadingModelOptions = false,
+    modelOptionsError = null,
     className,
     embedded = false,
     onSortChange,
@@ -51,7 +53,7 @@ export const CollectionFilterBar = ({
                 'grid gap-3 md:grid-cols-[minmax(0,1fr)_240px_auto] md:items-end',
                 embedded
                     ? 'border-t border-brand-100 px-3 py-2.5'
-                    : 'rounded-token-lg border border-line bg-surface-base p-3',
+                    : 'rounded-token-lg border border-line bg-surface-raised p-3',
                 className,
             )}
         >
@@ -68,7 +70,7 @@ export const CollectionFilterBar = ({
                     onChange={(event) => {
                         onModelChange(event.target.value);
                     }}
-                    className="ui-focus-ring h-9 w-full rounded-token-md border border-line-strong bg-surface-base px-3 text-sm text-ink"
+                    className="ui-focus-ring h-11 w-full rounded-token-md border border-line-strong bg-surface-base px-3 text-sm text-ink"
                     disabled={loadingModelOptions && resolvedModelOptions.length === 0}
                 >
                     <option value="">All models</option>
@@ -78,6 +80,11 @@ export const CollectionFilterBar = ({
                         </option>
                     ))}
                 </select>
+                {modelOptionsError ? (
+                    <p className="mt-1 text-xs font-medium text-warning-700">
+                        Model options could not be loaded. You can still browse all models.
+                    </p>
+                ) : null}
             </div>
 
             <div>
@@ -93,7 +100,7 @@ export const CollectionFilterBar = ({
                     onChange={(event) => {
                         onSortChange(parseCollectionSort(event.target.value));
                     }}
-                    className="ui-focus-ring h-9 w-full rounded-token-md border border-line-strong bg-surface-base px-3 text-sm text-ink"
+                    className="ui-focus-ring h-11 w-full rounded-token-md border border-line-strong bg-surface-base px-3 text-sm text-ink"
                 >
                     {COLLECTION_SORT_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>

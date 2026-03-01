@@ -1,7 +1,7 @@
 import type { Collection } from '~/models/types';
 import { Button } from '~/components/ui/Button';
 
-import { Image } from './Image';
+import { Image } from '~/components/ui/Image';
 
 interface CollectionDetailCardProps {
     collection: Collection;

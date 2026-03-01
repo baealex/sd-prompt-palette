@@ -100,10 +100,7 @@ export const CollectionDetailPage = ({ id }: CollectionDetailPageProps) => {
     };
 
     return (
-        <PageFrame
-            title=""
-            surface="plain"
-        >
+        <PageFrame surface="plain">
             {loading ? (
                 <Notice variant="neutral" className="mb-4">Loading...</Notice>
             ) : null}

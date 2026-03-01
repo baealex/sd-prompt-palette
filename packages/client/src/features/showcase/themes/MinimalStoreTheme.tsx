@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { getCollections } from '~/api';
 import { resolveCollectionSortOrder } from '~/features/collection/view-filter';
-import { Image } from '~/components/domain/Image';
+import { Image } from '~/components/ui/Image';
 import { ArrowLeftIcon, ArrowRightIcon, HeartIcon, SearchIcon } from '~/icons';
 import { useShowcaseFilters } from '../use-showcase-filters';
 

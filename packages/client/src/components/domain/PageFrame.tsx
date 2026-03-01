@@ -5,7 +5,7 @@ import { Card } from '~/components/ui/Card';
 type PageFrameSurface = 'card' | 'plain';
 
 interface PageFrameProps {
-    title: string;
+    title?: string;
     description?: string;
     surface?: PageFrameSurface;
     children?: ReactNode;
@@ -14,17 +14,25 @@ interface PageFrameProps {
 export const PageFrame = ({
     title,
     description,
-    surface = 'card',
+    surface = 'plain',
     children,
 }: PageFrameProps) => {
     const content = (
         <>
-            <header className="mb-3 sm:mb-4">
-                <h1 className="text-xl font-semibold tracking-tight text-ink sm:text-2xl">{title}</h1>
-                {description ? (
-                    <p className="mt-2 text-sm text-ink-muted">{description}</p>
-                ) : null}
-            </header>
+            {title || description ? (
+                <header className="mb-3 sm:mb-4">
+                    {title ? (
+                        <h1 className="text-xl font-semibold tracking-tight text-ink sm:text-2xl">
+                            {title}
+                        </h1>
+                    ) : null}
+                    {description ? (
+                        <p className={title ? 'mt-2 text-sm text-ink-muted' : 'text-sm text-ink-muted'}>
+                            {description}
+                        </p>
+                    ) : null}
+                </header>
+            ) : null}
             {children}
         </>
     );

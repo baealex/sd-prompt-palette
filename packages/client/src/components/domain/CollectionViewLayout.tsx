@@ -14,6 +14,7 @@ import { CollectionRealtimeControl } from '~/components/domain/CollectionRealtim
 import { CollectionSearchBar } from '~/components/domain/CollectionSearchBar';
 import { CollectionShowcaseShortcut } from '~/components/domain/CollectionShowcaseShortcut';
 import { PageFrame } from '~/components/domain/PageFrame';
+import { Card } from '~/components/ui/Card';
 import {
     DEFAULT_COLLECTION_SORT,
     applyCollectionFilterSearch,
@@ -98,6 +99,10 @@ export const CollectionViewLayout = () => {
                 .filter((item) => item.length > 0);
         },
     });
+    const modelOptionsError =
+        modelOptionsQuery.error instanceof Error
+            ? modelOptionsQuery.error.message
+            : null;
 
     const currentPath = useMemo(
         () => resolveCollectionViewPath(location.pathname),
@@ -229,7 +234,12 @@ export const CollectionViewLayout = () => {
 
     return (
         <PageFrame title={pageMeta.title} description={pageMeta.description}>
-            <div className="mb-4 overflow-hidden rounded-token-lg border-2 border-brand-200 bg-surface-base shadow-surface">
+            <Card
+                as="section"
+                padding="none"
+                emphasis="brandGlow"
+                className="mb-4 overflow-hidden"
+            >
                 <CollectionSearchBar
                     value={draftQuery}
                     onChange={setDraftQuery}
@@ -242,19 +252,22 @@ export const CollectionViewLayout = () => {
                     model={draftModel}
                     modelOptions={modelOptionsQuery.data ?? []}
                     loadingModelOptions={modelOptionsQuery.isPending}
+                    modelOptionsError={modelOptionsError}
                     onSortChange={handleSortChange}
                     onModelChange={handleModelChange}
                     onReset={resetFilters}
                     embedded
                 />
-            </div>
+            </Card>
             <div className="mb-4">
                 <CollectionRealtimeControl />
             </div>
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-                <CollectionNav />
-                <CollectionShowcaseShortcut />
-            </div>
+            <Card as="section" padding="sm" className="mb-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                    <CollectionNav />
+                    <CollectionShowcaseShortcut />
+                </div>
+            </Card>
 
             <Outlet />
         </PageFrame>

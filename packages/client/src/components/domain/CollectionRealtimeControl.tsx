@@ -1,7 +1,9 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useEffect } from 'react';
 
+import { Badge } from '~/components/ui/Badge';
 import { Button } from '~/components/ui/Button';
+import { Card } from '~/components/ui/Card';
 import { FieldChoice } from '~/components/ui/FieldChoice';
 import { Input } from '~/components/ui/Input';
 import { Switch } from '~/components/ui/Switch';
@@ -22,6 +24,7 @@ export const CollectionRealtimeControl = () => {
         savingSettings,
         settingsOpen,
         statusEnabled,
+        statusLabel,
         watchDirLabel,
         modeLabel,
         draftWatchDir,
@@ -62,11 +65,39 @@ export const CollectionRealtimeControl = () => {
 
     return (
         <>
-            <div className="flex flex-wrap items-center justify-between gap-1.5 rounded-token-md border border-line bg-surface-muted px-2.5 py-1.5">
-                <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                    <div className="flex items-center gap-1 rounded-token-md border border-line bg-surface-base pl-3 pr-2">
-                        <span className="text-[11px] font-semibold text-ink">
-                            Auto Collect
+            <Card as="section" padding="sm">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="text-sm font-semibold text-ink">
+                                Auto Collection
+                            </span>
+                            <Badge variant={statusEnabled ? 'success' : 'neutral'}>
+                                {statusLabel}
+                            </Badge>
+                            <Badge
+                                variant={
+                                    modeLabel === 'Move' ? 'warning' : 'info'
+                                }
+                            >
+                                {modeLabel} mode
+                            </Badge>
+                            {loadingConfig ? (
+                                <Badge variant="neutral">Syncing...</Badge>
+                            ) : null}
+                        </div>
+                        <div className="mt-2 grid gap-1">
+                            <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-muted">
+                                Watch Folder
+                            </span>
+                            <p className="truncate rounded-token-md border border-line bg-surface-muted px-3 py-2 text-xs font-medium text-ink">
+                                {watchDirLabel}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center rounded-token-md border border-line bg-surface-muted pl-2 pr-1">
+                        <span className="text-xs font-semibold text-ink-muted">
+                            Auto
                         </span>
                         <Switch
                             checked={statusEnabled}
@@ -77,17 +108,10 @@ export const CollectionRealtimeControl = () => {
                             }}
                         />
                     </div>
-                    <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-ink-muted">
-                        <span className="max-w-[420px] truncate">
-                            Watching: {watchDirLabel}
-                        </span>
-                        <span className="text-ink-subtle">|</span>
-                        <span>Mode: {modeLabel}</span>
-                    </div>
                 </div>
-                <div className="flex flex-wrap items-center justify-end gap-1.5">
+                <div className="mt-3 flex flex-wrap items-center justify-end gap-1.5">
                     <Button
-                        variant="ghost"
+                        variant="secondary"
                         size="sm"
                         onClick={() => {
                             void handleCollectNow();
@@ -97,14 +121,14 @@ export const CollectionRealtimeControl = () => {
                         {collectingNow ? 'Collecting...' : 'Collect now'}
                     </Button>
                     <Button
-                        variant="secondary"
+                        variant="primary"
                         size="sm"
                         onClick={handleOpenSettings}
                     >
                         Settings
                     </Button>
                 </div>
-            </div>
+            </Card>
 
             <DialogPrimitive.Root
                 open={settingsOpen}
@@ -112,7 +136,7 @@ export const CollectionRealtimeControl = () => {
             >
                 <DialogPrimitive.Portal>
                     <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-overlay/50" />
-                    <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-40 flex max-h-[calc(100vh-1.5rem)] w-[92vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 flex-col rounded-token-lg border border-line bg-surface-base p-4 shadow-overlay ui-focus-ring">
+                    <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-40 flex max-h-[calc(100vh-1.5rem)] w-[92vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 flex-col rounded-token-lg border border-line bg-surface-raised p-4 shadow-overlay ui-focus-ring">
                         <DialogPrimitive.Title className="text-lg font-semibold text-ink">
                             Auto Collect Settings
                         </DialogPrimitive.Title>
@@ -120,12 +144,45 @@ export const CollectionRealtimeControl = () => {
                             Configure Watch Folder, transfer mode, and Auto
                             Collect behavior.
                         </DialogPrimitive.Description>
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                            <Badge
+                                variant={
+                                    draftEnabled ? 'success' : 'neutral'
+                                }
+                            >
+                                Draft {draftEnabled ? 'On' : 'Off'}
+                            </Badge>
+                            <Badge
+                                variant={
+                                    draftIngestMode === 'move'
+                                        ? 'warning'
+                                        : 'info'
+                                }
+                            >
+                                Draft {draftIngestMode === 'move' ? 'Move' : 'Copy'}
+                            </Badge>
+                            <Badge
+                                variant={
+                                    hasDraftChanges ? 'warning' : 'neutral'
+                                }
+                            >
+                                {hasDraftChanges
+                                    ? 'Unsaved changes'
+                                    : 'No pending changes'}
+                            </Badge>
+                        </div>
 
                         <div className="mt-4 grid flex-1 gap-3 overflow-y-auto pr-1">
                             <section className="grid gap-3 rounded-token-md border border-line bg-surface-muted p-3">
-                                <h3 className="text-sm font-semibold text-ink">
-                                    Basic
-                                </h3>
+                                <div>
+                                    <h3 className="text-sm font-semibold text-ink">
+                                        Basic
+                                    </h3>
+                                    <p className="mt-1 text-xs text-ink-muted">
+                                        Select the server folder and enable Auto
+                                        Collection.
+                                    </p>
+                                </div>
                                 <label className="grid gap-1 text-sm font-semibold text-ink-muted">
                                     Watch Folder
                                     <div className="grid grid-cols-[1fr_auto] gap-2">
@@ -196,9 +253,15 @@ export const CollectionRealtimeControl = () => {
                             </section>
 
                             <section className="grid gap-2 rounded-token-md border border-line bg-surface-muted p-3">
-                                <h3 className="text-sm font-semibold text-ink">
-                                    Transfer Mode
-                                </h3>
+                                <div>
+                                    <h3 className="text-sm font-semibold text-ink">
+                                        Transfer Mode
+                                    </h3>
+                                    <p className="mt-1 text-xs text-ink-muted">
+                                        Choose whether files are copied or moved
+                                        into your library.
+                                    </p>
+                                </div>
                                 <FieldChoice
                                     type="radio"
                                     name="collect-mode"

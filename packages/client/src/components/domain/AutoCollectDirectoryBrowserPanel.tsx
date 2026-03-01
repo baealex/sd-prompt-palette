@@ -71,7 +71,7 @@ export const AutoCollectDirectoryBrowserPanel = ({
     }, [currentPath]);
 
     return (
-        <div className="grid gap-3 rounded-token-md border border-line bg-surface-base p-3">
+        <div className="grid gap-3 rounded-token-md border border-line bg-surface-raised p-3 shadow-surface">
             <div className="grid gap-2">
                 <div className="text-xs font-semibold uppercase tracking-[0.06em] text-ink-muted">Current Folder</div>
                 <div className="flex flex-wrap items-center gap-1 rounded-token-sm border border-line bg-surface-muted p-1">
@@ -81,7 +81,7 @@ export const AutoCollectDirectoryBrowserPanel = ({
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="!h-9 !px-2 text-xs"
+                                className="!h-11 !px-2 text-xs"
                                 onClick={() => {
                                     onLoadDirectories(crumb.path);
                                 }}
@@ -95,9 +95,14 @@ export const AutoCollectDirectoryBrowserPanel = ({
                 </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="text-xs text-ink-muted">
-                    {selectedPath ? `Selected: ${selectedPath}` : 'Select a folder from the list'}
+            <div className="flex flex-wrap items-end justify-between gap-2">
+                <div className="grid min-w-0 flex-1 gap-1">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-muted">
+                        Selected Folder
+                    </span>
+                    <p className="truncate rounded-token-sm border border-line bg-surface-muted px-2 py-1.5 text-xs text-ink-muted">
+                        {selectedPath || 'Select a folder from the list'}
+                    </p>
                 </div>
                 <div className="flex items-center gap-2">
                     <Button
@@ -154,12 +159,15 @@ export const AutoCollectDirectoryBrowserPanel = ({
 
                 <section className="rounded-token-sm border border-line bg-surface-muted p-2">
                     <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-[0.06em] text-ink-muted">
-                        Folders
+                        Folders ({entries.length})
+                    </p>
+                    <p className="mb-2 px-2 text-xs text-ink-subtle">
+                        Single click to select, double click to open.
                     </p>
                     <div
                         role="listbox"
                         aria-label="Folders"
-                        className="max-h-[36vh] min-h-[220px] overflow-auto rounded-token-sm border border-line bg-surface-base p-2"
+                        className="max-h-[36vh] min-h-[220px] overflow-auto rounded-token-sm border border-line bg-surface-raised p-2"
                     >
                         {loading ? (
                             <Notice variant="neutral" className="text-center">Loading folders...</Notice>

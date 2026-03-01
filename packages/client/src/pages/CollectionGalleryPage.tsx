@@ -3,9 +3,9 @@ import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect } from 'react';
 
 import { getCollections } from '~/api';
-import { MasonryColumns } from '~/components/domain/MasonryColumns';
-import { Pagination } from '~/components/domain/Pagination';
-import { Image } from '~/components/domain/Image';
+import { Image } from '~/components/ui/Image';
+import { MasonryColumns } from '~/components/ui/MasonryColumns';
+import { Pagination } from '~/components/ui/Pagination';
 import { Notice } from '~/components/ui/Notice';
 import {
     applyCollectionFilterSearch,

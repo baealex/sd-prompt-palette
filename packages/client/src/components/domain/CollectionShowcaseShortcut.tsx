@@ -37,7 +37,7 @@ export const CollectionShowcaseShortcut = () => {
         <Link
             to="/collection/showcase"
             search={searchParams}
-            className="ui-focus-ring inline-flex h-9 items-center gap-1.5 rounded-token-md bg-surface-muted px-3 text-sm font-medium text-ink-muted transition-colors hover:text-ink"
+            className="ui-focus-ring inline-flex h-11 items-center gap-1.5 rounded-token-md bg-surface-muted px-3 text-sm font-medium text-ink-muted transition-colors hover:text-ink"
         >
             <ImageIcon width={14} height={14} />
             Showcase

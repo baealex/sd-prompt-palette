@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 
-import { Image } from '~/components/domain/Image';
+import { Image } from '~/components/ui/Image';
 import { useShowcaseInfinite } from '../use-showcase-infinite';
 
 const ROTATIONS = [
