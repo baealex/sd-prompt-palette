@@ -1,10 +1,11 @@
+import dayjs from 'dayjs';
 import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
+import { DateTimePicker } from '~/components/ui/DateTimePicker';
 import { Select, type SelectOption } from '~/components/ui/Select';
 import { cn } from '~/components/ui/cn';
-import { ChevronDownIcon } from '~/icons';
+import { ArrowLeftIcon, ArrowRightIcon, ChevronDownIcon } from '~/icons';
 import type { CollectionDateField } from '~/api';
 import {
     COLLECTION_DATE_FIELD_OPTIONS,
@@ -18,6 +19,61 @@ import {
 } from '~/features/collection/view-filter';
 
 const MODEL_ALL_VALUE = '__collection_model_all__';
+const STORAGE_DATE_FORMAT = 'YYYY-MM-DDTHH:mm';
+
+type DateFilterMode = 'single' | 'range';
+
+const parseDateValue = (value: string) => {
+    if (!value) {
+        return null;
+    }
+
+    const parsed = dayjs(value);
+    if (!parsed.isValid()) {
+        return null;
+    }
+
+    return parsed;
+};
+
+const formatStorageDateTime = (value: dayjs.Dayjs) =>
+    value.format(STORAGE_DATE_FORMAT);
+
+const resolveSingleDay = (dateFrom: string, dateTo: string) => {
+    const parsedFrom = parseDateValue(dateFrom);
+    if (parsedFrom) {
+        return parsedFrom;
+    }
+
+    const parsedTo = parseDateValue(dateTo);
+    if (parsedTo) {
+        return parsedTo;
+    }
+
+    return null;
+};
+
+const isSameCalendarDay = (dateFrom: string, dateTo: string) => {
+    const parsedFrom = parseDateValue(dateFrom);
+    const parsedTo = parseDateValue(dateTo);
+
+    if (!parsedFrom || !parsedTo) {
+        return false;
+    }
+
+    return parsedFrom.isSame(parsedTo, 'day');
+};
+
+const resolveDateFilterMode = (
+    dateFrom: string,
+    dateTo: string,
+): DateFilterMode => {
+    if (!dateFrom && !dateTo) {
+        return 'single';
+    }
+
+    return isSameCalendarDay(dateFrom, dateTo) ? 'single' : 'range';
+};
 
 interface CollectionFilterBarProps {
     sort: CollectionSort;
@@ -35,6 +91,7 @@ interface CollectionFilterBarProps {
     onDateFieldChange: (value: CollectionDateField) => void;
     onDateFromChange: (value: string) => void;
     onDateToChange: (value: string) => void;
+    onDateRangeChange: (dateFrom: string, dateTo: string) => void;
     onDateQuickPreset: (preset: CollectionDateQuickPreset) => void;
     onReset: () => void;
 }
@@ -55,6 +112,7 @@ export const CollectionFilterBar = ({
     onDateFieldChange,
     onDateFromChange,
     onDateToChange,
+    onDateRangeChange,
     onDateQuickPreset,
     onReset,
 }: CollectionFilterBarProps) => {
@@ -63,6 +121,9 @@ export const CollectionFilterBar = ({
         hasDateRange || dateField !== DEFAULT_COLLECTION_DATE_FIELD;
     const [dateFiltersExpanded, setDateFiltersExpanded] =
         useState(hasActiveDateFilter);
+    const [dateFilterMode, setDateFilterMode] = useState<DateFilterMode>(() =>
+        resolveDateFilterMode(dateFrom, dateTo),
+    );
     const canReset =
         model.length > 0 ||
         sort !== DEFAULT_COLLECTION_SORT ||
@@ -117,20 +178,70 @@ export const CollectionFilterBar = ({
         ],
         [],
     );
+    const dateFieldLabelMap = useMemo(() => {
+        return new Map(
+            COLLECTION_DATE_FIELD_OPTIONS.map((option) => [option.value, option.label]),
+        );
+    }, []);
+    const dateSummary = useMemo(() => {
+        if (!hasActiveDateFilter) {
+            return 'Filter by collection added or image generated date.';
+        }
+
+        const activeFieldLabel =
+            dateFieldLabelMap.get(dateField) ?? COLLECTION_DATE_FIELD_OPTIONS[0].label;
+        const formatSummaryDate = (value: string) => {
+            const parsed = dayjs(value);
+            if (!parsed.isValid()) {
+                return value;
+            }
+            return parsed.format('YY.MM.DD');
+        };
+
+        if (dateFrom && dateTo && isSameCalendarDay(dateFrom, dateTo)) {
+            return `${activeFieldLabel}: ${formatSummaryDate(dateFrom)}`;
+        }
+        if (dateFrom && dateTo) {
+            return `${activeFieldLabel}: ${formatSummaryDate(dateFrom)} - ${formatSummaryDate(dateTo)}`;
+        }
+        if (dateFrom) {
+            return `${activeFieldLabel}: from ${formatSummaryDate(dateFrom)}`;
+        }
+        if (dateTo) {
+            return `${activeFieldLabel}: until ${formatSummaryDate(dateTo)}`;
+        }
+
+        return `${activeFieldLabel}: all dates`;
+    }, [dateField, dateFieldLabelMap, dateFrom, dateTo, hasActiveDateFilter]);
 
     useEffect(() => {
         if (hasActiveDateFilter) {
             setDateFiltersExpanded(true);
         }
     }, [hasActiveDateFilter]);
+    useEffect(() => {
+        if (!dateFrom && !dateTo) {
+            return;
+        }
+        setDateFilterMode(resolveDateFilterMode(dateFrom, dateTo));
+    }, [dateFrom, dateTo]);
+
+    const singleDay = useMemo(() => resolveSingleDay(dateFrom, dateTo), [dateFrom, dateTo]);
+    const singleDayValue = useMemo(() => {
+        if (!singleDay) {
+            return '';
+        }
+
+        return formatStorageDateTime(singleDay.startOf('day'));
+    }, [singleDay]);
 
     return (
         <div
             className={cn(
-                'grid gap-3',
+                'grid gap-4',
                 embedded
-                    ? 'border-t border-brand-100 px-3 py-2.5'
-                    : 'rounded-token-lg border border-line bg-surface-raised p-3',
+                    ? 'border-t border-brand-100 px-3 py-3'
+                    : 'rounded-token-lg border border-line bg-surface-raised p-4',
                 className,
             )}
         >
@@ -203,8 +314,8 @@ export const CollectionFilterBar = ({
             <section
                 aria-labelledby="collection-date-filter-group-label"
                 className={cn(
-                    'rounded-token-md border border-line/70 p-2.5',
-                    embedded ? 'bg-brand-50/30' : 'bg-surface',
+                    'rounded-token-md border border-line/70 bg-surface-base/80 p-3',
+                    embedded ? 'shadow-surface' : '',
                 )}
             >
                 <Button
@@ -216,7 +327,7 @@ export const CollectionFilterBar = ({
                     onClick={() => {
                         setDateFiltersExpanded((previous) => !previous);
                     }}
-                    className="!h-auto w-full justify-between rounded-token-sm border border-transparent px-2 py-2 hover:border-line"
+                    className="!h-auto w-full justify-between rounded-token-md border border-line/60 bg-surface-raised px-3.5 py-3 hover:border-line-strong hover:bg-surface-muted"
                 >
                     <span className="flex min-w-0 flex-col items-start text-left">
                         <span
@@ -225,16 +336,11 @@ export const CollectionFilterBar = ({
                         >
                             Date filters
                         </span>
-                        <span className="text-[11px] font-medium text-ink-muted">
-                            Filter by collection added or image generated date.
+                        <span className="mt-0.5 text-xs font-medium text-ink-subtle">
+                            {dateSummary}
                         </span>
                     </span>
                     <span className="ml-2 inline-flex items-center gap-2">
-                        {hasActiveDateFilter ? (
-                            <span className="rounded-full border border-brand-200 bg-brand-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-700">
-                                Active
-                            </span>
-                        ) : null}
                         <ChevronDownIcon
                             aria-hidden
                             className={cn(
@@ -248,13 +354,14 @@ export const CollectionFilterBar = ({
                 {dateFiltersExpanded ? (
                     <div
                         id="collection-date-filter-panel"
-                        className="mt-2 border-t border-line/70 pt-2"
+                        className="mt-3 grid gap-3 border-t border-line/70 pt-3"
                     >
-                        <div className="grid gap-3 md:grid-cols-[220px_minmax(0,1fr)_minmax(0,1fr)] md:items-end">
-                            <div>
+                        {/* Row 1: Date type + Day/Range toggle */}
+                        <div className="flex flex-wrap items-end gap-3">
+                            <div className="min-w-[200px] flex-1">
                                 <label
                                     id="collection-date-field-filter-label"
-                                    className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-ink-muted"
+                                    className="mb-1.5 block text-xs font-semibold text-ink-muted"
                                 >
                                     Date type
                                 </label>
@@ -270,61 +377,178 @@ export const CollectionFilterBar = ({
                                     }}
                                 />
                             </div>
-
-                            <div>
-                                <label
-                                    htmlFor="collection-date-from-filter"
-                                    className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-ink-muted"
-                                >
-                                    From
-                                </label>
-                                <Input
-                                    id="collection-date-from-filter"
-                                    type="datetime-local"
-                                    value={dateFrom}
-                                    onChange={(event) => {
-                                        onDateFromChange(event.target.value);
+                            <div
+                                role="radiogroup"
+                                aria-label="Date filter mode"
+                                className="inline-flex rounded-token-md border border-line/70 bg-surface-muted p-0.5"
+                            >
+                                <button
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={dateFilterMode === 'single'}
+                                    className={cn(
+                                        'ui-focus-ring inline-flex h-9 min-w-[80px] items-center justify-center rounded-token-sm px-3 text-xs font-semibold transition-colors',
+                                        dateFilterMode === 'single'
+                                            ? 'border border-line-strong bg-surface-raised text-ink shadow-surface'
+                                            : 'border border-transparent text-ink-muted hover:text-ink',
+                                    )}
+                                    onClick={() => {
+                                        setDateFilterMode('single');
+                                        const baseDay = singleDay?.startOf('day')
+                                            ?? dayjs().startOf('day');
+                                        onDateRangeChange(
+                                            formatStorageDateTime(baseDay.startOf('day')),
+                                            formatStorageDateTime(baseDay.endOf('day')),
+                                        );
                                     }}
-                                />
-                            </div>
-
-                            <div>
-                                <label
-                                    htmlFor="collection-date-to-filter"
-                                    className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-ink-muted"
                                 >
-                                    To
-                                </label>
-                                <Input
-                                    id="collection-date-to-filter"
-                                    type="datetime-local"
-                                    value={dateTo}
-                                    onChange={(event) => {
-                                        onDateToChange(event.target.value);
+                                    Day
+                                </button>
+                                <button
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={dateFilterMode === 'range'}
+                                    className={cn(
+                                        'ui-focus-ring inline-flex h-9 min-w-[80px] items-center justify-center rounded-token-sm px-3 text-xs font-semibold transition-colors',
+                                        dateFilterMode === 'range'
+                                            ? 'border border-line-strong bg-surface-raised text-ink shadow-surface'
+                                            : 'border border-transparent text-ink-muted hover:text-ink',
+                                    )}
+                                    onClick={() => {
+                                        setDateFilterMode('range');
+                                        if (dateFrom && dateTo && isSameCalendarDay(dateFrom, dateTo)) {
+                                            onDateToChange('');
+                                        }
                                     }}
-                                />
+                                >
+                                    Range
+                                </button>
                             </div>
                         </div>
 
-                        <div className="mt-2">
-                            <p className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-ink-muted">
-                                Quick range
-                            </p>
-                            <div className="flex flex-wrap gap-1.5">
-                                {quickPresetOptions.map((option) => (
-                                    <Button
-                                        key={option.value}
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => {
-                                            onDateQuickPreset(option.value);
-                                        }}
-                                    >
-                                        {option.label}
-                                    </Button>
-                                ))}
+                        {/* Row 2: Date input — mode-dependent */}
+                        {dateFilterMode === 'single' ? (
+                            <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] gap-2">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="!h-9 !w-9 rounded-token-md border border-line/70 bg-surface-raised text-ink-muted hover:border-line-strong hover:bg-surface-muted"
+                                    aria-label="Previous day"
+                                    onClick={() => {
+                                        const baseDay = singleDay?.startOf('day')
+                                            ?? dayjs().startOf('day');
+                                        const previousDay = baseDay.subtract(1, 'day');
+                                        onDateRangeChange(
+                                            formatStorageDateTime(
+                                                previousDay.startOf('day'),
+                                            ),
+                                            formatStorageDateTime(
+                                                previousDay.endOf('day'),
+                                            ),
+                                        );
+                                    }}
+                                >
+                                    <ArrowLeftIcon className="h-4 w-4" aria-hidden />
+                                </Button>
+                                <DateTimePicker
+                                    id="collection-date-single-filter"
+                                    value={singleDayValue}
+                                    boundary="start"
+                                    placeholder="Select day"
+                                    onChange={(nextValue) => {
+                                        if (!nextValue) {
+                                            onDateRangeChange('', '');
+                                            return;
+                                        }
+
+                                        const parsedDate = parseDateValue(nextValue);
+                                        if (!parsedDate) {
+                                            return;
+                                        }
+
+                                        onDateRangeChange(
+                                            formatStorageDateTime(
+                                                parsedDate.startOf('day'),
+                                            ),
+                                            formatStorageDateTime(
+                                                parsedDate.endOf('day'),
+                                            ),
+                                        );
+                                    }}
+                                />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="!h-9 !w-9 rounded-token-md border border-line/70 bg-surface-raised text-ink-muted hover:border-line-strong hover:bg-surface-muted"
+                                    aria-label="Next day"
+                                    onClick={() => {
+                                        const baseDay = singleDay?.startOf('day')
+                                            ?? dayjs().startOf('day');
+                                        const nextDay = baseDay.add(1, 'day');
+                                        onDateRangeChange(
+                                            formatStorageDateTime(nextDay.startOf('day')),
+                                            formatStorageDateTime(nextDay.endOf('day')),
+                                        );
+                                    }}
+                                >
+                                    <ArrowRightIcon className="h-4 w-4" aria-hidden />
+                                </Button>
                             </div>
+                        ) : (
+                            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-end">
+                                <div>
+                                    <label
+                                        htmlFor="collection-date-from-filter"
+                                        className="mb-1.5 block text-xs font-semibold text-ink-muted"
+                                    >
+                                        From
+                                    </label>
+                                    <DateTimePicker
+                                        id="collection-date-from-filter"
+                                        value={dateFrom}
+                                        boundary="start"
+                                        onChange={(nextValue) => {
+                                            onDateFromChange(nextValue);
+                                        }}
+                                    />
+                                </div>
+                                <div>
+                                    <label
+                                        htmlFor="collection-date-to-filter"
+                                        className="mb-1.5 block text-xs font-semibold text-ink-muted"
+                                    >
+                                        To
+                                    </label>
+                                    <DateTimePicker
+                                        id="collection-date-to-filter"
+                                        value={dateTo}
+                                        boundary="end"
+                                        onChange={(nextValue) => {
+                                            onDateToChange(nextValue);
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Row 3: Quick presets — always visible */}
+                        <div className="flex flex-wrap gap-1.5">
+                            {quickPresetOptions.map((option) => (
+                                <Button
+                                    key={option.value}
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="rounded-token-md border border-line/70 bg-surface-raised px-3 text-xs font-medium text-ink-muted hover:border-line-strong hover:bg-surface-muted"
+                                    onClick={() => {
+                                        onDateQuickPreset(option.value);
+                                    }}
+                                >
+                                    {option.label}
+                                </Button>
+                            ))}
                         </div>
                     </div>
                 ) : null}

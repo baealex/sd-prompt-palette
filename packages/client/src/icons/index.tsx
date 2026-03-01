@@ -4,6 +4,7 @@ import {
     ArrowLeft,
     ArrowRight,
     ArrowUp,
+    Calendar,
     ChevronDown,
     Database,
     Ellipsis,
@@ -32,6 +33,7 @@ const withDefaults = (IconComponent: LucideIcon) => (props: IconProps) => (
 );
 
 export const ArrowDownIcon = withDefaults(ArrowDown);
+export const CalendarIcon = withDefaults(Calendar);
 export const ChevronDownIcon = withDefaults(ChevronDown);
 export const ArrowUpIcon = withDefaults(ArrowUp);
 export const ArrowLeftIcon = withDefaults(ArrowLeft);

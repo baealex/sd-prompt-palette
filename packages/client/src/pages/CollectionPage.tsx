@@ -15,7 +15,7 @@ import { useCollectionPagePaginationSync } from '~/features/collection/use-colle
 const COLLECTION_PAGE_META = {
     title: 'Collection',
     description: 'Browse, search, and manage saved prompts.',
-    searchPlaceholder: 'Search title, prompt, or negative prompt',
+    searchPlaceholder: 'Search collections',
 } as const;
 
 export const CollectionPage = () => {
@@ -31,6 +31,7 @@ export const CollectionPage = () => {
         handleDateFieldChange,
         handleDateFromChange,
         handleDateToChange,
+        handleDateRangeChange,
         handleDateQuickPreset,
         handleViewChange,
         handlePageChange,
@@ -130,6 +131,7 @@ export const CollectionPage = () => {
                     onDateFieldChange={handleDateFieldChange}
                     onDateFromChange={handleDateFromChange}
                     onDateToChange={handleDateToChange}
+                    onDateRangeChange={handleDateRangeChange}
                     onDateQuickPreset={handleDateQuickPreset}
                     onReset={resetFilters}
                     embedded

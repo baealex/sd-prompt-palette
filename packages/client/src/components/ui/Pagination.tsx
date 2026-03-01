@@ -93,7 +93,7 @@ export const Pagination = ({
                         Prev
                     </Button>
 
-                    <div className="inline-flex h-10 min-w-[88px] items-center justify-center rounded-token-md border border-line bg-surface-muted px-3 text-xs font-semibold text-ink">
+                    <div className="inline-flex h-11 min-w-[88px] items-center justify-center rounded-token-md border border-line bg-surface-muted px-3 text-xs font-semibold text-ink">
                         {currentPage} / {totalPages}
                     </div>
 
@@ -208,7 +208,7 @@ export const Pagination = ({
                     ) : null}
                 </div>
 
-                <div className="inline-flex min-w-[108px] items-center justify-center rounded-token-md border border-line bg-surface-muted px-3 py-2 text-xs font-semibold text-ink sm:hidden">
+                <div className="inline-flex h-11 min-w-[108px] items-center justify-center rounded-token-md border border-line bg-surface-muted px-3 text-xs font-semibold text-ink sm:hidden">
                     {currentPage} / {totalPages}
                 </div>
 

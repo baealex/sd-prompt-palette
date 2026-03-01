@@ -175,6 +175,12 @@ export const useCollectionPageFilters = () => {
         },
         [updateFilterSearch],
     );
+    const handleDateRangeChange = useCallback(
+        (nextDateFrom: string, nextDateTo: string) => {
+            updateFilterSearch({ dateFrom: nextDateFrom, dateTo: nextDateTo });
+        },
+        [updateFilterSearch],
+    );
 
     const handleDateQuickPreset = useCallback(
         (preset: CollectionDateQuickPreset) => {
@@ -252,6 +258,7 @@ export const useCollectionPageFilters = () => {
         handleDateFieldChange,
         handleDateFromChange,
         handleDateToChange,
+        handleDateRangeChange,
         handleDateQuickPreset,
         handleViewChange,
         handlePageChange,
