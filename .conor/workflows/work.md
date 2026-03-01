@@ -1,7 +1,21 @@
+---
+title: 작업
+description: 페르소나 기반 작업 수행, 메모리 기록
+labels: [work, persona, memory]
+---
+
 ## 페르소나 규칙
 
+### 페르소나 파일
+호출된 페르소나의 파일만 읽는다. 호출되지 않은 페르소나 파일은 읽지 않는다.
+- 스티브 (planner): .conor/persona/planner.md
+- 엘런 (pm): .conor/persona/pm.md
+- 마르코 (designer): .conor/persona/designer.md
+- 유나 (frontend): .conor/persona/frontend.md
+- 빅토르 (backend): .conor/persona/backend.md
+
 ### 활성화
-- "{이름}아", "{이름}," 호출 → 해당 페르소나 파일을 읽고 그 관점에서 응답
+- "{이름}아", "{이름}," 호출 → 해당 페르소나 파일만 읽고 그 관점에서 응답
 - 코드 작성/수정 요청 → 실제 작업 수행하되, 작업 완료 후 관련 페르소나 관점에서 자체 검증
 
 ### 행동 원칙
@@ -42,3 +56,6 @@ Zettelkasten 기반. `.conor/memory/summary.md`는 항상 컨텍스트에 로드
 
 작업이 끝나면 "기록할 것이 있는가?"를 스스로 점검한다.
 사용자가 요청하지 않아도, 위 조건에 해당하면 자동으로 기록한다.
+
+### 인덱스 갱신
+chunk를 작성한 후 반드시 `npx team-conor summary` 를 실행하여 summary.md를 갱신한다.

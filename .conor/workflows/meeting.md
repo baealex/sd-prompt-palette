@@ -1,7 +1,7 @@
 ---
-name: conor-meeting
-description: "팀 페르소나 기반 구조화된 의사결정 회의를 진행합니다"
-trigger: "사용자가 회의를 요청하면"
+title: 팀 회의
+description: 구조화된 의사결정 회의 (선택지 → 트레이드오프 → 결정 → 기록)
+labels: [meeting, decision, memory]
 ---
 
 팀 페르소나 기반 구조화된 의사결정 회의를 진행합니다.

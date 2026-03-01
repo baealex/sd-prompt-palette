@@ -1,3 +1,9 @@
+---
+title: 코드 리뷰
+description: 팀 페르소나 기반 다관점 코드 리뷰
+labels: [review, persona]
+---
+
 팀 페르소나 기반 코드 리뷰를 실행합니다.
 
 절차:
