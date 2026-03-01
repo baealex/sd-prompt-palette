@@ -14,14 +14,14 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/baealex/my-express-template.git"
+		"url": "git+https://github.com/baealex/ocean-palette.git"
 	},
 	"author": "",
 	"license": "ISC",
 	"bugs": {
-		"url": "https://github.com/baealex/my-express-template/issues"
+		"url": "https://github.com/baealex/ocean-palette/issues"
 	},
-	"homepage": "https://github.com/baealex/my-express-template#readme",
+	"homepage": "https://github.com/baealex/ocean-palette#readme",
 	"dependencies": {
 		"@prisma/client": "^5.12.1",
 		"bcrypt": "^5.1.1",
