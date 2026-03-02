@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 
 import { getCollectionModelOptions, getCollections } from '~/api';
+import { toCollectionSummaryItems } from '~/entities/collection/mapper';
 import { collectionQueryKeys } from '~/features/collection/query-keys';
 import { resolveCollectionSortOrder, type CollectionFilterState } from './view-filter';
 
@@ -86,15 +87,9 @@ export const useCollectionPageData = ({
                 ...resolveCollectionSortOrder(sort),
             });
 
-            const responseItems = response.data.allCollections.collections
-                .map((item) => ({
-                    id: Number(item.id),
-                    title: item.title,
-                    prompt: item.prompt,
-                    negativePrompt: item.negativePrompt,
-                    image: item.image,
-                }))
-                .filter((item) => Number.isFinite(item.id) && item.id > 0);
+            const responseItems = toCollectionSummaryItems(
+                response.data.allCollections.collections,
+            );
             const total = response.data.allCollections.pagination.total;
             const lastPage = getLastPage(total, COLLECTION_PAGE_LIMIT);
 

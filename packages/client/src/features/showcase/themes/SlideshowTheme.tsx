@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { getCollections } from '~/api';
 import { collectionQueryKeys } from '~/features/collection/query-keys';
+import { toCollectionSummaryItems } from '~/entities/collection/mapper';
 import { resolveCollectionSortOrder } from '~/features/collection/view-filter';
 import { PauseIcon, PlayIcon } from '~/icons';
 import { ShowcaseLoading } from '~/features/showcase/ShowcaseLoading';
@@ -46,13 +47,9 @@ export const SlideshowTheme = () => {
                 dateTo,
                 ...resolveCollectionSortOrder(sort),
             });
-            return response.data.allCollections.collections.map((item) => ({
-                id: item.id,
-                title: item.title,
-                prompt: item.prompt,
-                negativePrompt: item.negativePrompt,
-                image: item.image,
-            }));
+            return toCollectionSummaryItems(
+                response.data.allCollections.collections,
+            );
         },
     });
 

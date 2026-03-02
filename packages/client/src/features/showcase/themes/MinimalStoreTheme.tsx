@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { getCollections } from '~/api';
 import { collectionQueryKeys } from '~/features/collection/query-keys';
+import { toCollectionSummaryItems } from '~/entities/collection/mapper';
 import { resolveCollectionSortOrder } from '~/features/collection/view-filter';
 import { Image } from '~/components/ui/Image';
 import { ArrowLeftIcon, ArrowRightIcon, HeartIcon, SearchIcon } from '~/icons';
@@ -72,14 +73,8 @@ export const MinimalStoreTheme = () => {
                 ...resolveCollectionSortOrder(sort),
             });
             return {
-                collections: response.data.allCollections.collections.map(
-                    (item) => ({
-                        id: item.id,
-                        title: item.title,
-                        prompt: item.prompt,
-                        negativePrompt: item.negativePrompt,
-                        image: item.image,
-                    }),
+                collections: toCollectionSummaryItems(
+                    response.data.allCollections.collections,
                 ),
                 total: response.data.allCollections.pagination.total,
             };

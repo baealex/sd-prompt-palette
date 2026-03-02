@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 
 import { getCollections } from '~/api';
+import { toCollectionSummaryItems } from '~/entities/collection/mapper';
 import { collectionQueryKeys } from '~/features/collection/query-keys';
 import { resolveCollectionSortOrder } from '~/features/collection/view-filter';
 import { useShowcaseFilters } from './use-showcase-filters';
@@ -35,13 +36,9 @@ export const useShowcaseInfinite = (themeKey: string) => {
                 dateTo,
                 ...resolveCollectionSortOrder(sort),
             });
-            return response.data.allCollections.collections.map((item) => ({
-                id: item.id,
-                title: item.title,
-                prompt: item.prompt,
-                negativePrompt: item.negativePrompt,
-                image: item.image,
-            }));
+            return toCollectionSummaryItems(
+                response.data.allCollections.collections,
+            );
         },
         initialPageParam: 1,
         getNextPageParam: (lastPage, _allPages, lastPageParam) => {
