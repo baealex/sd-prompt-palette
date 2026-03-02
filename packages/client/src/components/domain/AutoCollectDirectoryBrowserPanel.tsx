@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { KeyboardEvent } from 'react';
 
 import type { LiveDirectoryEntry } from '~/api';
 import { Button } from '~/components/ui/Button';
@@ -31,6 +32,58 @@ export const AutoCollectDirectoryBrowserPanel = ({
             setSelectedPath(entries[0]?.path ?? null);
         }
     }, [currentPath, entries, selectedPath]);
+    const selectedIndex = useMemo(
+        () => entries.findIndex((entry) => entry.path === selectedPath),
+        [entries, selectedPath],
+    );
+    const activeOptionId = selectedIndex >= 0
+        ? `auto-collect-folder-option-${selectedIndex}`
+        : undefined;
+
+    const selectByIndex = useCallback((nextIndex: number) => {
+        if (entries.length === 0) {
+            return;
+        }
+        const boundedIndex = Math.max(0, Math.min(nextIndex, entries.length - 1));
+        const nextEntry = entries[boundedIndex];
+        if (!nextEntry) {
+            return;
+        }
+        setSelectedPath(nextEntry.path);
+    }, [entries]);
+
+    const handleListboxKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
+        if (loading || entries.length === 0) {
+            return;
+        }
+
+        switch (event.key) {
+            case 'ArrowDown':
+                event.preventDefault();
+                selectByIndex(selectedIndex < 0 ? 0 : selectedIndex + 1);
+                break;
+            case 'ArrowUp':
+                event.preventDefault();
+                selectByIndex(selectedIndex < 0 ? 0 : selectedIndex - 1);
+                break;
+            case 'Home':
+                event.preventDefault();
+                selectByIndex(0);
+                break;
+            case 'End':
+                event.preventDefault();
+                selectByIndex(entries.length - 1);
+                break;
+            case 'Enter':
+                event.preventDefault();
+                if (selectedPath) {
+                    onLoadDirectories(selectedPath);
+                }
+                break;
+            default:
+                break;
+        }
+    }, [entries.length, loading, onLoadDirectories, selectByIndex, selectedIndex, selectedPath]);
 
     const breadcrumbs = useMemo(() => {
         if (!currentPath) {
@@ -167,6 +220,9 @@ export const AutoCollectDirectoryBrowserPanel = ({
                     <div
                         role="listbox"
                         aria-label="Folders"
+                        aria-activedescendant={activeOptionId}
+                        tabIndex={0}
+                        onKeyDown={handleListboxKeyDown}
                         className="max-h-[36vh] min-h-[220px] overflow-auto rounded-token-sm border border-line bg-surface-raised p-2"
                     >
                         {loading ? (
@@ -179,13 +235,16 @@ export const AutoCollectDirectoryBrowserPanel = ({
 
                         {!loading && entries.length > 0 ? (
                             <div className="grid gap-1">
-                                {entries.map((entry) => (
+                                {entries.map((entry, index) => (
                                     <Button
                                         key={entry.path}
+                                        id={`auto-collect-folder-option-${index}`}
+                                        role="option"
                                         variant={selectedPath === entry.path ? 'soft' : 'ghost'}
                                         size="md"
                                         className="w-full justify-start"
                                         aria-selected={selectedPath === entry.path}
+                                        tabIndex={-1}
                                         onClick={() => {
                                             setSelectedPath(entry.path);
                                         }}

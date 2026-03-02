@@ -19,11 +19,15 @@ export const IdeaPage = () => {
     const { copyToClipboard } = useClipboardToast();
     const [categories, setMemoCategories] = useMemoState<Category[]>(['categories'], []);
     const [generatedKeywords, setMemoKeywords] = useMemoState<Keyword[]>(['generated', 'keywords'], []);
-    const [selected, setMemoSelected] = useMemoState<string[]>(['selected'], categories.map((category) => category.name));
+    const [selected, setMemoSelected] = useMemoState<number[]>(['selected'], categories.map((category) => category.id));
 
     const [categoryList, setCategoryList] = useState<Category[]>(categories);
     const [keywords, setKeywords] = useState<Keyword[]>(generatedKeywords);
-    const [selectedNames, setSelectedNames] = useState<string[]>(selected);
+    const [selectedIds, setSelectedIds] = useState<number[]>(
+        selected
+            .map((value) => Number(value))
+            .filter((value) => Number.isFinite(value) && value > 0),
+    );
     const [error, setError] = useState<string | null>(null);
     const [isLoadingCategories, setIsLoadingCategories] = useState<boolean>(categoryList.length === 0);
     const [categoryQuery, setCategoryQuery] = useState('');
@@ -40,18 +44,18 @@ export const IdeaPage = () => {
 
                 const nextCategories = response.data.allCategories;
                 setCategoryList(nextCategories);
-                setSelectedNames((prev) => {
+                setSelectedIds((prev) => {
                     if (prev.length === 0) {
-                        return nextCategories.map((category) => category.name);
+                        return nextCategories.map((category) => category.id);
                     }
 
-                    const validSelection = prev.filter((name) => (
-                        nextCategories.some((category) => category.name === name)
+                    const validSelection = prev.filter((categoryId) => (
+                        nextCategories.some((category) => category.id === categoryId)
                     ));
 
                     return validSelection.length > 0
                         ? validSelection
-                        : nextCategories.map((category) => category.name);
+                        : nextCategories.map((category) => category.id);
                 });
             } catch (nextError) {
                 if (cancelled) {
@@ -74,11 +78,11 @@ export const IdeaPage = () => {
 
     useEffect(() => {
         setMemoKeywords(keywords);
-        setMemoSelected(selectedNames);
+        setMemoSelected(selectedIds);
         setMemoCategories(categoryList);
-    }, [categoryList, keywords, selectedNames, setMemoCategories, setMemoKeywords, setMemoSelected]);
+    }, [categoryList, keywords, selectedIds, setMemoCategories, setMemoKeywords, setMemoSelected]);
 
-    const selectedNameSet = useMemo(() => new Set(selectedNames), [selectedNames]);
+    const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
 
     const normalizedCategoryQuery = categoryQuery.trim().toLowerCase();
 
@@ -94,32 +98,37 @@ export const IdeaPage = () => {
 
     const selectedCount = useMemo(() => {
         return categoryList.reduce((count, category) => (
-            selectedNameSet.has(category.name) ? count + 1 : count
+            selectedIdSet.has(category.id) ? count + 1 : count
         ), 0);
-    }, [categoryList, selectedNameSet]);
+    }, [categoryList, selectedIdSet]);
 
     const isAllSelected = categoryList.length > 0 && selectedCount === categoryList.length;
     const canGenerate = selectedCount > 0 && categoryList.length > 0 && !isLoadingCategories;
 
     const handleCheckboxChange = (nextChecked: boolean, name: string) => {
-        setSelectedNames((prev) => {
+        const categoryId = Number(name);
+        if (!Number.isFinite(categoryId) || categoryId <= 0) {
+            return;
+        }
+
+        setSelectedIds((prev) => {
             if (nextChecked) {
-                if (prev.includes(name)) {
+                if (prev.includes(categoryId)) {
                     return prev;
                 }
-                return [...prev, name];
+                return [...prev, categoryId];
             }
 
-            return prev.filter((value) => value !== name);
+            return prev.filter((value) => value !== categoryId);
         });
     };
 
     const handleSelectAll = () => {
-        setSelectedNames(categoryList.map((category) => category.name));
+        setSelectedIds(categoryList.map((category) => category.id));
     };
 
     const handleClearSelection = () => {
-        setSelectedNames([]);
+        setSelectedIds([]);
     };
 
     const handleGenerate = (event: FormEvent<HTMLFormElement>) => {
@@ -130,7 +139,7 @@ export const IdeaPage = () => {
         }
 
         const nextKeywords = categoryList
-            .filter((category) => selectedNameSet.has(category.name))
+            .filter((category) => selectedIdSet.has(category.id))
             .map((category) => {
                 if (category.keywords.length === 0) {
                     return null;
@@ -208,9 +217,9 @@ export const IdeaPage = () => {
                             {visibleCategories.map((category) => (
                                 <Checkbox
                                     key={category.id}
-                                    name={category.name}
+                                    name={String(category.id)}
                                     label={category.name}
-                                    checked={selectedNameSet.has(category.name)}
+                                    checked={selectedIdSet.has(category.id)}
                                     meta={`${category.keywords.length} keywords`}
                                     onChange={handleCheckboxChange}
                                 />

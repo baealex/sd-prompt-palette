@@ -6,6 +6,7 @@ import {
     useMemo,
     useState,
 } from 'react';
+import type { MouseEvent } from 'react';
 
 import {
     Popover,
@@ -312,7 +313,7 @@ export const DateTimePicker = ({
     }, [selectedDate]);
 
     const handleClear = useCallback(
-        (event: React.MouseEvent) => {
+        (event: MouseEvent<HTMLButtonElement>) => {
             event.stopPropagation();
             onChange('');
             setOpen(false);
@@ -347,7 +348,7 @@ export const DateTimePicker = ({
                         aria-expanded={open}
                         aria-controls={panelId}
                         className={cn(
-                            'ui-focus-ring flex h-9 w-full items-center gap-2 rounded-token-md border border-line-strong bg-surface-base px-2.5 text-left text-sm transition-colors',
+                            'ui-focus-ring flex h-9 w-full items-center gap-2 rounded-token-md border border-line-strong bg-surface-base px-2.5 pr-9 text-left text-sm transition-colors',
                             displayValue ? 'text-ink' : 'text-ink-subtle',
                             disabled
                                 ? 'cursor-not-allowed opacity-55'
@@ -366,29 +367,21 @@ export const DateTimePicker = ({
                         <span className="min-w-0 flex-1 truncate">
                             {displayValue || placeholder}
                         </span>
-                        {value && !disabled ? (
-                            <span
-                                role="button"
-                                tabIndex={0}
-                                aria-label="Clear date"
-                                className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-surface-muted hover:text-ink"
-                                onClick={handleClear}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                        handleClear(
-                                            e as unknown as React.MouseEvent,
-                                        );
-                                    }
-                                }}
-                            >
-                                <CrossIcon
-                                    className="h-3.5 w-3.5"
-                                    aria-hidden
-                                />
-                            </span>
-                        ) : null}
                     </button>
                 </PopoverTrigger>
+                {value && !disabled ? (
+                    <button
+                        type="button"
+                        aria-label="Clear date"
+                        className="ui-focus-ring absolute right-1.5 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-ink-subtle transition-colors hover:bg-surface-muted hover:text-ink"
+                        onClick={handleClear}
+                    >
+                        <CrossIcon
+                            className="h-3.5 w-3.5"
+                            aria-hidden
+                        />
+                    </button>
+                ) : null}
             </div>
 
             <PopoverContent
