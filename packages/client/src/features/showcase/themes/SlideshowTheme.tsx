@@ -3,8 +3,10 @@ import { Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 
 import { getCollections } from '~/api';
+import { collectionQueryKeys } from '~/features/collection/query-keys';
 import { resolveCollectionSortOrder } from '~/features/collection/view-filter';
 import { PauseIcon, PlayIcon } from '~/icons';
+import { ShowcaseLoading } from '~/features/showcase/ShowcaseLoading';
 import { useShowcaseFilters } from '../use-showcase-filters';
 
 const BATCH_SIZE = 30;
@@ -20,9 +22,8 @@ export const SlideshowTheme = () => {
         useShowcaseFilters();
 
     const { data, isPending } = useQuery({
-        queryKey: [
-            'collections',
-            'showcase-slideshow',
+        queryKey: collectionQueryKeys.showcase({
+            theme: 'slideshow',
             query,
             model,
             searchBy,
@@ -30,7 +31,9 @@ export const SlideshowTheme = () => {
             dateFrom,
             dateTo,
             sort,
-        ],
+            page: 1,
+            limit: BATCH_SIZE,
+        }),
         queryFn: async () => {
             const response = await getCollections({
                 page: 1,
@@ -74,11 +77,7 @@ export const SlideshowTheme = () => {
     const activeSlide = shuffled[index] ?? null;
 
     if (isPending || !activeSlide) {
-        return (
-            <div className="flex h-full items-center justify-center text-sm text-ink-inverse">
-                Generating a show for you...
-            </div>
-        );
+        return <ShowcaseLoading />;
     }
 
     return (

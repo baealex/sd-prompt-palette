@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 
 import { getCollectionModelOptions, getCollections } from '~/api';
+import { collectionQueryKeys } from '~/features/collection/query-keys';
 import { resolveCollectionSortOrder, type CollectionFilterState } from './view-filter';
 
 import type { Collection } from '~/models/types';
@@ -37,8 +38,7 @@ export const useCollectionPageData = ({
     const queryClient = useQueryClient();
     const collectionsQueryKey = useMemo(
         () =>
-            [
-                'collections',
+            collectionQueryKeys.list({
                 query,
                 model,
                 searchBy,
@@ -46,8 +46,9 @@ export const useCollectionPageData = ({
                 dateFrom,
                 dateTo,
                 sort,
-                currentPage,
-            ] as const,
+                page: currentPage,
+                limit: COLLECTION_PAGE_LIMIT,
+            }),
         [
             currentPage,
             dateField,
@@ -61,7 +62,7 @@ export const useCollectionPageData = ({
     );
 
     const modelOptionsQuery = useQuery({
-        queryKey: ['collections', 'model-options'] as const,
+        queryKey: collectionQueryKeys.modelOptions(),
         queryFn: async () => {
             const response = await getCollectionModelOptions();
             return response.data.collectionModelOptions

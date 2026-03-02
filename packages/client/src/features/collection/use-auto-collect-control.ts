@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { getLiveConfig, listLiveDirectories, syncLiveImages, updateLiveConfig } from '~/api';
 import type { LiveConfig, LiveDirectoryEntry, LiveStatusResponse } from '~/api';
+import { collectionQueryKeys } from '~/features/collection/query-keys';
 import { useLiveCollectionsRealtime } from '~/features/collection/use-live-collections-realtime';
 
 import { mergeLiveConfig, normalizeWatchDir, toLiveConfigDraft } from './live-config-utils';
@@ -147,7 +148,20 @@ export const useAutoCollectControl = (): UseAutoCollectControlResult => {
         setCollectingNow(true);
         try {
             const response = await syncLiveImages();
-            await queryClient.invalidateQueries({ queryKey: ['collections'] });
+            await Promise.all([
+                queryClient.invalidateQueries({
+                    queryKey: collectionQueryKeys.listRoot(),
+                    exact: false,
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: collectionQueryKeys.showcaseRoot(),
+                    exact: false,
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: collectionQueryKeys.modelOptions(),
+                    exact: true,
+                }),
+            ]);
             setFeedback({
                 variant: 'success',
                 message: `Collect completed (${response.data.scanned} scanned)`,

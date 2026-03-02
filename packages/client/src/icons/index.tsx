@@ -15,6 +15,7 @@ import {
     Image,
     List,
     Menu,
+    LoaderCircle,
     Pause,
     Play,
     Plus,
@@ -47,6 +48,7 @@ export const HeartIcon = withDefaults(Heart);
 export const ImageIcon = withDefaults(Image);
 export const ListIcon = withDefaults(List);
 export const MenuIcon = withDefaults(Menu);
+export const LoaderIcon = withDefaults(LoaderCircle);
 export const MoreIcon = withDefaults(Ellipsis);
 export const SearchIcon = withDefaults(Search);
 export const DragHandleIcon = withDefaults(GripVertical);

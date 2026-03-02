@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 
 import { ArrowLeftIcon, CrossIcon, MenuIcon } from '~/icons';
@@ -7,6 +7,7 @@ import {
     SHOWCASE_THEMES,
     THEME_COMPONENTS,
 } from '~/features/showcase/themes';
+import { ShowcaseLoading } from '~/features/showcase/ShowcaseLoading';
 import type { ShowcaseThemeId } from '~/features/showcase/types';
 
 const VALID_THEME_IDS = new Set<string>(SHOWCASE_THEMES.map((t) => t.id));
@@ -60,10 +61,13 @@ export const ShowcasePage = () => {
     const containerClassName = activeDescriptor.scrollable
         ? 'relative min-h-screen w-full bg-black text-white'
         : 'relative h-screen w-full overflow-hidden bg-black text-white';
+    const showcaseFallback = <ShowcaseLoading />;
 
     return (
         <div className={containerClassName}>
-            <ThemeComponent />
+            <Suspense fallback={showcaseFallback}>
+                <ThemeComponent />
+            </Suspense>
 
             <Link
                 to="/collection"

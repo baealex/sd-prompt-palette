@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 
 import type { LiveStatusResponse } from '~/api';
+import { collectionQueryKeys } from '~/features/collection/query-keys';
 
 interface UseLiveCollectionsRealtimeOptions {
     onStatus?: (payload: Partial<LiveStatusResponse>) => void;
@@ -33,7 +34,20 @@ export const useLiveCollectionsRealtime = (options: UseLiveCollectionsRealtimeOp
 
             refreshTimerRef.current = window.setTimeout(() => {
                 refreshTimerRef.current = null;
-                void queryClient.invalidateQueries({ queryKey: ['collections'] });
+                void Promise.all([
+                    queryClient.invalidateQueries({
+                        queryKey: collectionQueryKeys.listRoot(),
+                        exact: false,
+                    }),
+                    queryClient.invalidateQueries({
+                        queryKey: collectionQueryKeys.showcaseRoot(),
+                        exact: false,
+                    }),
+                    queryClient.invalidateQueries({
+                        queryKey: collectionQueryKeys.modelOptions(),
+                        exact: true,
+                    }),
+                ]);
             }, 250);
         });
 

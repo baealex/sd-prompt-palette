@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 
 import { Image } from '~/components/ui/Image';
+import { ShowcaseLoading } from '~/features/showcase/ShowcaseLoading';
 import { useShowcaseInfinite } from '../use-showcase-infinite';
 
 const ROTATIONS = [
@@ -29,11 +30,7 @@ export const MoodBoardTheme = () => {
         useShowcaseInfinite('moodboard');
 
     if (loading) {
-        return (
-            <div className="flex h-screen items-center justify-center text-sm text-white/60">
-                Curating your mood board...
-            </div>
-        );
+        return <ShowcaseLoading />;
     }
 
     if (collections.length === 0) {

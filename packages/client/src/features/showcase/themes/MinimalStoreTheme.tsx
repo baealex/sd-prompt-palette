@@ -3,9 +3,11 @@ import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 
 import { getCollections } from '~/api';
+import { collectionQueryKeys } from '~/features/collection/query-keys';
 import { resolveCollectionSortOrder } from '~/features/collection/view-filter';
 import { Image } from '~/components/ui/Image';
 import { ArrowLeftIcon, ArrowRightIcon, HeartIcon, SearchIcon } from '~/icons';
+import { ShowcaseLoading } from '~/features/showcase/ShowcaseLoading';
 import { useShowcaseFilters } from '../use-showcase-filters';
 
 const GRID_CHUNK_SIZE = 8;
@@ -45,9 +47,8 @@ export const MinimalStoreTheme = () => {
     });
 
     const { data, isPending } = useQuery({
-        queryKey: [
-            'collections',
-            'showcase-store',
+        queryKey: collectionQueryKeys.showcase({
+            theme: 'minimal-store',
             query,
             model,
             searchBy,
@@ -56,7 +57,8 @@ export const MinimalStoreTheme = () => {
             dateTo,
             sort,
             page,
-        ],
+            limit: PAGE_SIZE,
+        }),
         queryFn: async () => {
             const response = await getCollections({
                 page,
@@ -137,11 +139,7 @@ export const MinimalStoreTheme = () => {
     };
 
     if (isPending && collections.length === 0) {
-        return (
-            <div className="flex h-screen items-center justify-center bg-white text-sm text-gray-400">
-                Loading store...
-            </div>
-        );
+        return <ShowcaseLoading />;
     }
 
     if (collections.length === 0) {

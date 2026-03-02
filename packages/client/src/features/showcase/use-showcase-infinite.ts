@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 
 import { getCollections } from '~/api';
+import { collectionQueryKeys } from '~/features/collection/query-keys';
 import { resolveCollectionSortOrder } from '~/features/collection/view-filter';
 import { useShowcaseFilters } from './use-showcase-filters';
 
@@ -12,9 +13,8 @@ export const useShowcaseInfinite = (themeKey: string) => {
         useShowcaseFilters();
 
     const result = useInfiniteQuery({
-        queryKey: [
-            'collections',
-            `showcase-${themeKey}`,
+        queryKey: collectionQueryKeys.showcase({
+            theme: themeKey,
             query,
             model,
             searchBy,
@@ -22,7 +22,7 @@ export const useShowcaseInfinite = (themeKey: string) => {
             dateFrom,
             dateTo,
             sort,
-        ],
+        }),
         queryFn: async ({ pageParam }) => {
             const response = await getCollections({
                 page: pageParam,

@@ -1,9 +1,21 @@
+import { lazy } from 'react';
+import type { LazyExoticComponent } from 'react';
 import type { ComponentType } from 'react';
 
 import type { ShowcaseThemeDescriptor, ShowcaseThemeId } from './types';
-import { SlideshowTheme } from './themes/SlideshowTheme';
-import { MoodBoardTheme } from './themes/MoodBoardTheme';
-import { MinimalStoreTheme } from './themes/MinimalStoreTheme';
+
+const SlideshowTheme = lazy(async () => {
+    const module = await import('./themes/SlideshowTheme');
+    return { default: module.SlideshowTheme };
+});
+const MoodBoardTheme = lazy(async () => {
+    const module = await import('./themes/MoodBoardTheme');
+    return { default: module.MoodBoardTheme };
+});
+const MinimalStoreTheme = lazy(async () => {
+    const module = await import('./themes/MinimalStoreTheme');
+    return { default: module.MinimalStoreTheme };
+});
 
 export const SHOWCASE_THEMES: ShowcaseThemeDescriptor[] = [
     {
@@ -28,7 +40,10 @@ export const SHOWCASE_THEMES: ShowcaseThemeDescriptor[] = [
 
 export const DEFAULT_SHOWCASE_THEME: ShowcaseThemeId = 'slideshow';
 
-export const THEME_COMPONENTS: Record<ShowcaseThemeId, ComponentType> = {
+export const THEME_COMPONENTS: Record<
+    ShowcaseThemeId,
+    LazyExoticComponent<ComponentType>
+> = {
     slideshow: SlideshowTheme,
     moodboard: MoodBoardTheme,
     'minimal-store': MinimalStoreTheme,

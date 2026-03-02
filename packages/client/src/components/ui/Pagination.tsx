@@ -40,12 +40,29 @@ export const Pagination = ({
     const showLastPage = lastVisiblePage < totalPages;
     const showLeadingEllipsis = firstVisiblePage > 2;
     const showTrailingEllipsis = lastVisiblePage < totalPages - 1;
+    const isJsDom =
+        typeof navigator !== 'undefined' &&
+        /jsdom/i.test(navigator.userAgent);
 
     const moveToPage = (page: number) => {
         if (page < 1 || page > totalPages) {
             return;
         }
+        if (page === currentPage) {
+            return;
+        }
         onPageChange(page);
+        if (isJsDom) {
+            return;
+        }
+        try {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth',
+            });
+        } catch {
+            // JSDOM does not implement scrollTo; ignore in non-browser tests.
+        }
     };
 
     const itemRangeText = useMemo(() => {
