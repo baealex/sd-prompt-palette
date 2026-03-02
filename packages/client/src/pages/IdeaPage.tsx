@@ -17,11 +17,18 @@ import { useMemoState } from '~/modules/memo';
 
 export const IdeaPage = () => {
     const { copyToClipboard } = useClipboardToast();
-    const [categories, setMemoCategories] = useMemoState<Category[]>(['categories'], []);
-    const [generatedKeywords, setMemoKeywords] = useMemoState<Keyword[]>(['generated', 'keywords'], []);
-    const [selected, setMemoSelected] = useMemoState<number[]>(['selected'], categories.map((category) => category.id));
+    const [generatedKeywords, setMemoKeywords] = useMemoState<Keyword[]>(
+        ['idea', 'generated', 'keywords'],
+        [],
+        { storage: 'session' },
+    );
+    const [selected, setMemoSelected] = useMemoState<number[]>(
+        ['idea', 'selected'],
+        [],
+        { storage: 'session' },
+    );
 
-    const [categoryList, setCategoryList] = useState<Category[]>(categories);
+    const [categoryList, setCategoryList] = useState<Category[]>([]);
     const [keywords, setKeywords] = useState<Keyword[]>(generatedKeywords);
     const [selectedIds, setSelectedIds] = useState<number[]>(
         selected
@@ -79,8 +86,7 @@ export const IdeaPage = () => {
     useEffect(() => {
         setMemoKeywords(keywords);
         setMemoSelected(selectedIds);
-        setMemoCategories(categoryList);
-    }, [categoryList, keywords, selectedIds, setMemoCategories, setMemoKeywords, setMemoSelected]);
+    }, [keywords, selectedIds, setMemoKeywords, setMemoSelected]);
 
     const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
 
