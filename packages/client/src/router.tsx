@@ -42,17 +42,11 @@ const RouteFallback = () => {
     return (
         <section
             aria-label="Page loading"
-            className="animate-pulse space-y-4 rounded-token-lg border border-line bg-surface-base p-4 shadow-surface"
+            className="animate-pulse space-y-3"
         >
-            <div className="space-y-2">
-                <div className="h-6 w-44 rounded-token-sm bg-surface-muted" />
-                <div className="h-4 w-72 max-w-full rounded-token-sm bg-surface-muted" />
-            </div>
-            <div className="grid gap-3 md:grid-cols-2">
-                <div className="h-36 rounded-token-md bg-surface-muted" />
-                <div className="h-36 rounded-token-md bg-surface-muted" />
-            </div>
-            <div className="h-10 w-32 rounded-token-md bg-surface-muted" />
+            <div className="h-5 w-36 rounded-token-sm bg-surface-muted" />
+            <div className="h-10 rounded-token-md bg-surface-muted" />
+            <div className="h-56 rounded-token-lg bg-surface-muted" />
         </section>
     );
 };
