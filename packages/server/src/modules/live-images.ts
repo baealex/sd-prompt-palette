@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { AsyncLocalStorage } from 'async_hooks';
 import type { FSWatcher } from 'chokidar';
 import { Server as SocketIOServer } from 'socket.io';
 
@@ -56,6 +57,7 @@ class LiveImagesService {
     private emitTimer: NodeJS.Timeout | null = null;
     private pendingEmitReason = 'init';
     private imageMutationQueue: Promise<void> = Promise.resolve();
+    private readonly imageMutationContext = new AsyncLocalStorage<boolean>();
 
     private readonly defaultWatchDir = path.resolve('watch');
     private readonly configRepository = new LiveImagesConfigRepository();
@@ -207,26 +209,41 @@ class LiveImagesService {
             const linkedSourcePath =
                 await this.imageRepository.readSourceLink(imageId);
             await this.libraryManager.deleteImageRecord(imageId);
-
-            const absolutePath =
-                this.libraryManager.absolutePathFromImageUrl(image.url);
-            if (absolutePath) {
-                await this.libraryManager.unlinkIfExists(absolutePath);
-            }
-
-            if (
-                this.config.deleteSourceOnDelete &&
-                linkedSourcePath &&
-                this.ingestMode === 'copy'
-            ) {
-                await this.libraryManager.unlinkIfExists(linkedSourcePath);
-            }
+            await this.cleanupDeletedImageFiles(image, linkedSourcePath);
 
             return image;
         });
 
         if (deleted) {
             this.queueEmit('api:delete');
+        }
+
+        return deleted;
+    }
+
+    async deleteImageIfOrphan(
+        imageId: number,
+        reason = 'collection:orphan-cleanup',
+    ): Promise<boolean> {
+        const deleted = await this.enqueueImageMutation(async () => {
+            const result =
+                await this.imageRepository.deleteImageAndRelationsIfOrphan(
+                    imageId,
+                );
+            if (!result.deleted || !result.image) {
+                return false;
+            }
+
+            this.promptCache.delete(imageId);
+            await this.cleanupDeletedImageFiles(
+                result.image,
+                result.sourcePath,
+            );
+            return true;
+        });
+
+        if (deleted) {
+            this.queueEmit(reason);
         }
 
         return deleted;
@@ -542,8 +559,36 @@ class LiveImagesService {
         });
     }
 
+    private async cleanupDeletedImageFiles(
+        image: Image,
+        linkedSourcePath: string | null,
+    ): Promise<void> {
+        const absolutePath = this.libraryManager.absolutePathFromImageUrl(
+            image.url,
+        );
+        if (absolutePath) {
+            await this.libraryManager.unlinkIfExists(absolutePath);
+        }
+
+        if (
+            this.config.deleteSourceOnDelete &&
+            linkedSourcePath &&
+            this.ingestMode === 'copy'
+        ) {
+            await this.libraryManager.unlinkIfExists(linkedSourcePath);
+        }
+    }
+
     private enqueueImageMutation<T>(task: () => Promise<T>): Promise<T> {
-        const run = this.imageMutationQueue.then(task, task);
+        if (this.imageMutationContext.getStore()) {
+            return task();
+        }
+
+        const runTaskInContext = () => this.imageMutationContext.run(true, task);
+        const run = this.imageMutationQueue.then(
+            runTaskInContext,
+            runTaskInContext,
+        );
         this.imageMutationQueue = run.then(
             () => undefined,
             () => undefined,

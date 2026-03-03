@@ -514,35 +514,36 @@ export const CollectionResolvers: IResolvers = {
         deleteCollection: async (_, { id }: Collection) => {
             id = Number(id);
 
-            const target = await models.collection.findUnique({
-                where: {
-                    id,
-                },
-                select: {
-                    id: true,
-                    imageId: true,
-                },
+            const imageId = await models.$transaction(async (tx) => {
+                const target = await tx.collection.findUnique({
+                    where: {
+                        id,
+                    },
+                    select: {
+                        id: true,
+                        imageId: true,
+                    },
+                });
+
+                if (!target) {
+                    throw new Error('Collection not found');
+                }
+
+                await tx.collection.delete({
+                    where: {
+                        id: target.id,
+                    },
+                });
+
+                return target.imageId;
             });
 
-            if (!target) {
-                throw new Error('Collection not found');
-            }
+            const deletedOrphan = await liveImagesService.deleteImageIfOrphan(
+                imageId,
+                'gql:deleteCollection',
+            );
 
-            await models.collection.delete({
-                where: {
-                    id: target.id,
-                },
-            });
-
-            const remains = await models.collection.count({
-                where: {
-                    imageId: target.imageId,
-                },
-            });
-
-            if (remains === 0) {
-                await liveImagesService.deleteImage(target.imageId);
-            } else {
+            if (!deletedOrphan) {
                 liveImagesService.notifyCollectionsChanged(
                     'gql:deleteCollection',
                 );

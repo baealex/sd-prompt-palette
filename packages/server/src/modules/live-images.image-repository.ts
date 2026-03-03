@@ -33,6 +33,12 @@ const isRetryableSqliteWriteError = (error: unknown): boolean => {
     );
 };
 
+interface DeleteImageAndRelationsIfOrphanResult {
+    deleted: boolean;
+    image: Image | null;
+    sourcePath: string | null;
+}
+
 export class LiveImagesImageRepository {
     async countImages(): Promise<number> {
         return models.image.count();
@@ -139,6 +145,62 @@ export class LiveImagesImageRepository {
             await tx.image.delete({
                 where: { id: imageId },
             });
+        });
+    }
+
+    async deleteImageAndRelationsIfOrphan(
+        imageId: number,
+    ): Promise<DeleteImageAndRelationsIfOrphanResult> {
+        return models.$transaction(async (tx) => {
+            const image = await tx.image.findUnique({
+                where: { id: imageId },
+            });
+            if (!image) {
+                return {
+                    deleted: false,
+                    image: null,
+                    sourcePath: null,
+                };
+            }
+
+            const linkedCollectionCount = await tx.collection.count({
+                where: { imageId },
+            });
+            if (linkedCollectionCount > 0) {
+                return {
+                    deleted: false,
+                    image,
+                    sourcePath: null,
+                };
+            }
+
+            const sourceLink = await tx.liveSyncSourceLink.findUnique({
+                where: { imageId },
+                select: { sourcePath: true },
+            });
+
+            await tx.collection.deleteMany({
+                where: { imageId },
+            });
+            await tx.keyword.updateMany({
+                where: { imageId },
+                data: { imageId: null },
+            });
+            await tx.liveSyncSourceLink.deleteMany({
+                where: { imageId },
+            });
+            await tx.imageMeta.deleteMany({
+                where: { imageId },
+            });
+            await tx.image.delete({
+                where: { id: imageId },
+            });
+
+            return {
+                deleted: true,
+                image,
+                sourcePath: sourceLink?.sourcePath || null,
+            };
         });
     }
 
