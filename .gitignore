@@ -3,6 +3,6 @@
 /assets
 .npm-cache
 node_modules
-/docs/plan/
+/docs/private/
 .tmp*
 .claude/settings.local.json
