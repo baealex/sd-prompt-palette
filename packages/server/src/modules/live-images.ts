@@ -56,6 +56,10 @@ class LiveImagesService {
     private emitTimer: NodeJS.Timeout | null = null;
     private pendingEmitReason = 'init';
     private imageMutationQueue: Promise<void> = Promise.resolve();
+    private activeSyncRuns = 0;
+    private syncReason: string | null = null;
+    private syncScanned: number | null = null;
+    private syncUpdatedAt = Date.now();
 
     private readonly defaultWatchDir = path.resolve('watch');
     private readonly configRepository = new LiveImagesConfigRepository();
@@ -123,6 +127,10 @@ class LiveImagesService {
             enabled: this.config.enabled,
             watchersRunning: Boolean(this.sourceWatcher && this.libraryWatcher),
             initialized: this.initialized,
+            syncing: this.activeSyncRuns > 0,
+            syncReason: this.syncReason,
+            syncScanned: this.syncScanned,
+            syncUpdatedAt: this.syncUpdatedAt,
             updatedAt: this.config.updatedAt,
         };
     }
@@ -208,8 +216,9 @@ class LiveImagesService {
                 await this.imageRepository.readSourceLink(imageId);
             await this.libraryManager.deleteImageRecord(imageId);
 
-            const absolutePath =
-                this.libraryManager.absolutePathFromImageUrl(image.url);
+            const absolutePath = this.libraryManager.absolutePathFromImageUrl(
+                image.url,
+            );
             if (absolutePath) {
                 await this.libraryManager.unlinkIfExists(absolutePath);
             }
@@ -301,9 +310,26 @@ class LiveImagesService {
     }
 
     async syncNow(reason = 'api:sync'): Promise<{ scanned: number }> {
-        const scanned = await this.syncWatchDirectory(reason);
-        this.queueEmit(reason);
-        return { scanned };
+        this.activeSyncRuns += 1;
+        this.syncReason = reason;
+        this.syncScanned = null;
+        this.syncUpdatedAt = Date.now();
+        this.emitStatus(`${reason}:start`);
+
+        try {
+            const scanned = await this.syncWatchDirectory(reason);
+            this.syncScanned = scanned;
+            this.syncUpdatedAt = Date.now();
+            return { scanned };
+        } finally {
+            this.activeSyncRuns = Math.max(0, this.activeSyncRuns - 1);
+            if (this.activeSyncRuns === 0) {
+                this.syncReason = null;
+            }
+            this.syncUpdatedAt = Date.now();
+            this.emitStatus(`${reason}:end`);
+            this.queueEmit(reason);
+        }
     }
 
     private registerSocketHandlers(): void {
@@ -335,12 +361,14 @@ class LiveImagesService {
         await this.stopWatchers();
 
         if (!this.config.enabled) {
+            this.emitStatus(reason);
             return;
         }
 
         await fs.promises.mkdir(this.watchDirPath, { recursive: true });
         await fs.promises.mkdir(this.imageBaseDirPath, { recursive: true });
         this.startWatchers();
+        this.emitStatus(reason);
         this.queueEmit(reason);
     }
 
@@ -358,10 +386,16 @@ class LiveImagesService {
             watchDirPath: this.watchDirPath,
             imageBaseDirPath: this.imageBaseDirPath,
             onSourceAdd: (absolutePath) => {
-                void this.ingestSourceFile(absolutePath, 'watch:add');
+                void this.ingestSourceFile({
+                    sourcePath: absolutePath,
+                    reason: 'watch:add',
+                });
             },
             onSourceChange: (absolutePath) => {
-                void this.ingestSourceFile(absolutePath, 'watch:change');
+                void this.ingestSourceFile({
+                    sourcePath: absolutePath,
+                    reason: 'watch:change',
+                });
             },
             onSourceError: (error: unknown) => {
                 logger.error(
@@ -397,6 +431,17 @@ class LiveImagesService {
         }, 180);
     }
 
+    private emitStatus(reason: string): void {
+        if (!this.io) {
+            return;
+        }
+
+        this.io.emit('live:status', {
+            reason,
+            ...this.getStatus(),
+        });
+    }
+
     private async emitImagesUpdate(reason: string): Promise<void> {
         if (!this.io) {
             return;
@@ -419,10 +464,15 @@ class LiveImagesService {
         }
     }
 
-    private async ingestSourceFile(
-        sourcePath: string,
-        reason: string,
-    ): Promise<void> {
+    private async ingestSourceFile({
+        sourcePath,
+        reason,
+        skipQueue = false,
+    }: {
+        sourcePath: string;
+        reason: string;
+        skipQueue?: boolean;
+    }): Promise<void> {
         if (
             isIgnoredSourcePath({
                 targetPath: sourcePath,
@@ -438,10 +488,9 @@ class LiveImagesService {
 
         this.sourceProcessing.add(sourcePath);
         try {
-            const changed = await this.enqueueImageMutation(async () => {
-                const stat = await this.libraryManager.readStatIfExists(
-                    sourcePath,
-                );
+            const run = async () => {
+                const stat =
+                    await this.libraryManager.readStatIfExists(sourcePath);
                 if (!stat || !stat.isFile() || !isImageFileName(sourcePath)) {
                     return false;
                 }
@@ -467,7 +516,11 @@ class LiveImagesService {
 
                 this.sourceFingerprint.set(sourcePath, fingerprint);
                 return ingestResult.changed;
-            });
+            };
+
+            const changed = skipQueue
+                ? await run()
+                : await this.enqueueImageMutation(run);
 
             if (changed) {
                 this.queueEmit(reason);
@@ -493,7 +546,8 @@ class LiveImagesService {
                 return false;
             }
 
-            const url = this.libraryManager.imageUrlFromAbsolutePath(targetPath);
+            const url =
+                this.libraryManager.imageUrlFromAbsolutePath(targetPath);
             if (!url) {
                 return false;
             }
@@ -525,7 +579,11 @@ class LiveImagesService {
 
             for (const sourcePath of entries) {
                 try {
-                    await this.ingestSourceFile(sourcePath, reason);
+                    await this.ingestSourceFile({
+                        sourcePath,
+                        reason,
+                        skipQueue: true,
+                    });
                     scanned += 1;
                 } catch (error: unknown) {
                     if (hasErrorCode(error, 'ENOENT')) {

@@ -1,18 +1,28 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import exifr from 'exifr';
 
 import {
     absolutePathFromImageUrl,
     createDestinationPath,
+    deriveCreatedAt,
     extractPromptParts,
     imageUrlFromAbsolutePath,
     moveFile,
     normalizeIngestMode,
+    resolveGeneratedAt,
     sanitizeLimit,
     sanitizePage,
 } from './live-images.utils';
 import { MAX_LIMIT } from './live-images.types';
+
+jest.mock('exifr', () => ({
+    __esModule: true,
+    default: {
+        parse: jest.fn(),
+    },
+}));
 
 function withCode(message: string, code: string): NodeJS.ErrnoException {
     const error = new Error(message) as NodeJS.ErrnoException;
@@ -21,6 +31,107 @@ function withCode(message: string, code: string): NodeJS.ErrnoException {
 }
 
 describe('live-images.utils business logic', () => {
+    const mockedExifrParse = exifr.parse as jest.MockedFunction<
+        typeof exifr.parse
+    >;
+
+    const createStatsLike = (input: {
+        atime?: Date;
+        mtime: Date;
+        ctime?: Date;
+        birthtime: Date;
+    }): fs.Stats => {
+        const atime = input.atime || input.mtime;
+        const ctime = input.ctime || input.mtime;
+        return {
+            atime,
+            mtime: input.mtime,
+            ctime,
+            birthtime: input.birthtime,
+            atimeMs: atime.getTime(),
+            mtimeMs: input.mtime.getTime(),
+            ctimeMs: ctime.getTime(),
+            birthtimeMs: input.birthtime.getTime(),
+        } as fs.Stats;
+    };
+
+    describe('timestamp resolution', () => {
+        afterEach(() => {
+            mockedExifrParse.mockReset();
+            jest.restoreAllMocks();
+        });
+
+        it('prefers EXIF date for createdAt when available', async () => {
+            // Arrange
+            const exifDate = new Date('2021-04-03T02:01:00.000Z');
+            const stats = createStatsLike({
+                mtime: new Date('2024-04-01T11:00:00.000Z'),
+                birthtime: new Date('2026-03-08T00:00:00.000Z'),
+            });
+            mockedExifrParse.mockResolvedValueOnce({
+                DateTimeOriginal: exifDate,
+            });
+
+            // Act
+            const createdAt = await deriveCreatedAt('dummy-file.png', stats);
+
+            // Assert
+            expect(createdAt.toISOString()).toBe(exifDate.toISOString());
+        });
+
+        it('falls back to mtime before birthtime when EXIF is missing', async () => {
+            // Arrange
+            const mtime = new Date('2020-01-02T03:04:05.000Z');
+            const stats = createStatsLike({
+                mtime,
+                birthtime: new Date('2026-03-08T00:00:00.000Z'),
+            });
+            mockedExifrParse.mockRejectedValueOnce(new Error('parse failed'));
+
+            // Act
+            const createdAt = await deriveCreatedAt('dummy-file.png', stats);
+
+            // Assert
+            expect(createdAt.toISOString()).toBe(mtime.toISOString());
+        });
+
+        it('prefers mtime when EXIF date is newer than file time', async () => {
+            // Arrange
+            const mtime = new Date('2020-01-02T03:04:05.000Z');
+            const stats = createStatsLike({
+                mtime,
+                birthtime: new Date('2026-03-08T00:00:00.000Z'),
+            });
+            mockedExifrParse.mockResolvedValueOnce({
+                DateTimeOriginal: new Date('2026-03-08T12:34:56.000Z'),
+            });
+
+            // Act
+            const createdAt = await deriveCreatedAt('dummy-file.png', stats);
+
+            // Assert
+            expect(createdAt.toISOString()).toBe(mtime.toISOString());
+        });
+
+        it('resolves generatedAt from the earliest available file timestamp', () => {
+            // Arrange
+            const earliestAtime = new Date('2018-12-31T10:20:30.000Z');
+            const mtime = new Date('2019-12-31T10:20:30.000Z');
+            const stats = createStatsLike({
+                atime: earliestAtime,
+                mtime,
+                ctime: new Date('2024-01-01T00:00:00.000Z'),
+                birthtime: new Date('2026-03-08T00:00:00.000Z'),
+            });
+
+            // Act
+            const generatedAt = resolveGeneratedAt(stats);
+
+            // Assert
+            expect(generatedAt.toISOString()).toBe(earliestAtime.toISOString());
+        });
+    });
+
     describe('pagination and config sanitizing', () => {
         it('clamps and normalizes limit values', () => {
             // Arrange
@@ -49,7 +160,10 @@ describe('live-images.utils business logic', () => {
 
             // Act
             const parsedFloatingPage = sanitizePage(floatingPage);
-            const fallbackFromNegative = sanitizePage(invalidPage, fallbackPage);
+            const fallbackFromNegative = sanitizePage(
+                invalidPage,
+                fallbackPage,
+            );
             const fallbackFromNaN = sanitizePage(notANumberPage, 2);
 
             // Assert
@@ -138,11 +252,22 @@ Steps: 25, Sampler: Euler a
 
         it('encodes URL paths and resolves back to original absolute path', () => {
             // Arrange
-            const absolutePath = path.resolve(imageBaseDirPath, '2026', '2', 'poster #1.png');
+            const absolutePath = path.resolve(
+                imageBaseDirPath,
+                '2026',
+                '2',
+                'poster #1.png',
+            );
 
             // Act
-            const url = imageUrlFromAbsolutePath(imageBaseDirPath, absolutePath);
-            const resolvedAbsolutePath = absolutePathFromImageUrl(imageBaseDirPath, url as string);
+            const url = imageUrlFromAbsolutePath(
+                imageBaseDirPath,
+                absolutePath,
+            );
+            const resolvedAbsolutePath = absolutePathFromImageUrl(
+                imageBaseDirPath,
+                url as string,
+            );
 
             // Assert
             expect(url).toBe('/assets/images/2026/2/poster%20%231.png');
@@ -156,9 +281,18 @@ Steps: 25, Sampler: Euler a
             const wrongPrefixPath = '/api/images/a.png';
 
             // Act
-            const fromEncodedTraversal = absolutePathFromImageUrl(imageBaseDirPath, encodedTraversalPath);
-            const fromPlainTraversal = absolutePathFromImageUrl(imageBaseDirPath, plainTraversalPath);
-            const fromWrongPrefix = absolutePathFromImageUrl(imageBaseDirPath, wrongPrefixPath);
+            const fromEncodedTraversal = absolutePathFromImageUrl(
+                imageBaseDirPath,
+                encodedTraversalPath,
+            );
+            const fromPlainTraversal = absolutePathFromImageUrl(
+                imageBaseDirPath,
+                plainTraversalPath,
+            );
+            const fromWrongPrefix = absolutePathFromImageUrl(
+                imageBaseDirPath,
+                wrongPrefixPath,
+            );
 
             // Assert
             expect(fromEncodedTraversal).toBeNull();
@@ -171,7 +305,9 @@ Steps: 25, Sampler: Euler a
         let tempDirPath = '';
 
         beforeEach(async () => {
-            tempDirPath = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'ocean-palette-live-images-'));
+            tempDirPath = await fs.promises.mkdtemp(
+                path.join(os.tmpdir(), 'ocean-palette-live-images-'),
+            );
         });
 
         afterEach(async () => {
@@ -191,7 +327,7 @@ Steps: 25, Sampler: Euler a
                 '2026',
                 '2',
                 '15',
-                `${createdAt.getTime()}-${serverTimeToken}-12abcdef3456.png`
+                `${createdAt.getTime()}-${serverTimeToken}-12abcdef3456.png`,
             );
 
             // Act
@@ -215,7 +351,7 @@ Steps: 25, Sampler: Euler a
                 '2026',
                 '2',
                 '15',
-                `${createdAt.getTime()}-${serverTimeToken}-12abcdef3456_1.png`
+                `${createdAt.getTime()}-${serverTimeToken}-12abcdef3456_1.png`,
             );
 
             // Assert
@@ -231,11 +367,14 @@ Steps: 25, Sampler: Euler a
 
         it('falls back to copy/unlink when rename fails with EXDEV', async () => {
             // Arrange
-            const renameSpy = jest.spyOn(fs.promises, 'rename')
+            const renameSpy = jest
+                .spyOn(fs.promises, 'rename')
                 .mockRejectedValueOnce(withCode('cross-device move', 'EXDEV'));
-            const copySpy = jest.spyOn(fs.promises, 'copyFile')
+            const copySpy = jest
+                .spyOn(fs.promises, 'copyFile')
                 .mockResolvedValueOnce();
-            const unlinkSpy = jest.spyOn(fs.promises, 'unlink')
+            const unlinkSpy = jest
+                .spyOn(fs.promises, 'unlink')
                 .mockResolvedValueOnce();
 
             // Act

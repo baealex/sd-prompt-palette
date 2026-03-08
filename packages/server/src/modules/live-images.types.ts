@@ -89,6 +89,10 @@ export interface LiveImagesStatus {
     enabled: boolean;
     watchersRunning: boolean;
     initialized: boolean;
+    syncing: boolean;
+    syncReason: string | null;
+    syncScanned: number | null;
+    syncUpdatedAt: number;
     updatedAt: number;
 }
 

@@ -50,11 +50,12 @@ export interface ImageUploadResponse {
     generatedAt?: string | null;
 }
 
-const escapeGraphQLString = (value: string) => value
-    .replace(/\\/g, '\\\\')
-    .replace(/"/g, '\\"')
-    .replace(/\n/g, '\\n')
-    .replace(/\r/g, '\\r');
+const escapeGraphQLString = (value: string) =>
+    value
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"')
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '\\r');
 
 export async function graphQLRequest<T extends string, K>(
     query: string,
@@ -67,14 +68,19 @@ export async function graphQLRequest<T extends string, K>(
     });
 
     if (data.errors && data.errors.length > 0) {
-        throw new Error(data.errors.map((error: GraphQLError) => error.message).join('\n'));
+        throw new Error(
+            data.errors.map((error: GraphQLError) => error.message).join('\n'),
+        );
     }
 
     return data;
 }
 
 export function getCategories() {
-    return graphQLRequest<'allCategories', Pick<Category, 'id' | 'name' | 'keywords' | 'order'>[]>(`
+    return graphQLRequest<
+        'allCategories',
+        Pick<Category, 'id' | 'name' | 'keywords' | 'order'>[]
+    >(`
         query {
             allCategories {
                 id
@@ -98,7 +104,10 @@ export function getCategories() {
 }
 
 export function createCategory(data: { name: string }) {
-    return graphQLRequest<'createCategory', Pick<Category, 'id' | 'name' | 'order'>>(
+    return graphQLRequest<
+        'createCategory',
+        Pick<Category, 'id' | 'name' | 'order'>
+    >(
         `
         mutation($name: String!) {
             createCategory(name: $name) {
@@ -149,7 +158,10 @@ export function deleteCategory(data: { id: number }) {
 }
 
 export function createKeyword(data: { categoryId: number; name: string }) {
-    return graphQLRequest<'createKeyword', Pick<Keyword, 'id' | 'name' | 'categories'>>(
+    return graphQLRequest<
+        'createKeyword',
+        Pick<Keyword, 'id' | 'name' | 'categories'>
+    >(
         `
         mutation($categoryId: ID!, $name: String!) {
             createKeyword(categoryId: $categoryId, name: $name) {
@@ -166,7 +178,11 @@ export function createKeyword(data: { categoryId: number; name: string }) {
     );
 }
 
-export function updateKeywordOrder(data: { keywordId: number; categoryId: number; order: number }) {
+export function updateKeywordOrder(data: {
+    keywordId: number;
+    categoryId: number;
+    order: number;
+}) {
     return graphQLRequest<'updateKeywordOrder', boolean>(
         `
         mutation($keywordId: ID!, $categoryId: ID!, $order: Int!) {
@@ -196,7 +212,19 @@ export function deleteKeyword(data: { keywordId: number; categoryId: number }) {
 }
 
 export function getCollection(data: { id: number }) {
-    return graphQLRequest<'collection', Pick<Collection, 'id' | 'title' | 'prompt' | 'negativePrompt' | 'image' | 'generatedMetadata' | 'generatedAt'>>(
+    return graphQLRequest<
+        'collection',
+        Pick<
+            Collection,
+            | 'id'
+            | 'title'
+            | 'prompt'
+            | 'negativePrompt'
+            | 'image'
+            | 'generatedMetadata'
+            | 'generatedAt'
+        >
+    >(
         `
         query($id: ID!) {
             collection(id: $id) {
@@ -253,13 +281,19 @@ export function getCollectionModelOptions() {
     `);
 }
 
-interface GetCollectionsRequestData extends OrderRequest, PaginationRequest, SearchRequest {
+interface GetCollectionsRequestData
+    extends OrderRequest,
+        PaginationRequest,
+        SearchRequest {
     page?: number;
     limit?: number;
 }
 
 interface GetCollectionsResponse {
-    collections: Pick<Collection, 'id' | 'image' | 'title' | 'prompt' | 'negativePrompt'>[];
+    collections: Pick<
+        Collection,
+        'id' | 'image' | 'title' | 'prompt' | 'negativePrompt'
+    >[];
     pagination: Pagination;
 }
 
@@ -339,8 +373,16 @@ export function getCollections(data: GetCollectionsRequestData = {}) {
     );
 }
 
-export function createCollection(data: { title: string; prompt: string; negativePrompt: string; imageId: number }) {
-    return graphQLRequest<'createCollection', Pick<Collection, 'id' | 'prompt' | 'negativePrompt' | 'image'>>(
+export function createCollection(data: {
+    title: string;
+    prompt: string;
+    negativePrompt: string;
+    imageId: number;
+}) {
+    return graphQLRequest<
+        'createCollection',
+        Pick<Collection, 'id' | 'prompt' | 'negativePrompt' | 'image'>
+    >(
         `
         mutation($title: String!, $prompt: String!, $negativePrompt: String!, $imageId: ID!) {
             createCollection(title: $title, prompt: $prompt, negativePrompt: $negativePrompt, imageId: $imageId) {
@@ -393,7 +435,10 @@ export function deleteCollection(data: { id: number }) {
     );
 }
 
-export function createSampleImage(data: { imageId: number; keywordId: number }) {
+export function createSampleImage(data: {
+    imageId: number;
+    keywordId: number;
+}) {
     return graphQLRequest<'createSampleImage', boolean>(
         `
         mutation($imageId: ID!, $keywordId: ID!) {
@@ -473,6 +518,7 @@ export function parseImageMetadata(data: { image: string }) {
 
 export interface LiveStatusResponse {
     ok: boolean;
+    reason?: string;
     config?: LiveConfig;
     watchDir: string;
     libraryDir: string;
@@ -481,6 +527,10 @@ export interface LiveStatusResponse {
     enabled?: boolean;
     watchersRunning?: boolean;
     initialized: boolean;
+    syncing?: boolean;
+    syncReason?: string | null;
+    syncScanned?: number | null;
+    syncUpdatedAt?: number;
     updatedAt?: number;
 }
 
@@ -563,7 +613,12 @@ export function listLiveDirectories(data: { path?: string } = {}) {
 }
 
 export function pickLiveDirectory() {
-    return axios.request<{ ok: boolean; path?: string; canceled?: boolean; message?: string }>({
+    return axios.request<{
+        ok: boolean;
+        path?: string;
+        canceled?: boolean;
+        message?: string;
+    }>({
         method: 'POST',
         url: '/api/live/config/pick-dir',
     });

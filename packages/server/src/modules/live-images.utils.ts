@@ -37,6 +37,11 @@ const EXIF_DATE_FIELDS = [
     'DateTimeDigitized',
     'DateTime',
     'ModifyDate',
+    'MediaCreateDate',
+    'MediaModifyDate',
+    'TrackCreateDate',
+    'TrackModifyDate',
+    'CreationDate',
 ] as const;
 
 type ExifDateField = (typeof EXIF_DATE_FIELDS)[number];
@@ -53,7 +58,10 @@ export function normalizeIngestMode(input: unknown): IngestMode {
     return 'copy';
 }
 
-export function sanitizeLimit(value: unknown, fallback = DEFAULT_LIMIT): number {
+export function sanitizeLimit(
+    value: unknown,
+    fallback = DEFAULT_LIMIT,
+): number {
     const parsed = Number(value);
     if (!Number.isFinite(parsed) || parsed <= 0) {
         return fallback;
@@ -75,7 +83,11 @@ function toPosixPath(targetPath: string): string {
 
 function isPathInside(parentPath: string, childPath: string): boolean {
     const relative = path.relative(parentPath, childPath);
-    return Boolean(relative) && !relative.startsWith('..') && !path.isAbsolute(relative);
+    return (
+        Boolean(relative) &&
+        !relative.startsWith('..') &&
+        !path.isAbsolute(relative)
+    );
 }
 
 function toValidDate(input: unknown): Date | null {
@@ -84,6 +96,85 @@ function toValidDate(input: unknown): Date | null {
         return null;
     }
     return date;
+}
+
+function toValidTimestamp(input: unknown): number | null {
+    if (typeof input === 'number' && Number.isFinite(input) && input > 0) {
+        return input;
+    }
+
+    const parsedDate = toValidDate(input);
+    if (!parsedDate) {
+        return null;
+    }
+
+    const timestamp = parsedDate.getTime();
+    if (!Number.isFinite(timestamp) || timestamp <= 0) {
+        return null;
+    }
+
+    return timestamp;
+}
+
+function toEarliestDateFromTimestamps(timestamps: number[]): Date {
+    if (timestamps.length === 0) {
+        return new Date();
+    }
+
+    let minimum = timestamps[0];
+    for (const timestamp of timestamps.slice(1)) {
+        if (timestamp < minimum) {
+            minimum = timestamp;
+        }
+    }
+    return new Date(minimum);
+}
+
+function collectStatsTimestamps(stats: fs.Stats): number[] {
+    const candidates: number[] = [];
+    const addCandidate = (value: unknown) => {
+        const timestamp = toValidTimestamp(value);
+        if (timestamp !== null) {
+            candidates.push(timestamp);
+        }
+    };
+
+    addCandidate(stats.atime);
+    addCandidate(stats.mtime);
+    addCandidate(stats.ctime);
+    addCandidate(stats.birthtime);
+    addCandidate(stats.atimeMs);
+    addCandidate(stats.mtimeMs);
+    addCandidate(stats.ctimeMs);
+    addCandidate(stats.birthtimeMs);
+
+    return Array.from(new Set(candidates));
+}
+
+function resolveEarliestDateFromStats(stats: fs.Stats): Date {
+    return toEarliestDateFromTimestamps(collectStatsTimestamps(stats));
+}
+
+async function collectExifTimestamps(filePath: string): Promise<number[]> {
+    try {
+        const metadata = (await exifr.parse(filePath, {
+            pick: [...EXIF_DATE_FIELDS],
+        })) as ExifDateMetadata | null;
+        if (!metadata) {
+            return [];
+        }
+
+        const candidates: number[] = [];
+        for (const field of EXIF_DATE_FIELDS) {
+            const timestamp = toValidTimestamp(metadata[field]);
+            if (timestamp !== null) {
+                candidates.push(timestamp);
+            }
+        }
+        return Array.from(new Set(candidates));
+    } catch {
+        return [];
+    }
 }
 
 export async function hashFile(filePath: string): Promise<string> {
@@ -97,7 +188,10 @@ export async function hashFile(filePath: string): Promise<string> {
     });
 }
 
-export async function moveFile(fromPath: string, toPath: string): Promise<void> {
+export async function moveFile(
+    fromPath: string,
+    toPath: string,
+): Promise<void> {
     try {
         await fs.promises.rename(fromPath, toPath);
     } catch (error: unknown) {
@@ -110,41 +204,20 @@ export async function moveFile(fromPath: string, toPath: string): Promise<void> 
     }
 }
 
-export async function deriveCreatedAt(filePath: string, stats: fs.Stats): Promise<Date> {
-    try {
-        const metadata = await exifr.parse(filePath, {
-            pick: [...EXIF_DATE_FIELDS],
-        }) as ExifDateMetadata | null;
-
-        if (metadata) {
-            for (const field of EXIF_DATE_FIELDS) {
-                const date = toValidDate(metadata[field]);
-                if (date) {
-                    return date;
-                }
-            }
-        }
-    } catch {
-        // noop
-    }
-
-    const birthTimeMs = stats.birthtime?.getTime?.() || 0;
-    if (Number.isFinite(birthTimeMs) && birthTimeMs > 0) {
-        return new Date(birthTimeMs);
-    }
-    return new Date(stats.mtime.getTime());
+export async function deriveCreatedAt(
+    filePath: string,
+    stats: fs.Stats,
+): Promise<Date> {
+    const statsTimestamps = collectStatsTimestamps(stats);
+    const exifTimestamps = await collectExifTimestamps(filePath);
+    return toEarliestDateFromTimestamps([
+        ...statsTimestamps,
+        ...exifTimestamps,
+    ]);
 }
 
 export function resolveGeneratedAt(stats: fs.Stats): Date {
-    const modifiedAt = new Date(stats.mtime.getTime());
-    const birthTimeMs = stats.birthtime?.getTime?.() || 0;
-    const createdAtCandidate =
-        Number.isFinite(birthTimeMs) && birthTimeMs > 0
-            ? new Date(birthTimeMs)
-            : modifiedAt;
-    return createdAtCandidate.getTime() > modifiedAt.getTime()
-        ? modifiedAt
-        : createdAtCandidate;
+    return resolveEarliestDateFromStats(stats);
 }
 
 export function decodeFileNameFromUrl(url: string): string {
@@ -169,13 +242,22 @@ export function extractPromptParts(rawPromptText: string): PromptParts {
     if (comfyPositiveStart >= 0 || comfyNegativeStart >= 0) {
         const positiveText =
             comfyPositiveStart >= 0 && comfyNegativeStart > comfyPositiveStart
-                ? text.slice(comfyPositiveStart + 'Positive Prompt'.length, comfyNegativeStart).trim()
+                ? text
+                      .slice(
+                          comfyPositiveStart + 'Positive Prompt'.length,
+                          comfyNegativeStart,
+                      )
+                      .trim()
                 : comfyPositiveStart >= 0
-                    ? text.slice(comfyPositiveStart + 'Positive Prompt'.length).trim()
-                    : '';
+                  ? text
+                        .slice(comfyPositiveStart + 'Positive Prompt'.length)
+                        .trim()
+                  : '';
         const negativeText =
             comfyNegativeStart >= 0
-                ? text.slice(comfyNegativeStart + 'Negative Prompt'.length).trim()
+                ? text
+                      .slice(comfyNegativeStart + 'Negative Prompt'.length)
+                      .trim()
                 : '';
 
         return {
@@ -188,7 +270,7 @@ export function extractPromptParts(rawPromptText: string): PromptParts {
     if (negativePromptMatch && typeof negativePromptMatch.index === 'number') {
         const promptText = text.slice(0, negativePromptMatch.index).trim();
         const afterNegativeLabel = text.slice(
-            negativePromptMatch.index + negativePromptMatch[0].length
+            negativePromptMatch.index + negativePromptMatch[0].length,
         );
         const stepsMatch = afterNegativeLabel.match(/[\r\n]Steps:\s*/i);
         const negativePromptText = stepsMatch
@@ -207,7 +289,10 @@ export function extractPromptParts(rawPromptText: string): PromptParts {
     };
 }
 
-export function imageUrlFromAbsolutePath(imageBaseDirPath: string, absolutePath: string): string | null {
+export function imageUrlFromAbsolutePath(
+    imageBaseDirPath: string,
+    absolutePath: string,
+): string | null {
     const relative = path.relative(imageBaseDirPath, absolutePath);
     if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) {
         return null;
@@ -221,7 +306,10 @@ export function imageUrlFromAbsolutePath(imageBaseDirPath: string, absolutePath:
     return `/assets/images/${parts.join('/')}`;
 }
 
-export function absolutePathFromImageUrl(imageBaseDirPath: string, url: string): string | null {
+export function absolutePathFromImageUrl(
+    imageBaseDirPath: string,
+    url: string,
+): string | null {
     const prefix = '/assets/images/';
     if (!url.startsWith(prefix)) {
         return null;
@@ -240,7 +328,10 @@ export function absolutePathFromImageUrl(imageBaseDirPath: string, url: string):
         });
 
     const absolutePath = path.resolve(imageBaseDirPath, ...decodedParts);
-    if (absolutePath !== imageBaseDirPath && !isPathInside(imageBaseDirPath, absolutePath)) {
+    if (
+        absolutePath !== imageBaseDirPath &&
+        !isPathInside(imageBaseDirPath, absolutePath)
+    ) {
         return null;
     }
 
