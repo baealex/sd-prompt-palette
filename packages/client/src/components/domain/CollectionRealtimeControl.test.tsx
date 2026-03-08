@@ -1,9 +1,18 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+    act,
+    cleanup,
+    fireEvent,
+    render,
+    screen,
+    waitFor,
+} from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { LiveStatusResponse } from '~/api';
 import { getLiveConfig, syncLiveImages, updateLiveConfig } from '~/api';
 import { ToastProvider } from '~/components/ui/ToastProvider';
+import { useLiveCollectionsRealtime } from '~/features/collection/use-live-collections-realtime';
 
 import { CollectionRealtimeControl } from './CollectionRealtimeControl';
 
@@ -21,14 +30,21 @@ vi.mock('~/features/collection/use-live-collections-realtime', () => ({
 const mockedGetLiveConfig = vi.mocked(getLiveConfig);
 const mockedSyncLiveImages = vi.mocked(syncLiveImages);
 const mockedUpdateLiveConfig = vi.mocked(updateLiveConfig);
+const mockedUseLiveCollectionsRealtime = vi.mocked(useLiveCollectionsRealtime);
 
-const createConfig = (overrides: Partial<{
-    watchDir: string;
-    ingestMode: 'copy' | 'move';
-    deleteSourceOnDelete: boolean;
-    enabled: boolean;
-    updatedAt: number;
-}> = {}) => ({
+let latestStatusHandler:
+    | ((payload: Partial<LiveStatusResponse>) => void)
+    | null = null;
+
+const createConfig = (
+    overrides: Partial<{
+        watchDir: string;
+        ingestMode: 'copy' | 'move';
+        deleteSourceOnDelete: boolean;
+        enabled: boolean;
+        updatedAt: number;
+    }> = {},
+) => ({
     watchDir: '',
     ingestMode: 'copy' as const,
     deleteSourceOnDelete: false,
@@ -77,6 +93,10 @@ afterEach(() => {
 });
 
 beforeEach(() => {
+    latestStatusHandler = null;
+    mockedUseLiveCollectionsRealtime.mockImplementation((options = {}) => {
+        latestStatusHandler = options.onStatus || null;
+    });
     mockedSyncLiveImages.mockResolvedValue({
         data: { ok: true, scanned: 0 },
     } as never);
@@ -88,30 +108,79 @@ describe('CollectionRealtimeControl', () => {
 
         renderControl();
 
-        const toggle = await screen.findByRole('switch', { name: 'Auto Collect' });
+        const toggle = await screen.findByRole('switch', {
+            name: 'Auto Collect',
+        });
         expect(toggle).toHaveAttribute('aria-checked', 'false');
         fireEvent.click(toggle);
 
-        expect(await screen.findByText('Set a Watch Folder before enabling Auto Collect.')).toBeInTheDocument();
-        expect(await screen.findByText('Auto Collect Settings')).toBeInTheDocument();
+        expect(
+            await screen.findByText(
+                'Set a Watch Folder before enabling Auto Collect.',
+            ),
+        ).toBeInTheDocument();
+        expect(
+            await screen.findByText('Auto Collect Settings'),
+        ).toBeInTheDocument();
         expect(mockedUpdateLiveConfig).not.toHaveBeenCalled();
     });
 
     it('runs manual collect and shows success feedback', async () => {
-        mockGetLiveConfigOnce(createConfig({ watchDir: 'D:\\watch', enabled: true }));
+        mockGetLiveConfigOnce(
+            createConfig({ watchDir: 'D:\\watch', enabled: true }),
+        );
         mockedSyncLiveImages.mockResolvedValueOnce({
             data: { ok: true, scanned: 7 },
         } as never);
 
         renderControl();
 
-        const toggle = await screen.findByRole('switch', { name: 'Auto Collect' });
+        const toggle = await screen.findByRole('switch', {
+            name: 'Auto Collect',
+        });
         expect(toggle).toHaveAttribute('aria-checked', 'true');
         fireEvent.click(screen.getByRole('button', { name: 'Collect now' }));
 
         await waitFor(() => {
             expect(mockedSyncLiveImages).toHaveBeenCalledTimes(1);
         });
-        expect(await screen.findByText('Collect completed (7 scanned)')).toBeInTheDocument();
+        expect(
+            await screen.findByText('Collect completed (7 scanned)'),
+        ).toBeInTheDocument();
+    });
+
+    it('reflects realtime syncing status from socket events', async () => {
+        mockGetLiveConfigOnce(
+            createConfig({ watchDir: 'D:\\watch', enabled: true }),
+        );
+
+        renderControl();
+        await screen.findByRole('switch', { name: 'Auto Collect' });
+        expect(
+            screen.getByRole('button', { name: 'Collect now' }),
+        ).toBeEnabled();
+
+        act(() => {
+            latestStatusHandler?.({ syncing: true });
+        });
+
+        expect(
+            screen.getByRole('button', { name: 'Collecting...' }),
+        ).toBeDisabled();
+
+        act(() => {
+            latestStatusHandler?.({
+                syncing: false,
+                syncScanned: 11,
+                syncUpdatedAt: Date.now(),
+            });
+        });
+
+        expect(
+            screen.getByRole('button', { name: 'Collect now' }),
+        ).toBeEnabled();
+        expect(
+            screen.getByText(/Last sync scanned 11 files/),
+        ).toBeInTheDocument();
     });
 });

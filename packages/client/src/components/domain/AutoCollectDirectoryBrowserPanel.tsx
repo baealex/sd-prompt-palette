@@ -3,6 +3,7 @@ import type { KeyboardEvent } from 'react';
 
 import type { LiveDirectoryEntry } from '~/api';
 import { Button } from '~/components/ui/Button';
+import { Input } from '~/components/ui/Input';
 import { Notice } from '~/components/ui/Notice';
 import { ArrowUpIcon } from '~/icons';
 
@@ -12,7 +13,7 @@ interface AutoCollectDirectoryBrowserPanelProps {
     parentPath: string | null;
     roots: string[];
     entries: LiveDirectoryEntry[];
-    onLoadDirectories: (targetPath?: string) => void;
+    onLoadDirectories: (targetPath?: string) => Promise<void>;
     onUsePath: (path: string) => void;
 }
 
@@ -26,10 +27,27 @@ export const AutoCollectDirectoryBrowserPanel = ({
     onUsePath,
 }: AutoCollectDirectoryBrowserPanelProps) => {
     const [selectedPath, setSelectedPath] = useState<string | null>(null);
+    const [entryQuery, setEntryQuery] = useState('');
+    const [localNavigating, setLocalNavigating] = useState(false);
+    const [navigatingPath, setNavigatingPath] = useState<string | null>(null);
+
+    const normalizedEntryQuery = entryQuery.trim().toLowerCase();
+    const visibleEntries = useMemo(() => {
+        if (normalizedEntryQuery.length === 0) {
+            return entries;
+        }
+
+        return entries.filter((entry) =>
+            entry.name.toLowerCase().includes(normalizedEntryQuery),
+        );
+    }, [entries, normalizedEntryQuery]);
 
     useEffect(() => {
-        if (!selectedPath || !entries.some((entry) => entry.path === selectedPath)) {
-            setSelectedPath(entries[0]?.path ?? null);
+        if (
+            !selectedPath ||
+            !visibleEntries.some((entry) => entry.path === selectedPath)
+        ) {
+            setSelectedPath(visibleEntries[0]?.path ?? null);
         }
     }, [currentPath, entries, selectedPath]);
     const selectedIndex = useMemo(
@@ -126,24 +144,38 @@ export const AutoCollectDirectoryBrowserPanel = ({
     return (
         <div className="grid gap-3 rounded-token-md border border-line bg-surface-raised p-3 shadow-surface">
             <div className="grid gap-2">
-                <div className="text-xs font-semibold uppercase tracking-[0.06em] text-ink-muted">Current Folder</div>
+                <div className="text-xs font-semibold uppercase tracking-[0.06em] text-ink-muted">
+                    Current Folder
+                </div>
                 <div className="flex flex-wrap items-center gap-1 rounded-token-sm border border-line bg-surface-muted p-1">
-                    {breadcrumbs.length > 0 ? breadcrumbs.map((crumb, index) => (
-                        <div key={`${crumb.path}-${crumb.label}`} className="flex items-center">
-                            {index > 0 ? <span className="px-1 text-xs text-ink-subtle">/</span> : null}
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="!h-11 !px-2 text-xs"
-                                onClick={() => {
-                                    onLoadDirectories(crumb.path);
-                                }}
+                    {breadcrumbs.length > 0 ? (
+                        breadcrumbs.map((crumb, index) => (
+                            <div
+                                key={`${crumb.path}-${crumb.label}`}
+                                className="flex items-center"
                             >
-                                {crumb.label}
-                            </Button>
-                        </div>
-                    )) : (
-                        <span className="px-2 py-1 text-xs text-ink-muted">No folder selected</span>
+                                {index > 0 ? (
+                                    <span className="px-1 text-xs text-ink-subtle">
+                                        /
+                                    </span>
+                                ) : null}
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="!h-11 !px-2 text-xs"
+                                    onClick={() => {
+                                        void navigateToDirectory(crumb.path);
+                                    }}
+                                    disabled={busy}
+                                >
+                                    {crumb.label}
+                                </Button>
+                            </div>
+                        ))
+                    ) : (
+                        <span className="px-2 py-1 text-xs text-ink-muted">
+                            No folder selected
+                        </span>
                     )}
                 </div>
             </div>
@@ -165,58 +197,90 @@ export const AutoCollectDirectoryBrowserPanel = ({
                             if (!parentPath || loading) {
                                 return;
                             }
-                            onLoadDirectories(parentPath);
+                            void navigateToDirectory(parentPath);
                         }}
-                        disabled={!parentPath || loading}
+                        disabled={!parentPath || busy}
                     >
                         <ArrowUpIcon width={14} height={14} />
-                        Up
+                        Up One Level
                     </Button>
                     <Button
                         variant="secondary"
                         size="md"
                         onClick={() => {
-                            onLoadDirectories(currentPath || undefined);
+                            void navigateToDirectory(currentPath || undefined);
                         }}
-                        disabled={loading}
+                        disabled={busy}
                     >
                         Refresh
                     </Button>
                 </div>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-[200px_minmax(0,1fr)]">
+            <div className="grid gap-3 md:grid-cols-[220px_minmax(0,1fr)] lg:grid-cols-[240px_minmax(0,1fr)]">
                 <aside className="rounded-token-sm border border-line bg-surface-muted p-2">
                     <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-[0.06em] text-ink-muted">
                         Quick Access
                     </p>
                     <div className="grid gap-1">
-                        {roots.length > 0 ? roots.map((rootPath) => (
-                            <Button
-                                key={rootPath}
-                                variant={currentPath === rootPath ? 'soft' : 'ghost'}
-                                size="md"
-                                className="w-full justify-start"
-                                onClick={() => {
-                                    onLoadDirectories(rootPath);
-                                }}
-                                disabled={loading}
+                        {roots.length > 0 ? (
+                            roots.map((rootPath) => (
+                                <Button
+                                    key={rootPath}
+                                    variant={
+                                        currentPath === rootPath
+                                            ? 'soft'
+                                            : 'ghost'
+                                    }
+                                    size="md"
+                                    className="w-full justify-start"
+                                    onClick={() => {
+                                        void navigateToDirectory(rootPath);
+                                    }}
+                                    disabled={busy}
+                                >
+                                    {rootPath}
+                                </Button>
+                            ))
+                        ) : (
+                            <Notice
+                                variant="neutral"
+                                className="text-center text-xs"
                             >
-                                {rootPath}
-                            </Button>
-                        )) : (
-                            <Notice variant="neutral" className="text-center text-xs">No roots available</Notice>
+                                No roots available
+                            </Notice>
                         )}
                     </div>
                 </aside>
 
                 <section className="rounded-token-sm border border-line bg-surface-muted p-2">
                     <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-[0.06em] text-ink-muted">
-                        Folders ({entries.length})
+                        Folders ({visibleEntries.length}
+                        {normalizedEntryQuery ? ` / ${entries.length}` : ''})
                     </p>
                     <p className="mb-2 px-2 text-xs text-ink-subtle">
-                        Single click to select, double click to open.
+                        {busy
+                            ? `Opening ${navigatingPath || 'folder'}...`
+                            : 'Single click to select, double click to open.'}
                     </p>
+                    <div className="mb-2 grid gap-2 sm:grid-cols-[1fr_auto]">
+                        <Input
+                            value={entryQuery}
+                            onChange={(event) =>
+                                setEntryQuery(event.target.value)
+                            }
+                            placeholder="Filter folders"
+                            aria-label="Filter folders"
+                        />
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEntryQuery('')}
+                            disabled={entryQuery.trim().length === 0}
+                        >
+                            Clear
+                        </Button>
+                    </div>
                     <div
                         role="listbox"
                         aria-label="Folders"
@@ -225,15 +289,27 @@ export const AutoCollectDirectoryBrowserPanel = ({
                         onKeyDown={handleListboxKeyDown}
                         className="max-h-[36vh] min-h-[220px] overflow-auto rounded-token-sm border border-line bg-surface-raised p-2"
                     >
-                        {loading ? (
-                            <Notice variant="neutral" className="text-center">Loading folders...</Notice>
+                        {busy ? (
+                            <Notice variant="neutral" className="text-center">
+                                Loading folders...
+                            </Notice>
                         ) : null}
 
-                        {!loading && entries.length === 0 ? (
-                            <Notice variant="neutral" className="text-center">No subfolders in this location</Notice>
+                        {!busy && entries.length === 0 ? (
+                            <Notice variant="neutral" className="text-center">
+                                No subfolders in this location
+                            </Notice>
                         ) : null}
 
-                        {!loading && entries.length > 0 ? (
+                        {!busy &&
+                        entries.length > 0 &&
+                        visibleEntries.length === 0 ? (
+                            <Notice variant="neutral" className="text-center">
+                                No folders match this filter
+                            </Notice>
+                        ) : null}
+
+                        {!busy && visibleEntries.length > 0 ? (
                             <div className="grid gap-1">
                                 {entries.map((entry, index) => (
                                     <Button
@@ -249,10 +325,15 @@ export const AutoCollectDirectoryBrowserPanel = ({
                                             setSelectedPath(entry.path);
                                         }}
                                         onDoubleClick={() => {
-                                            onLoadDirectories(entry.path);
+                                            void navigateToDirectory(
+                                                entry.path,
+                                            );
                                         }}
+                                        disabled={busy}
                                     >
-                                        <span className="truncate">{entry.name}</span>
+                                        <span className="truncate">
+                                            {entry.name}
+                                        </span>
                                     </Button>
                                 ))}
                             </div>
@@ -261,46 +342,58 @@ export const AutoCollectDirectoryBrowserPanel = ({
                 </section>
             </div>
 
-            <div className="flex flex-wrap justify-end gap-2">
-                <Button
-                    variant="secondary"
-                    size="md"
-                    onClick={() => {
-                        if (!selectedPath) {
-                            return;
-                        }
-                        onLoadDirectories(selectedPath);
-                    }}
-                    disabled={!selectedPath || loading}
-                >
-                    Open Selected
-                </Button>
-                <Button
-                    variant="secondary"
-                    size="md"
-                    onClick={() => {
-                        if (!currentPath) {
-                            return;
-                        }
-                        onUsePath(currentPath);
-                    }}
-                    disabled={!currentPath}
-                >
-                    Use Current Folder
-                </Button>
-                <Button
-                    variant="primary"
-                    size="md"
-                    onClick={() => {
-                        if (!selectedPath) {
-                            return;
-                        }
-                        onUsePath(selectedPath);
-                    }}
-                    disabled={!selectedPath}
-                >
-                    Use Selected Folder
-                </Button>
+            <div className="grid gap-2 rounded-token-sm border border-line bg-surface-muted p-3">
+                <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-muted">
+                        Watch Folder Target
+                    </p>
+                    <p className="mt-1 truncate text-sm font-medium text-ink">
+                        {selectedPath ||
+                            currentPath ||
+                            'Select a folder from the list first'}
+                    </p>
+                </div>
+                <div className="flex flex-wrap justify-end gap-2">
+                    <Button
+                        variant="secondary"
+                        size="md"
+                        onClick={() => {
+                            if (!selectedPath) {
+                                return;
+                            }
+                            void navigateToDirectory(selectedPath);
+                        }}
+                        disabled={!selectedPath || busy}
+                    >
+                        Open Selected Folder
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        size="md"
+                        onClick={() => {
+                            if (!currentPath) {
+                                return;
+                            }
+                            onUsePath(currentPath);
+                        }}
+                        disabled={!currentPath}
+                    >
+                        Use Current as Watch Folder
+                    </Button>
+                    <Button
+                        variant="primary"
+                        size="md"
+                        onClick={() => {
+                            if (!selectedPath) {
+                                return;
+                            }
+                            onUsePath(selectedPath);
+                        }}
+                        disabled={!selectedPath}
+                    >
+                        Use Selected as Watch Folder
+                    </Button>
+                </div>
             </div>
         </div>
     );

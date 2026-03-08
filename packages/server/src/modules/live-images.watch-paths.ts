@@ -91,5 +91,19 @@ export async function walkWatchImageFiles({
         }
     }
 
+    const toSortKey = (absolutePath: string) =>
+        path
+            .relative(watchDirPath, absolutePath)
+            .split(path.sep)
+            .join('/')
+            .toLowerCase();
+
+    result.sort((left, right) =>
+        toSortKey(left).localeCompare(toSortKey(right), undefined, {
+            sensitivity: 'base',
+            numeric: true,
+        }),
+    );
+
     return result;
 }
