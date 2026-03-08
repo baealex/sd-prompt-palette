@@ -10,6 +10,10 @@ export interface LiveStatusResponse {
     enabled?: boolean;
     watchersRunning?: boolean;
     initialized: boolean;
+    syncing?: boolean;
+    syncReason?: string | null;
+    syncScanned?: number | null;
+    syncUpdatedAt?: number;
     updatedAt?: number;
 }
 
@@ -123,7 +127,12 @@ export function listLiveDirectories(data: { path?: string } = {}) {
 }
 
 export function pickLiveDirectory() {
-    return axios.request<{ ok: boolean; path?: string; canceled?: boolean; message?: string }>({
+    return axios.request<{
+        ok: boolean;
+        path?: string;
+        canceled?: boolean;
+        message?: string;
+    }>({
         method: 'POST',
         url: '/api/live/config/pick-dir',
     });

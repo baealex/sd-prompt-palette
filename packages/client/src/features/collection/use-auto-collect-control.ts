@@ -1,8 +1,18 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 
-import { getLiveConfig, listLiveDirectories, syncLiveImages, updateLiveConfig } from '~/api';
-import type { LiveConfig, LiveDirectoryEntry, LiveStatusResponse } from '~/api';
+import {
+    getLiveConfig,
+    listLiveDirectories,
+    syncLiveImages,
+    updateLiveConfig,
+} from '~/api';
+import type {
+    LiveConfig,
+    LiveDirectoriesResponse,
+    LiveDirectoryEntry,
+    LiveStatusResponse,
+} from '~/api';
 import { collectionQueryKeys } from '~/features/collection/query-keys';
 import { useLiveCollectionsRealtime } from '~/features/collection/use-live-collections-realtime';
 

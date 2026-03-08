@@ -30,6 +30,7 @@ export const AutoCollectDirectoryBrowserPanel = ({
     const [entryQuery, setEntryQuery] = useState('');
     const [localNavigating, setLocalNavigating] = useState(false);
     const [navigatingPath, setNavigatingPath] = useState<string | null>(null);
+    const busy = loading || localNavigating;
 
     const normalizedEntryQuery = entryQuery.trim().toLowerCase();
     const visibleEntries = useMemo(() => {
@@ -54,54 +55,71 @@ export const AutoCollectDirectoryBrowserPanel = ({
         () => entries.findIndex((entry) => entry.path === selectedPath),
         [entries, selectedPath],
     );
-    const activeOptionId = selectedIndex >= 0
-        ? `auto-collect-folder-option-${selectedIndex}`
-        : undefined;
+    const activeOptionId =
+        selectedIndex >= 0
+            ? `auto-collect-folder-option-${selectedIndex}`
+            : undefined;
 
-    const selectByIndex = useCallback((nextIndex: number) => {
-        if (entries.length === 0) {
-            return;
-        }
-        const boundedIndex = Math.max(0, Math.min(nextIndex, entries.length - 1));
-        const nextEntry = entries[boundedIndex];
-        if (!nextEntry) {
-            return;
-        }
-        setSelectedPath(nextEntry.path);
-    }, [entries]);
+    const selectByIndex = useCallback(
+        (nextIndex: number) => {
+            if (entries.length === 0) {
+                return;
+            }
+            const boundedIndex = Math.max(
+                0,
+                Math.min(nextIndex, entries.length - 1),
+            );
+            const nextEntry = entries[boundedIndex];
+            if (!nextEntry) {
+                return;
+            }
+            setSelectedPath(nextEntry.path);
+        },
+        [entries],
+    );
 
-    const handleListboxKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
-        if (loading || entries.length === 0) {
-            return;
-        }
+    const handleListboxKeyDown = useCallback(
+        (event: KeyboardEvent<HTMLDivElement>) => {
+            if (loading || entries.length === 0) {
+                return;
+            }
 
-        switch (event.key) {
-            case 'ArrowDown':
-                event.preventDefault();
-                selectByIndex(selectedIndex < 0 ? 0 : selectedIndex + 1);
-                break;
-            case 'ArrowUp':
-                event.preventDefault();
-                selectByIndex(selectedIndex < 0 ? 0 : selectedIndex - 1);
-                break;
-            case 'Home':
-                event.preventDefault();
-                selectByIndex(0);
-                break;
-            case 'End':
-                event.preventDefault();
-                selectByIndex(entries.length - 1);
-                break;
-            case 'Enter':
-                event.preventDefault();
-                if (selectedPath) {
-                    onLoadDirectories(selectedPath);
-                }
-                break;
-            default:
-                break;
-        }
-    }, [entries.length, loading, onLoadDirectories, selectByIndex, selectedIndex, selectedPath]);
+            switch (event.key) {
+                case 'ArrowDown':
+                    event.preventDefault();
+                    selectByIndex(selectedIndex < 0 ? 0 : selectedIndex + 1);
+                    break;
+                case 'ArrowUp':
+                    event.preventDefault();
+                    selectByIndex(selectedIndex < 0 ? 0 : selectedIndex - 1);
+                    break;
+                case 'Home':
+                    event.preventDefault();
+                    selectByIndex(0);
+                    break;
+                case 'End':
+                    event.preventDefault();
+                    selectByIndex(entries.length - 1);
+                    break;
+                case 'Enter':
+                    event.preventDefault();
+                    if (selectedPath) {
+                        onLoadDirectories(selectedPath);
+                    }
+                    break;
+                default:
+                    break;
+            }
+        },
+        [
+            entries.length,
+            loading,
+            onLoadDirectories,
+            selectByIndex,
+            selectedIndex,
+            selectedPath,
+        ],
+    );
 
     const breadcrumbs = useMemo(() => {
         if (!currentPath) {
@@ -140,6 +158,26 @@ export const AutoCollectDirectoryBrowserPanel = ({
         }
         return result;
     }, [currentPath]);
+
+    const navigateToDirectory = useCallback(
+        async (targetPath?: string) => {
+            const normalizedTarget = targetPath?.trim();
+            const nextPath =
+                normalizedTarget && normalizedTarget.length > 0
+                    ? normalizedTarget
+                    : undefined;
+
+            setLocalNavigating(true);
+            setNavigatingPath(nextPath || currentPath || null);
+            try {
+                await onLoadDirectories(nextPath);
+            } finally {
+                setLocalNavigating(false);
+                setNavigatingPath(null);
+            }
+        },
+        [currentPath, onLoadDirectories],
+    );
 
     return (
         <div className="grid gap-3 rounded-token-md border border-line bg-surface-raised p-3 shadow-surface">
@@ -316,10 +354,16 @@ export const AutoCollectDirectoryBrowserPanel = ({
                                         key={entry.path}
                                         id={`auto-collect-folder-option-${index}`}
                                         role="option"
-                                        variant={selectedPath === entry.path ? 'soft' : 'ghost'}
+                                        variant={
+                                            selectedPath === entry.path
+                                                ? 'soft'
+                                                : 'ghost'
+                                        }
                                         size="md"
                                         className="w-full justify-start"
-                                        aria-selected={selectedPath === entry.path}
+                                        aria-selected={
+                                            selectedPath === entry.path
+                                        }
                                         tabIndex={-1}
                                         onClick={() => {
                                             setSelectedPath(entry.path);
